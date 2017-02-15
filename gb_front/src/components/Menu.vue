@@ -16,25 +16,45 @@
                     IN+
                 </div>
             </li>
-            <router-link tag="li" to="/" active-class="active" exact><a><i class="fa fa-th-large"></i> <span
+            <router-link tag="li" to="/" active-class="active" exact><a><i class="fa fa-tachometer" aria-hidden="true"></i> <span
                     class="nav-label">儀錶板</span></a></router-link>
             <li>
-                <a><i class="fa fa-th-large"></i> <span class="nav-label">系統管理</span> <span
+                <a><i class="fa fa-truck" aria-hidden="true"></i><span class="nav-label">車輛管理</span> <span
+                        class="fa arrow"></span></a>
+                <ul class="nav nav-second-level collapse">
+                    <router-link tag="li"
+                                 :to="{name:'AddVehicle'}" active-class="active">
+                        <a><i class="fa fa-plus" aria-hidden="true"></i>
+                            <span class="nav-label">新增車輛</span> </a></router-link>
+
+                    <router-link tag="li"
+                                 :to="{name:'DelVehicle'}" active-class="active">
+                        <a><i class="fa fa-trash" aria-hidden="true"></i>
+                            <span class="nav-label">刪除車輛</span> </a></router-link>
+
+                    <router-link tag="li"
+                                 :to="{name:'UpdateVehicle'}" active-class="active">
+                        <a><i class="fa fa-pencil" aria-hidden="true"></i>
+                            <span class="nav-label">更新車輛資料</span> </a></router-link>
+                </ul>
+            </li>
+            <li>
+                <a><i class="fa fa-cog" aria-hidden="true"></i><span class="nav-label">系統管理</span> <span
                         class="fa arrow"></span></a>
                 <ul class="nav nav-second-level collapse">
                     <router-link tag="li"
                                  :to="{name:'AddUser'}" active-class="active">
-                        <a><i class="fa fa-th-large"></i>
+                        <a><i class="fa fa-plus" aria-hidden="true"></i>
                             <span class="nav-label">新增使用者</span> </a></router-link>
 
                     <router-link tag="li"
                                  :to="{name:'DelUser'}" active-class="active">
-                        <a><i class="fa fa-th-large"></i>
+                        <a><i class="fa fa-trash" aria-hidden="true"></i>
                             <span class="nav-label">刪除使用者</span> </a></router-link>
 
                     <router-link tag="li"
                                  :to="{name:'UpdateUser'}" active-class="active">
-                        <a><i class="fa fa-th-large"></i>
+                        <a><i class="fa fa-pencil" aria-hidden="true"></i>
                             <span class="nav-label">更新使用者</span> </a></router-link>
                 </ul>
             </li>

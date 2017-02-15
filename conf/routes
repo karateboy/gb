@@ -10,7 +10,6 @@ GET      /assets/*file                      controllers.Assets.versioned(path="/
 GET      /html/*file                        controllers.Assets.at(path="/public/html", file)
 GET      /dist/*file                        controllers.Assets.at(path="/public/dist", file)
 
-GET      /login                             controllers.Login.prompt
 GET      /logout                            controllers.Login.logout
 POST     /authenticate                      controllers.Login.authenticate
 GET      /testAuthenticated                 controllers.Login.testAuthenticated

@@ -15,6 +15,7 @@ import play.api.libs.json._
 import com.github.nscala_time.time.Imports._
 import Highchart._
 import models._
+import models.ModelHelper._
 
 object Application extends Controller {
 
@@ -79,17 +80,16 @@ object Application extends Controller {
         },
         param => {
           val f = User.updateUser(param)
-          for(rets <- f) yield{
+          for (rets <- f) yield {
             val ret = rets.head
-            Ok(Json.obj("ok" -> (ret.getMatchedCount == 1)))  
-          }          
+            Ok(Json.obj("ok" -> (ret.getMatchedCount == 1)))
+          }
         })
   }
 
-  def getAllUsers = Security.Authenticated {
-    val users = User.getAllUsers()
-
-    Ok(Json.toJson(users))
+  def getAllUsers = Security.Authenticated.async {
+    val userF = User.getAllUsersFuture()
+    for (users <- userF) yield Ok(Json.toJson(users))
   }
 
   def adminOnly[A, B <: controllers.Security.UserInfo](permited: Future[Result])(implicit request: play.api.mvc.Security.AuthenticatedRequest[A, B]) = {
@@ -100,8 +100,9 @@ object Application extends Controller {
       }
     else {
       val userInfo = userInfoOpt.get
-      val user = User.getUserByEmail(userInfo.id).get
-      if (!user.isAdmin)
+      val userF = User.getUserByIdFuture(userInfo.id)
+      val userOpt = waitReadyResult(userF)
+      if (userOpt.isEmpty || userOpt.get.groupId != Group.Admin.toString())
         Future {
           Forbidden("無權限!")
         }

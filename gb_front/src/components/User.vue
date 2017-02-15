@@ -35,13 +35,6 @@
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-lg-2 control-label">系統管理員</label>
-                <div class="col-lg-5">
-                    <input type="checkbox" class="form-control"
-                           v-model="user.isAdmin">
-                </div>
-            </div>
-            <div class="form-group">
                 <label class="col-lg-2 control-label">群組:</label>
                 <div class="col-lg-7">
                     <div class="btn-group" data-toggle="buttons">

@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h1>外銷內部生產管理系統</h1>
+        <h1>廢棄物清運管理系統</h1>
     </div>
 </template>
 <style>

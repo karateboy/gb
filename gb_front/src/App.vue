@@ -12,7 +12,7 @@
                                 class="fa fa-bars"></i> </a>
                         <form role="search" class="navbar-form-custom" method="post" action="#">
                             <div class="form-group">
-                                <input type="text" placeholder="佩登斯生產履歷系統" class="form-control" name="top-search"
+                                <input type="text" placeholder="廢棄物清運管理系統" class="form-control" name="top-search"
                                        id="top-search">
                             </div>
                         </form>
