@@ -20,7 +20,7 @@ object WasteCode {
   val codecRegistry = fromRegistries(fromProviders(classOf[WasteCode]), DEFAULT_CODEC_REGISTRY)
     
   val ColName = "wasteCode"
-  val collection = MongoDB.database.getCollection[WasteCode](ColName)
+  val collection = MongoDB.database.getCollection[WasteCode](ColName).withCodecRegistry(codecRegistry)
 
   import org.mongodb.scala.model.Indexes._
   def init(colNames: Seq[String]) {
@@ -55,8 +55,10 @@ object WasteCode {
         """.map(rs => WasteCode(rs.string("WasteNum"), rs.string("WasteNum").substring(0, 2), rs.string("WasteName"))).list().apply()
       }
 
-    Logger.debug(s"# of wasteNum = ${list.length}")
-    val f = collection.insertMany(list).toFuture()
+    var map = Map.empty[String, WasteCode]
+    list.foreach(wc => map += wc._id -> wc)
+    val filterdList = map.values.toList
+    val f = collection.insertMany(filterdList).toFuture()
     f.onFailure(errorHandler)
     f.onSuccess({
       case x =>
