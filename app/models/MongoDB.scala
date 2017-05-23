@@ -15,6 +15,7 @@ object MongoDB {
     val colFuture = f.map { colNames =>
       User.init(colNames)
       Identity.init(colNames)
+      WasteCode.init(colNames)
     }
     //Program need to wait before init complete
     import scala.concurrent.Await

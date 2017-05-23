@@ -1,18 +1,21 @@
 name := """gb"""
 
-version := "1.0.0"
+version := "1.0.1"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.11.11"
 
 libraryDependencies ++= Seq(
   cache,
   ws,
   filters,
   specs2 % Test,
+  "org.scalikejdbc" %% "scalikejdbc"                  % "2.5.2",
+  "org.scalikejdbc" %% "scalikejdbc-config"           % "2.5.2",
+  "org.scalikejdbc" %% "scalikejdbc-play-initializer" % "2.5.1",
   "com.github.nscala-time" %% "nscala-time" % "2.16.0",
-  "org.mongodb.scala" %% "mongo-scala-driver" % "1.2.1"
+  "org.mongodb.scala" %% "mongo-scala-driver" % "2.0.0"
 )
 
 mappings in Universal ++=

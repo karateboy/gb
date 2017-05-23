@@ -55,8 +55,7 @@ object Application extends Controller {
         val f = User.deleteUser(email)
         val requestF =
           for (result <- f) yield {
-            val deleteResult = result.head
-            Ok(Json.obj("ok" -> (deleteResult.getDeletedCount == 1)))
+            Ok(Json.obj("ok" -> (result.getDeletedCount == 1)))
           }
 
         requestF.recover({
@@ -80,8 +79,7 @@ object Application extends Controller {
         },
         param => {
           val f = User.updateUser(param)
-          for (rets <- f) yield {
-            val ret = rets.head
+          for (ret <- f) yield {
             Ok(Json.obj("ok" -> (ret.getMatchedCount == 1)))
           }
         })

@@ -31,8 +31,8 @@ object Identity {
     }
     val f = collection.count().toFuture()
     f.onSuccess({
-      case count: Seq[Long] =>
-        if (count(0) == 0) {
+      case count =>
+        if (count == 0) {
           val id1 = Identity("vehicle", 1)
           newID(id1)
         }
@@ -61,6 +61,6 @@ object Identity {
 
     val f = collection.findOneAndUpdate(equal("_id", name), Updates.inc("seq", 1)).toFuture()
     for (id <- f)
-      yield toIdentity(id(0))
+      yield toIdentity(id)
   }
 }

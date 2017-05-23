@@ -9,13 +9,17 @@
     "build": "cross-env NODE_ENV=production webpack --progress --hide-modules"
   },
   "dependencies": {
-    "axios": "^0.15.3",
+    "axios": "^0.16.1",
+    "eslint": "^3.17.0",
+    "eslint-config-rallycoding": "^3.2.0",
+    "eslint-plugin-html": "^2.0.1",
+    "eslint-rallycoding": "^1.2.0",
     "get-env": "^0.5.10",
     "moment": "^2.17.1",
     "vue": "^2.1.0",
     "vue-router": "^2.1.1",
     "vue-strap": "^1.1.36",
-    "vuejs-datepicker": "^0.6.2",
+    "vuejs-datepicker": "^0.7.12",
     "vuex": "^2.1.1"
   },
   "devDependencies": {

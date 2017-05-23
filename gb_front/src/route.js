@@ -6,6 +6,11 @@ import DelUser from './components/DelUser.vue'
 import UpdateUser from './components/UpdateUser.vue'
 import VehicleOps from './components/VehicleOps.vue'
 
+import Order from  './components/Order.vue'
+import NewOrder from './components/NewOrder.vue'
+import MyOrder from "./components/MyOrder.vue"
+import QueryOrder from "./components/QueryOrder.vue"
+
 export const routes = [
     {path: '/', component: Dashboard, name: 'Dashboard'},
     {path: '/Login', component: Login, name: 'Login'},
@@ -15,6 +20,14 @@ export const routes = [
             {path: 'AddVehicle', component:AddUser, name:'AddVehicle' },
             {path: 'DelVehicle', component:DelUser, name:'DelVehicle' },
             {path: 'UpdateVehicle', component:UpdateUser, name:'UpdateVehicle' },
+        ]
+    },
+    {
+        path: '/Order', component: Order, name: 'Order',
+        children: [
+            {path: 'New', component: NewOrder, name: 'NewOrder'},
+            {path: 'Mine', component: MyOrder, name: 'MyOrder'},
+            {path: 'Query', component: QueryOrder, name: 'QueryOrder'}
         ]
     },
     {

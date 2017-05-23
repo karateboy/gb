@@ -19,6 +19,9 @@ case class GeoJSON(geoType: String, coordinates: Seq[Double]) {
 }
 
 object GeoJSON {
+  implicit val geoPointRead = Json.reads[GeoPoint]
+  implicit val geoPointWrite = Json.writes[GeoPoint]
+
   implicit object TransformGeoJSON extends BsonTransformer[GeoJSON] {
     def apply(gj: GeoJSON): BsonDocument = gj.toDocument.toBsonDocument
   }

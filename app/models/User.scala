@@ -31,8 +31,8 @@ object User {
     }
     val f = collection.count().toFuture()
     f.onSuccess({
-      case count: Seq[Long] =>
-        if (count(0) == 0) {
+      case count =>
+        if (count == 0) {
           val defaultUser = User("karateboy", "abc123", "karateboy", "0920660136")
           Logger.info("Create default user:" + defaultUser.toString())
           newUser(defaultUser)
@@ -67,7 +67,7 @@ object User {
   }
 
   def getUserByIdFuture(_id: String) = {
-    val f = collection.find(equal("_id", _id)).first().toFuture()
+    val f = collection.find(equal("_id", _id)).limit(1).toFuture()
     f.onFailure { errorHandler }
     for (ret <- f)
       yield if (ret.length == 0)

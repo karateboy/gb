@@ -6,22 +6,18 @@ import play.api.libs.functional.syntax._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 case class Truck(_id: String, company: String, weight: Double, bucketType: String,
-                 clipper: Boolean, lifter: Boolean, highBucket: Boolean, freezer: Boolean, var loc: GeoPoint, online: Boolean) {
+                 clipper: Boolean, lifter: Boolean, highBucket: Boolean, freezer: Boolean, loc: GeoPoint) {
   def toDocument = {
     Document("_id" -> _id, "company" -> company, "weight" -> weight, "bucketType" -> bucketType,
       "clipper" -> clipper, "lifter" -> lifter, "highBucket" -> highBucket, "freezer" -> freezer,
-      "loc" -> loc.toGeoJSON, "online" -> online)
+      "loc" -> loc.toGeoJSON)
   }
 }
 object Truck {
-  import scala.concurrent._
-  import scala.concurrent.duration._
   import GeoJSON._
 
   val ColName = "trucks"
   val collection = MongoDB.database.getCollection(ColName)
-  implicit val geoPointRead = Json.reads[GeoPoint]
-  implicit val geoPointWrite = Json.writes[GeoPoint]
   implicit val truckRead = Json.reads[Truck]
   implicit val truckWrite = Json.writes[Truck]
 
@@ -35,10 +31,9 @@ object Truck {
     val highBucket = doc.getBoolean("highBucket")
     val freezer = doc.getBoolean("freezer")
     val loc = GeoJSON.toGeoJSON(doc("loc").asDocument()).toGeoPoint
-    val online = doc.getBoolean("online")
 
     Truck(_id = _id, company = company, weight = weight, bucketType = bucketType, clipper = clipper, lifter = lifter,
-      highBucket = highBucket, freezer = freezer, loc = loc, online = online)
+      highBucket = highBucket, freezer = freezer, loc = loc)
   }
 
   def init(colNames: Seq[String]) {
@@ -50,12 +45,11 @@ object Truck {
         case _: Seq[_] =>
           val f1 = collection.createIndex(Indexes.ascending("company")).toFuture()
           val f2 = collection.createIndex(Indexes.geo2dsphere("loc")).toFuture()
-          val f3 = collection.createIndex(Indexes.ascending("online", "weight", "bucketType", "clipper", "lifter", "highBucket", "freezer")).toFuture()
+          val f3 = collection.createIndex(Indexes.ascending("weight", "bucketType", "clipper", "lifter", "highBucket", "freezer")).toFuture()
           f1.onFailure(errorHandler)
           f2.onFailure(errorHandler)
           f3.onFailure(errorHandler)
       })
     }
   }
-
 }
