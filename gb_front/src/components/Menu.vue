@@ -35,6 +35,26 @@
                 </ul>
             </li>
             <li>
+                <a><i class="fa fa-h-square" aria-hidden="true"></i><span class="nav-label">安養單位</span> <span
+                        class="fa arrow"></span></a>
+                <ul class="nav nav-second-level collapse">
+                    <router-link tag="li"
+                                 :to="{name:'AddCareHouse'}" active-class="active">
+                        <a><i class="fa fa-plus" aria-hidden="true"></i>
+                            <span class="nav-label">新增安養單位</span> </a></router-link>
+
+                    <router-link tag="li"
+                                 :to="{name:'QueryCareHouse'}" active-class="active">
+                        <a><i class="fa fa-search" aria-hidden="true"></i>
+                            <span class="nav-label">查詢安養單位</span> </a></router-link>
+
+                    <router-link tag="li"
+                                 :to="{name:'UpdateCareHouse'}" active-class="active">
+                        <a><i class="fa fa-pencil" aria-hidden="true"></i>
+                            <span class="nav-label">更新安養單位資料</span> </a></router-link>
+                </ul>
+            </li>
+            <li>
                 <a><i class="fa fa-truck" aria-hidden="true"></i><span class="nav-label">車輛管理</span> <span
                         class="fa arrow"></span></a>
                 <ul class="nav nav-second-level collapse">

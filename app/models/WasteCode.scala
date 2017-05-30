@@ -38,7 +38,6 @@ object WasteCode {
           val endF = Future.sequence(Seq(cf1, cf2))
           endF.onComplete({
             case x =>
-              Logger.debug("ImportFromSQL")
               importFromSQL
           })
       })

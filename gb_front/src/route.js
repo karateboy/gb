@@ -31,6 +31,13 @@ export const routes = [
         ]
     },
     {
+        path: '/CareHouse', component: CareHouse, name: 'CareHouse',
+        children: [
+            {path: 'New', component: NewOrder, name: 'NewCareHouse'},
+            {path: 'Query', component: QueryOrder, name: 'QueryCareHouser'}
+        ]
+    },
+    {
         path: '/System', component: SystemManagement, name: 'SystemManagement',
         children: [
             {path: 'AddUser', component:AddUser, name:'AddUser' },
