@@ -11,6 +11,9 @@ import NewOrder from './components/NewOrder.vue'
 import MyOrder from "./components/MyOrder.vue"
 import QueryOrder from "./components/QueryOrder.vue"
 
+import CareHouse from './components/CareHouse.vue'
+import QueryCareHouse from './components/QueryCareHouse.vue'
+
 export const routes = [
     {path: '/', component: Dashboard, name: 'Dashboard'},
     {path: '/Login', component: Login, name: 'Login'},
@@ -33,8 +36,7 @@ export const routes = [
     {
         path: '/CareHouse', component: CareHouse, name: 'CareHouse',
         children: [
-            {path: 'New', component: NewOrder, name: 'NewCareHouse'},
-            {path: 'Query', component: QueryOrder, name: 'QueryCareHouser'}
+            {path: 'Query', component: QueryCareHouse, name: 'QueryCareHouse'}
         ]
     },
     {

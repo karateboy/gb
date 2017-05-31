@@ -19,7 +19,7 @@ import java.nio.file._
 import org.apache.poi.ss.usermodel._
 
 case class CareType(name: String, quantity: Int)
-case class CareHouse(_id: String, public: Boolean, county: String, name: String,
+case class CareHouse(_id: String, isPublic: Boolean, county: String, name: String,
                      principal: String, district: String, addr: String, phone: String, careTypes: Seq[CareType], beds: Option[Int], waste: Option[String])
 
 object CareHouse {
@@ -65,7 +65,7 @@ object CareHouse {
       if (row == null)
         finish = true
       else {
-        val public = row.getCell(1).getStringCellValue == "公立"
+        val isPublic = row.getCell(1).getStringCellValue == "公立"
         val name = row.getCell(2).getStringCellValue
         val principal = row.getCell(3).getStringCellValue
         val district = row.getCell(4).getStringCellValue
@@ -122,7 +122,7 @@ object CareHouse {
         }
 
         val careHouse = CareHouse(_id = s"$county#$name",
-          public = public,
+          isPublic = isPublic,
           county = county,
           name = name,
           principal = principal,
