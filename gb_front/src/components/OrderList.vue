@@ -5,10 +5,9 @@
             <tr class='info'>
                 <th></th>
                 <th>訂單編號</th>
-                <th>客戶編號</th>
-                <th>品名</th>
-                <th>訂單總數(打)</th>
-                <th>預定出貨日</th>
+                <th>聯絡人</th>
+                <th>地址</th>
+                <th>電話</th>
             </tr>
             </thead>
             <tbody>
@@ -23,10 +22,9 @@
 
                 </td>
                 <td>{{ order._id}}</td>
-                <td>{{ order.customerId}}</td>
-                <td>{{ order.name}}</td>
-                <td>{{ displayQuantity(order)}}</td>
-                <td>{{ displayDate(order.expectedDeliverDate) }}</td>
+                <td>{{ order.contact}}</td>
+                <td>{{ order.address}}</td>
+                <td>{{ order.phone}}</td>
             </tr>
             </tbody>
         </table>

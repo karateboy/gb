@@ -25,14 +25,17 @@
                                              v-model="queryParam.addr"></div>
             </div>
             <div class="form-group">
-                <div class="col-lg-offset-1">
+                <div class="col-lg-1 col-lg-offset-1">
                     <button class='btn btn-primary' @click='query'>查詢</button>
                 </div>
+<!--                <div class="col-lg-1 col-lg-offset-1">
+                    <button class="btn btn-info" @click='exportExcel'>Excel</button>
+                </div>-->
             </div>
         </div>
         <div v-if='display'>
-            <div v-if='orderList.length != 0'>
-                <order-list :order-list="careHouseList"></order-list>
+            <div v-if='careHouseList.length != 0'>
+                <care-house-list :care-house-list="careHouseList"></care-house-list>
             </div>
             <div v-else class="alert alert-info">沒有符合的機構</div>
         </div>
@@ -70,9 +73,7 @@
                 if (this.queryParam.district == '')
                     this.queryParam.district = null
 
-                if (this.queryParam.district == '')
-                    this.queryParam.district = null
-
+                console.log(this.queryParam)
             },
             query(){
                 this.prepareParam()
@@ -83,6 +84,14 @@
                         this.careHouseList.push(careHouse)
                     }
                     this.display = true
+                }).catch((err) => {
+                    alert(err)
+                })
+            },
+            exportExcel(){
+                this.prepareParam()
+                axios.post('/QueryCareHouse/excel', this.queryParam).then((resp) => {
+                    console.log(resp)
                 }).catch((err) => {
                     alert(err)
                 })

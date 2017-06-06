@@ -141,7 +141,7 @@ object WorkCard {
     for (cards <- f) yield cards.map { toWorkCard(_) }
   }
 
-  def checkOrderDetailComplete(orderId: String, detailIndex: Int) {
+  def checkOrderDetailComplete(orderId: Long, detailIndex: Int) {
     val f = getOrderWorkCards(orderId, detailIndex)
     val orderF = Order.getOrder(orderId)
     for {
@@ -152,7 +152,7 @@ object WorkCard {
       val finishedCards = cards.filter { !_.active }
       val finishedGood = finishedCards.map { _.good }
       val finished = finishedGood.sum
-      if (finished >= order.details(detailIndex).quantity)
+      if (finished >= order.contract.get.details(detailIndex).quantity)
         Order.setOrderDetailComplete(orderId, detailIndex, true)
     }
   }
@@ -172,14 +172,14 @@ object WorkCard {
           val workCardF = WorkCard.getCard(workCardID)
           for (cardOpt <- workCardF) yield {
             val card = cardOpt.get
-            checkOrderDetailComplete(card.orderId, card.detailIndex)
+            //checkOrderDetailComplete(card.orderId, card.detailIndex)
           }
         }
     })
     f
   }
 
-  def getOrderWorkCards(orderId: String, detailIndex: Int) = {
+  def getOrderWorkCards(orderId: Long, detailIndex: Int) = {
     val f = collection.find(and(equal("orderId", orderId), equal("detailIndex", detailIndex))).sort(ascending("orderId", "detailIndex")).toFuture()
     f.onFailure { errorHandler }
     for (cards <- f) yield cards.map { toWorkCard(_) }

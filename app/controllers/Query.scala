@@ -11,6 +11,7 @@ import play.api.libs.ws._
 import play.api.libs.ws.ning.NingAsyncHttpClientConfigBuilder
 import scala.concurrent.Future
 import play.api.libs.json._
+import scala.concurrent.ExecutionContext.Implicits.global
 import com.github.nscala_time.time.Imports._
 import Highchart._
 import models._
@@ -63,5 +64,36 @@ object Query extends Controller {
     }
 
     count
+  }
+  
+  import java.nio.file.Files
+
+  def queryCareHouse(outputTypeStr: String) = Security.Authenticated.async(BodyParsers.parse.json) {
+    implicit request =>
+      val outputType = OutputType.withName(outputTypeStr)
+      implicit val paramRead = Json.reads[QueryCareHouseParam]
+      implicit val careTypeWrite = Json.writes[CareType]
+      implicit val careHouseWrite = Json.writes[CareHouse]
+      val result = request.body.validate[QueryCareHouseParam]
+      result.fold(
+        err =>
+          Future {
+            Logger.error(JsError.toJson(err).toString())
+            BadRequest(JsError.toJson(err).toString())
+          },
+        param => {
+          val f = CareHouse.queryCareHouse(param)
+          for (careHouseList <- f) yield {
+            outputType match {
+              case OutputType.html =>
+                Ok(Json.toJson(careHouseList))
+              case OutputType.excel =>
+                val excel = ExcelUtility.exportCareHouse(careHouseList)
+                Ok.sendFile(excel, fileName = _ =>
+                  play.utils.UriEncoding.encodePathSegment("安養機構.xlsx", "UTF-8"),
+                  onClose = () => { Files.deleteIfExists(excel.toPath()) })
+            }
+          }
+        })
   }
 }

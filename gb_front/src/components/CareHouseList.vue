@@ -3,7 +3,6 @@
         <table class="table table-hover table-bordered table-condensed">
             <thead>
             <tr class='info'>
-                <th></th>
                 <th>公立</th>
                 <th>機構名稱</th>
                 <th>負責人</th>
@@ -19,12 +18,12 @@
             </thead>
             <tbody>
             <tr v-for="(careHouse, index) in myList" :class='{success: selectedIndex == index}'>
-                <td>
-                </td>
-                <td>{{ careHouse.isPublic}}</td>
+                <td>{{ displayIsPublic(careHouse.isPublic)}}</td>
                 <td>{{ careHouse.name}}</td>
                 <td>{{ careHouse.principal}}</td>
                 <td>{{ careHouse.district}}</td>
+                <td>{{ careHouse.addr}}</td>
+                <td>{{ careHouse.phone}}</td>
                 <td>{{ displayBed("安養", careHouse) }}</td>
                 <td>{{ displayBed("養護", careHouse) }}</td>
                 <td>{{ displayBed("長照", careHouse) }}</td>
@@ -36,7 +35,7 @@
     </div>
 </template>
 <style scoped>
-    body{
+    body {
     }
 
 
@@ -64,11 +63,15 @@
         },
         methods: {
             displayBed(careTypeName, careHouse){
-              for(let careType of careHouse.careTypes){
-                  if(careType.name === careTypeName)
-                      return careType.quantity
-              }
-              return 0
+                for (let careType of careHouse.careTypes) {
+                    if (careType.name === careTypeName)
+                        return careType.quantity
+                }
+                return 0
+            },
+            displayIsPublic(v){
+                if (v) return "公立"
+                else return "私立"
             },
             displayOrder(idx){
                 this.selectedIndex = idx
@@ -76,7 +79,6 @@
                 this.display = 'detail';
             }
         },
-        components: {
-        }
+        components: {}
     }
 </script>

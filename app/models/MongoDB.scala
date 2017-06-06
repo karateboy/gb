@@ -15,6 +15,7 @@ object MongoDB {
     val colFuture = f.map { colNames =>
       User.init(colNames)
       Identity.init(colNames)
+      Order.init(colNames)
       WasteCode.init(colNames)
       CareHouse.init(colNames)
     }

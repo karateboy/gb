@@ -21,6 +21,8 @@ import org.apache.poi.ss.usermodel._
 case class CareType(name: String, quantity: Int)
 case class CareHouse(_id: String, isPublic: Boolean, county: String, name: String,
                      principal: String, district: String, addr: String, phone: String, careTypes: Seq[CareType], beds: Option[Int], waste: Option[String])
+case class QueryCareHouseParam(isPublic: Option[Boolean], county: Option[String], name: Option[String],
+                               principal: Option[String], district: Option[String], addr: Option[String])
 
 object CareHouse {
   import org.mongodb.scala.bson.codecs.Macros._
@@ -159,6 +161,33 @@ object CareHouse {
     } {
       Logger.debug(s"$county")
       parser(sheet, county)
+    }
+  }
+
+  def queryCareHouse(param: QueryCareHouseParam) = {
+    import org.mongodb.scala.model.Filters._
+    import org.mongodb.scala.model._
+
+    val isPublicFilter = param.isPublic map { isPublic => equal("isPublic", isPublic) }
+    val countyFilter = param.county map { county => regex("county", county) }
+    val nameFilter = param.name map { name => regex("name", name) }
+    val principalFilter = param.principal map { principal => regex("principal", principal) }
+    val districtFilter = param.district map { district => regex("district", district) }
+
+    val filterList = List(isPublicFilter, countyFilter, nameFilter, principalFilter,
+      districtFilter).flatMap { f => f }
+    val filter = if (!filterList.isEmpty)
+      and(filterList: _*)
+    else
+      Filters.exists("_id")
+
+    val f = collection.find(filter).sort(Sorts.ascending("_id")).toFuture()
+    f.onFailure {
+      errorHandler
+    }
+    for (records <- f)
+      yield {
+      records
     }
   }
 }

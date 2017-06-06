@@ -11,18 +11,25 @@ import play.api.libs.json.Json
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
 
-case class Identity(_id: String, seq: Int)
+case class Identity(_id: String, seq: Long)
 
 object Identity {
   import scala.concurrent._
   import scala.concurrent.duration._
+  import org.mongodb.scala.bson.codecs.Macros._
+  import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
+  import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
+
+  val codecRegistry = fromRegistries(fromProviders(classOf[Identity]), DEFAULT_CODEC_REGISTRY)
+
+  val Vehicle = "vehicle"
+  val Order = "order"
+  val Customer = "customer"
 
   val ColName = "identity"
-  val collection = MongoDB.database.getCollection(ColName)
+  val collection = MongoDB.database.getCollection[Identity](ColName).withCodecRegistry(codecRegistry)
   implicit val userRead = Json.reads[Identity]
   implicit val userWrite = Json.writes[Identity]
-
-  def toDocument(id: Identity) = Document(Json.toJson(id).toString())
 
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {
@@ -33,26 +40,20 @@ object Identity {
     f.onSuccess({
       case count =>
         if (count == 0) {
-          val id1 = Identity("vehicle", 1)
+          val id1 = Identity(Vehicle, 1)
+          val id2 = Identity(Order, 1)
+          val id3 = Identity(Customer, 1)
           newID(id1)
+          newID(id2)
+          newID(id3)
         }
     })
     f.onFailure(errorHandler)
 
   }
 
-  def toIdentity(doc: Document) = {
-    val ret = Json.parse(doc.toJson()).validate[Identity]
-
-    ret.fold(error => {
-      Logger.error(JsError.toJson(error).toString())
-      throw new Exception(JsError.toJson(error).toString)
-    },
-      id => id)
-  }
-
   def newID(id: Identity) = {
-    collection.insertOne(toDocument(id)).toFuture()
+    collection.insertOne(id).toFuture()
   }
 
   def getNewID(name: String) = {
@@ -61,6 +62,6 @@ object Identity {
 
     val f = collection.findOneAndUpdate(equal("_id", name), Updates.inc("seq", 1)).toFuture()
     for (id <- f)
-      yield toIdentity(id)
+      yield id
   }
 }

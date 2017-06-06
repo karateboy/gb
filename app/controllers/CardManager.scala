@@ -51,7 +51,7 @@ object CardManager extends Controller {
       yield Ok(Json.toJson(workCards))
   }
 
-  def getOrderDetailWorkCards(orderId: String, detailIndex: Int) = Security.Authenticated.async {
+  def getOrderDetailWorkCards(orderId: Long, detailIndex: Int) = Security.Authenticated.async {
     val f = WorkCard.getOrderWorkCards(orderId, detailIndex)
     for (cards <- f) yield {
       Ok(Json.toJson(cards))

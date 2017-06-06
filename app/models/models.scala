@@ -139,3 +139,22 @@ object EnumUtils {
     Format(enumReads(enum), enumWrites)
   }
 }
+
+import org.mongodb.scala.bson.ObjectId
+object ObjectIdUtil {
+  def objectIdReads: Reads[ObjectId] = new Reads[ObjectId] {
+    def reads(json: JsValue): JsResult[ObjectId] = json match {
+      case JsString(s) => {
+        try {
+          JsSuccess(new ObjectId(s))
+        } catch {
+          case _: NoSuchElementException => JsError(s"unexpected ObjectId")
+        }
+      }
+      case _ => JsError("String value expected")
+    }
+  }
+  implicit def objectWrites: Writes[ObjectId] = new Writes[ObjectId] {
+    def writes(v: ObjectId): JsValue = JsString(v.toHexString)
+  }
+}

@@ -16,16 +16,18 @@
                     IN+
                 </div>
             </li>
-            <router-link tag="li" to="/" active-class="active" exact><a><i class="fa fa-tachometer" aria-hidden="true"></i> <span
-                    class="nav-label">儀錶板</span></a></router-link>
+            <router-link tag="li" to="/" active-class="active" exact>
+                <a><i class="fa fa-tachometer"
+                      aria-hidden="true"></i> <span
+                        class="nav-label">儀錶板</span></a></router-link>
             <li>
                 <a><i class="fa fa-address-book-o" aria-hidden="true"></i><span class="nav-label">清運訂單管理</span> <span
                         class="fa arrow"></span></a>
                 <ul class="nav nav-second-level collapse">
                     <router-link tag="li"
-                                 :to="{name:'NewOrder'}" active-class="active">
+                                 :to="{name:'UnhandledOrder'}" active-class="active">
                         <a><i class="fa fa-telegram" aria-hidden="true"></i>
-                            <span class="nav-label">清運訂單</span> </a></router-link>
+                            <span class="nav-label">未聯絡通報</span> </a></router-link>
                     <router-link tag="li" to="/Order/Mine" active-class="active"><a><i class="fa fa-th-large"></i> <span
                             class="nav-label">我的訂單</span> </a></router-link>
                     <router-link tag="li"
