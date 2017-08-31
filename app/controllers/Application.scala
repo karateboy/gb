@@ -116,4 +116,13 @@ object Application extends Controller {
     implicit val write = Json.writes[GroupInfo]
     Ok(Json.toJson(infoList))
   }
+  
+  def testGeoCoding = Security.Authenticated {
+    //val retList = GoogleApi.queryAddr("台北市萬華區西園路二段372巷23弄13號3樓")
+    //for(ret <- retList){
+    //  Logger.info(ret.toString())  
+    //}
+    CareHouse.convertAddrToLocation()
+    Ok("ok")
+  }
 }

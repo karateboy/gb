@@ -20,7 +20,9 @@ import org.apache.poi.ss.usermodel._
 
 case class CareType(name: String, quantity: Int)
 case class CareHouse(_id: String, isPublic: Boolean, county: String, name: String,
-                     principal: String, district: String, addr: String, phone: String, careTypes: Seq[CareType], beds: Option[Int], waste: Option[String])
+                     principal: String, district: String, addr: String, phone: String,
+                     careTypes: Seq[CareType], beds: Option[Int], waste: Option[String],
+                     var location: Option[Seq[Double]])
 case class QueryCareHouseParam(isPublic: Option[Boolean], county: Option[String], name: Option[String],
                                principal: Option[String], district: Option[String], addr: Option[String])
 
@@ -133,7 +135,8 @@ object CareHouse {
           phone = phone,
           careTypes = getCareTypes,
           beds = getBeds,
-          waste = None)
+          waste = None,
+          location = None)
 
         //Logger.debug(careHouse.toString)
         seq = seq :+ careHouse
@@ -185,9 +188,31 @@ object CareHouse {
     f.onFailure {
       errorHandler
     }
-    for (records <- f)
-      yield {
+    for (records <- f) yield {
       records
+    }
+  }
+
+  def convertAddrToLocation() = {
+    import org.mongodb.scala.model.Filters._
+    import org.mongodb.scala.model._
+
+    val noLocationListF = collection.find(Filters.exists("location", false)).toFuture()
+    for(noLocationList <- noLocationListF){
+      Logger.info(s"no location list #=${noLocationList.length}")
+      noLocationList.map {
+        careHouse => assert(careHouse.location.isEmpty)
+        val locationList = GoogleApi.queryAddr(careHouse.addr)
+        if(!locationList.isEmpty){
+          val location = locationList(0)
+          careHouse.location = Some(location)
+          val f = collection.updateOne(Filters.eq("_id", careHouse._id), Updates.set("location", location)).toFuture()
+          f.onFailure(errorHandler)
+          Logger.info(".")
+        }else{
+          Logger.warn(s"${careHouse.addr} 無法轉換!")
+        }
+      }
     }
   }
 }

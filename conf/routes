@@ -31,6 +31,7 @@ GET      /UnhandledOrder         controllers.OrderManager.unhandledOrder
 DELETE   /Order/:orderId         controllers.OrderManager.deleteOrder(orderId:Long)
 POST     /CloseOrder/:orderId    controllers.OrderManager.closeOrder(orderId:Long)
 
+GET		 /TestGoogle			 controllers.Application.testGeoCoding
 #Report
 
 #JSON
