@@ -4,12 +4,12 @@
             <div class="ibox ">
                 <div class="ibox-content">
                     <div class="map_container">
-                        <gmap-map :center="{lat:1.38, lng:103.8}" :zoom="12" class="map_canvas">
-                            <gmap-marker :position="{lat:1.38, lng:103.8}">
-                            </gmap-marker>
-                            <gmap-info-window :position="{lat:1.38, lng:103.8}">
-                                Hello world!
-                            </gmap-info-window>
+                        <gmap-map :zoom="1" :center="{lat: 0, lng: 0}" ref="map" class="map_canvas">
+                            <gmap-marker v-for="(careHouse, index) in careHouseList"
+                                         :key="index"
+                                         clickable="true"
+                                         :title="careHouse.name"
+                                         :position="getPosition(careHouse)"/>
                         </gmap-map>
                     </div>
                 </div>
@@ -18,12 +18,13 @@
     </div>
 </template>
 <style>
-    .map_container{
+    .map_container {
         position: relative;
         width: 100%;
         padding-bottom: 42%; /* Ratio 16:9 ( 100%/16*9 = 56.25% ) */
     }
-    .map_container .map_canvas{
+
+    .map_container .map_canvas {
         position: absolute;
         top: 0;
         right: 0;
@@ -31,11 +32,6 @@
         left: 0;
         margin: 0;
         padding: 0;
-    }
-
-    .realtimeChart_container{
-        position: relative;
-        width: 120%;
     }
 </style>
 <script>
@@ -68,6 +64,17 @@
             },
             param: function (newParam) {
                 this.fetchCareHouse(this.skip, this.limit)
+            },
+            careHouseList(careHouseList) {
+                if (careHouseList.length > 2) {
+                    const bounds = new google.maps.LatLngBounds()
+                    for (let careHouse of careHouseList) {
+                        let pos = this.getPosition(careHouse)
+                        bounds.extend(pos)
+                    }
+                    this.$refs.map.$mapObject.fitBounds(bounds)
+                }
+
             }
         },
 
@@ -77,7 +84,8 @@
                 this.careHouseList.splice(0, this.careHouseList.length)
 
                 for (let careHouse of ret) {
-                    this.careHouseList.push(careHouse)
+                    if (careHouse.location && careHouse.location.length == 2)
+                        this.careHouseList.push(careHouse)
                 }
                 console.log("#=" + this.careHouseList.length)
             },
@@ -94,7 +102,11 @@
                     })
                 }
             },
-            initMap() {
+            getPosition(careHouse) {
+                return {
+                    lat: careHouse.location[0],
+                    lng: careHouse.location[1]
+                }
             }
         },
         components: {}

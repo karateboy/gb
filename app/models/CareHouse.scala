@@ -223,6 +223,7 @@ object CareHouse {
 
     val noLocationListF = collection.find(Filters.exists("location", false)).toFuture()
     for (noLocationList <- noLocationListF) {
+      var failed = 0
       Logger.info(s"no location list #=${noLocationList.length}")
       noLocationList.map {
         careHouse =>
@@ -233,11 +234,13 @@ object CareHouse {
             careHouse.location = Some(location)
             val f = collection.updateOne(Filters.eq("_id", careHouse._id), Updates.set("location", location)).toFuture()
             f.onFailure(errorHandler)
-            Logger.info(".")
+            Logger.info(s"${careHouse.addr} 轉換成功!")
           } else {
+            failed+=1
             Logger.warn(s"${careHouse.addr} 無法轉換!")
           }
       }
+      Logger.info(s"共 ${failed} 筆無法轉換")
     }
   }
 }
