@@ -167,7 +167,7 @@ object CareHouse {
     }
   }
 
-  def queryCareHouse(param: QueryCareHouseParam) = {
+  def queryCareHouse(param: QueryCareHouseParam)(skip: Int, limit: Int) = {
     import org.mongodb.scala.model.Filters._
     import org.mongodb.scala.model._
 
@@ -184,7 +184,7 @@ object CareHouse {
     else
       Filters.exists("_id")
 
-    val f = collection.find(filter).sort(Sorts.ascending("_id")).toFuture()
+    val f = collection.find(filter).sort(Sorts.ascending("_id")).skip(skip).limit(limit).toFuture()
     f.onFailure {
       errorHandler
     }
@@ -193,25 +193,50 @@ object CareHouse {
     }
   }
 
+  def queryCareHouseCount(param: QueryCareHouseParam) = {
+    import org.mongodb.scala.model.Filters._
+    import org.mongodb.scala.model._
+
+    val isPublicFilter = param.isPublic map { isPublic => equal("isPublic", isPublic) }
+    val countyFilter = param.county map { county => regex("county", county) }
+    val nameFilter = param.name map { name => regex("name", name) }
+    val principalFilter = param.principal map { principal => regex("principal", principal) }
+    val districtFilter = param.district map { district => regex("district", district) }
+
+    val filterList = List(isPublicFilter, countyFilter, nameFilter, principalFilter,
+      districtFilter).flatMap { f => f }
+    val filter = if (!filterList.isEmpty)
+      and(filterList: _*)
+    else
+      Filters.exists("_id")
+
+    val f = collection.count(filter).toFuture()
+    f.onFailure {
+      errorHandler
+    }
+    for (count <- f) yield count
+  }
+  
   def convertAddrToLocation() = {
     import org.mongodb.scala.model.Filters._
     import org.mongodb.scala.model._
 
     val noLocationListF = collection.find(Filters.exists("location", false)).toFuture()
-    for(noLocationList <- noLocationListF){
+    for (noLocationList <- noLocationListF) {
       Logger.info(s"no location list #=${noLocationList.length}")
       noLocationList.map {
-        careHouse => assert(careHouse.location.isEmpty)
-        val locationList = GoogleApi.queryAddr(careHouse.addr)
-        if(!locationList.isEmpty){
-          val location = locationList(0)
-          careHouse.location = Some(location)
-          val f = collection.updateOne(Filters.eq("_id", careHouse._id), Updates.set("location", location)).toFuture()
-          f.onFailure(errorHandler)
-          Logger.info(".")
-        }else{
-          Logger.warn(s"${careHouse.addr} 無法轉換!")
-        }
+        careHouse =>
+          assert(careHouse.location.isEmpty)
+          val locationList = GoogleApi.queryAddr(careHouse.addr)
+          if (!locationList.isEmpty) {
+            val location = locationList(0)
+            careHouse.location = Some(location)
+            val f = collection.updateOne(Filters.eq("_id", careHouse._id), Updates.set("location", location)).toFuture()
+            f.onFailure(errorHandler)
+            Logger.info(".")
+          } else {
+            Logger.warn(s"${careHouse.addr} 無法轉換!")
+          }
       }
     }
   }

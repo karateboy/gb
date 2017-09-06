@@ -28,16 +28,19 @@
                 <div class="col-lg-1 col-lg-offset-1">
                     <button class='btn btn-primary' @click='query'>查詢</button>
                 </div>
-<!--                <div class="col-lg-1 col-lg-offset-1">
-                    <button class="btn btn-info" @click='exportExcel'>Excel</button>
-                </div>-->
+                <div class="col-lg-1 col-lg-offset-1">
+                    <button class='btn btn-primary' @click='queryMap'>顯示地圖</button>
+                </div>
+                <!--                <div class="col-lg-1 col-lg-offset-1">
+                                    <button class="btn btn-info" @click='exportExcel'>Excel</button>
+                                </div>-->
             </div>
         </div>
         <div v-if='display'>
-            <div v-if='careHouseList.length != 0'>
-                <care-house-list :care-house-list="careHouseList"></care-house-list>
-            </div>
-            <div v-else class="alert alert-info">沒有符合的機構</div>
+            <care-house-list url="/QueryCareHouse" :param="queryParam"></care-house-list>
+        </div>
+        <div v-if='showMap'>
+            <care-house-map url="/QueryCareHouse" :param="queryParam"></care-house-map>
         </div>
     </div>
 </template>
@@ -48,19 +51,18 @@
     import axios from 'axios'
     import moment from 'moment'
     import CareHouseList from "./CareHouseList.vue"
+    import CareHouseMap from "./CareHouseMap.vue"
 
-    export default{
-        data(){
+    export default {
+        data() {
             return {
                 display: false,
-                careHouseList: [],
+                showMap: false,
                 queryParam: {}
             }
         },
-        computed: {},
         methods: {
-            prepareParam(){
-
+            prepareParam() {
                 if (this.queryParam.brand == "")
                     this.queryParam.brand = null
 
@@ -72,33 +74,25 @@
 
                 if (this.queryParam.district == '')
                     this.queryParam.district = null
-
-                console.log(this.queryParam)
             },
-            query(){
+            query() {
                 this.prepareParam()
-                axios.post('/QueryCareHouse', this.queryParam).then((resp) => {
-                    const ret = resp.data
-                    this.careHouseList.splice(0, this.careHouseList.length)
-                    for (let careHouse of ret) {
-                        this.careHouseList.push(careHouse)
-                    }
+                if (!this.display)
                     this.display = true
-                }).catch((err) => {
-                    alert(err)
-                })
+
+                this.queryParam = Object.assign({}, this.queryParam)
             },
-            exportExcel(){
+            queryMap(){
                 this.prepareParam()
-                axios.post('/QueryCareHouse/excel', this.queryParam).then((resp) => {
-                    console.log(resp)
-                }).catch((err) => {
-                    alert(err)
-                })
+                if (!this.showMap)
+                    this.showMap = true
+
+                this.queryParam = Object.assign({}, this.queryParam)
             }
         },
         components: {
-            CareHouseList
+            CareHouseList,
+            CareHouseMap
         }
     }
 </script>

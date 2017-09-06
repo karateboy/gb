@@ -39,7 +39,7 @@
                     ...
                 </div>
                 <div>
-                    <strong>Copyright</strong> Patterns Company &copy; 2017
+                    <strong>Copyright</strong> g+der &copy; 2017
                 </div>
             </div>
 

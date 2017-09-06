@@ -27,6 +27,17 @@ axios.defaults.withCredentials = true
 //Setup moment
 moment.locale('zh_tw')
 
+import * as VueGoogleMaps from 'vue2-google-maps'
+Vue.use(VueGoogleMaps, {
+    load: {
+        key: 'AIzaSyAi9hG7X74_CL-3i_6utBMNKzrRKOqwo98',
+        libraries: 'places', // This is required if you use the Autocomplete plugin
+        // OR: libraries: 'places,drawing'
+        // OR: libraries: 'places,drawing,visualization'
+        // (as you require)
+    }
+})
+
 new Vue({
     el: '#app',
     store,
