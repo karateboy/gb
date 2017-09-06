@@ -21,13 +21,14 @@
     export default{
         data(){
             return {
+                fetched: false,
                 orderList: []
             }
         },
         computed: {
             ...mapGetters(['user']),
             unhandledOrder(){
-                if (this.orderList.length == 0) {
+                if (!this.fetched) {
                     const url = "/UnhandledOrder"
                     axios.get(url).then(
                         (resp) => {
@@ -40,10 +41,10 @@
                     ).catch((err) => {
                         alert(err)
                     })
+                    this.fetched = true
                 }
                 return this.orderList
             }
-
         },
         methods: {},
         components: {

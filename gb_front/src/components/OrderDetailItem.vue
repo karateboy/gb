@@ -10,27 +10,26 @@
                 <div class="modal-body">
                     <form>
                         <div class="form-group">
-                            <label class="col-lg-2 control-label">顏色:</label>
+                            <label class="col-lg-2 control-label">廢棄物代碼:</label>
                             <div class="col-lg-2"><input type="text" class="form-control"
-                                                         v-model="detail.color"></div>
+                                                         v-model="detail.wasteCode"></div>
                         </div>
                         <div class="form-group">
-                            <label class="col-lg-2 control-label">尺寸:</label>
-                            <div class="col-lg-2"><input type="text" class="form-control"
-                                                         v-model="detail.size"></div>
+                            <label class="col-lg-2 control-label">廢棄物種類:</label>
+                            <div class="col-lg-2">{{wasteCodeName}}</div>
                             <div class="col-lg-8">
                                 <div class="btn-group" data-toggle="buttons">
                                     <label class="btn btn-outline btn-primary"
-                                           v-for="sizeOpt in sizeList"
-                                           @click="detail.size=sizeOpt">
-                                        <input type="radio">{{ sizeOpt }} </label>
+                                           v-for="unitOpt in unitList"
+                                           @click="detail.unit=unitOpt">
+                                        <input type="radio">{{ unitOpt }} </label>
                                 </div>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-lg-2 control-label">數量(打):</label>
+                            <label class="col-lg-2 control-label">數量:</label>
                             <div class="col-lg-2"><input type="text" class="form-control"
-                                                         v-model="dozenNumber"></div>
+                                                         v-model="order.amount"></div>
                         </div>
                     </form>
                 </div>
@@ -55,7 +54,6 @@
 
 </style>
 <script>
-    import * as dozenExp from '../dozenExp'
     export default{
         props: {
             opType: {
@@ -72,23 +70,14 @@
         },
         data(){
             return {
-                sizeList: [
-                    'XS/S', 'S/M', 'M/L', 'L/XL', '2-6', '8-12', 'XXS', 'XS', 'SS', 'S', 'M', 'L', 'XL', 'XXL', 'M/S',
-                    'T', 'A/B', 'C/D', 'A', 'B', 'C', 'D', 'E',
-                    'XSml', 'Sml', 'Med', 'Lge', 'Xlge', 'Sml/Med', 'Lge/Xlge', 'ChSml', 'ChLge', 'Adult', 'ChSml/ChMed',
-                    'ChMed/ChLge', 'ChLge/ChXLge',
-                    '0-6', '6-12', '12-24', '2T3T', '4T5T', '6-8'
+                unitList: [
+                    '米', '噸'
                 ]
             }
         },
         computed:{
-            dozenNumber:{
-                get: function(){
-                    return dozenExp.toDozenStr(this.detail.quantity)
-                },
-                set: function(v){
-                    this.detail.quantity = dozenExp.fromDozenStr(v)
-                }
+            wasteCodeName(){
+                return "測試"
             }
         },
         methods: {

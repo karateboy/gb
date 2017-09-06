@@ -18,13 +18,13 @@ import play.api.libs.functional.syntax._
  */
 
 case class OrderDetail(wasteCode: String, unit: String, quantity: Int, complete: Boolean)
-case class Contract(salesId: String, customerId: Long, deliverDate: Long, details: Seq[OrderDetail], amount: Long)
+case class Contract(customerId: String, deliverDate: Long, details: Seq[OrderDetail], amount: Long)
 case class Order(_id: Long, contact: String, address: String, phone: String, notifiedDate: Long, contacted: Boolean,
-                 contract: Option[Contract], active: Boolean) {
+                 contract: Option[Contract], salesId: Option[String], active: Boolean) {
   def newOrderID = {
     val newIDF = Identity.getNewID(Identity.Order)
     for (newID <- newIDF)
-      yield Order(newID.seq, contact, address, phone, DateTime.now.getMillis, false, None, true)
+      yield Order(newID.seq, contact, address, phone, DateTime.now.getMillis, false, None, None, true)
   }
 }
 
