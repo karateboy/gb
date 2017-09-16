@@ -7,8 +7,9 @@
                         <gmap-map :zoom="1" :center="{lat: 0, lng: 0}" ref="map" class="map_canvas">
                             <gmap-marker v-for="(careHouse, index) in careHouseList"
                                          :key="index"
-                                         clickable="true"
+                                         :clickable="true"
                                          :title="careHouse.name"
+                                         icon="/assets/img/calbration.png"
                                          :position="getPosition(careHouse)"/>
                         </gmap-map>
                     </div>
@@ -52,6 +53,7 @@
                 careHouseList: [],
                 total: 0,
                 display: "",
+                dropAnimation: google.maps.Animation.DROP
             }
         },
         mounted: function () {
