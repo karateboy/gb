@@ -4,6 +4,7 @@
             <table class="table table-hover table-bordered table-condensed">
                 <thead>
                 <tr class='info'>
+                    <th></th>
                     <th>公立</th>
                     <th>機構名稱</th>
                     <th>負責人</th>
@@ -19,6 +20,10 @@
                 </thead>
                 <tbody>
                 <tr v-for="(careHouse, index) in careHouseList" :class='{success: selectedIndex == index}'>
+                    <td>
+                        <button class="btn btn-primary" @click="editCareHouse(index)"><i class="fa fa-pen"></i>&nbsp;編輯</button>
+                    
+                    </td>
                     <td>{{ displayIsPublic(careHouse.isPublic)}}</td>
                     <td>{{ careHouse.name}}</td>
                     <td>{{ careHouse.principal}}</td>
@@ -37,6 +42,7 @@
                         count-text="第{from}到第{to}筆/共{count}筆|{count} 筆|1筆"></pagination>
         </div>
         <div v-else class="alert alert-info" role="alert">沒有符合的機構</div>
+        <care-house-detail v-if="display === 'detail'" :careHouse="careHouseList[selectedIndex]"></care-house-detail>
     </div>
 </template>
 <style scoped>
@@ -46,6 +52,7 @@
 <script>
     import axios from 'axios'
     import {Pagination, PaginationEvent} from 'vue-pagination-2'
+    import CareHouseDetail from './CareHouseDetail.vue'
 
     export default {
         props: {
@@ -64,8 +71,7 @@
                 limit: 5,
                 total: 0,
                 display: "",
-                selectedIndex: -1,
-                careHouse: {}
+                selectedIndex: -1
             }
         },
         mounted: function () {
@@ -135,14 +141,14 @@
                 if (v) return "公立"
                 else return "私立"
             },
-            displayOrder(idx) {
+            editCareHouse(idx) {
                 this.selectedIndex = idx
-                this.showOrder(this.myList[idx])
                 this.display = 'detail';
             }
         },
         components: {
-            Pagination
+            Pagination,
+            CareHouseDetail
         }
     }
 </script>

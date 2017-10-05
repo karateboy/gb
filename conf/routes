@@ -21,10 +21,12 @@ PUT      /User/:id                      controllers.Application.updateUser(id)
 DELETE   /User/:id                      controllers.Application.deleteUser(id)
 
 GET      /Group                         controllers.Application.getGroupInfoList
+
 POST     /QueryCareHouse                controllers.Query.queryCareHouseList()
 POST     /QueryCareHouse/:skip/:limit   controllers.Query.queryCareHouse(skip:Int, limit:Int, outputTypeStr="html")
 POST     /QueryCareHouse/count          controllers.Query.queryCareHouseCount()
 POST     /QueryCareHouse/excel          controllers.Query.queryCareHouseExcel()
+PUT		 /CareHouse						controllers.Query.updateCareHouse
 
 POST     /NewOrder                      controllers.OrderManager.newOrder
 POST     /UpdateOrder                   controllers.OrderManager.upsertOrder

@@ -99,7 +99,7 @@ object Query extends Controller {
 
   def queryCareHouseList = queryCareHouse(0, 10000, "html")
   def queryCareHouseExcel = queryCareHouse(0, 10000, "excel")
-  
+
   def queryCareHouseCount() = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
       implicit val paramRead = Json.reads[QueryCareHouseParam]
@@ -118,6 +118,25 @@ object Query extends Controller {
             count =>
               Ok(Json.toJson(count))
           }
+        })
+  }
+
+  def updateCareHouse = Security.Authenticated.async(BodyParsers.parse.json) {
+    implicit request =>
+      implicit val careTypeReads = Json.reads[CareType]
+
+      implicit val paramRead = Json.reads[CareHouse]
+      val result = request.body.validate[CareHouse]
+      result.fold(
+        err =>
+          Future {
+            Logger.error(JsError.toJson(err).toString())
+            BadRequest(JsError.toJson(err).toString())
+          },
+        careHouse => {
+          val f = CareHouse.upsertCareHouse(careHouse._id, careHouse)
+          //f.onSuccess(Ok(Json.obj("ok"->true)))
+          for (ret <- f) yield Ok(Json.obj("Ok" -> true))
         })
   }
 }

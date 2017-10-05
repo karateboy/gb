@@ -24,7 +24,30 @@ case class CareHouse(_id: String, isPublic: Boolean, county: String, name: Strin
                      careTypes: Seq[CareType], beds: Option[Int], waste: Option[String],
                      var location: Option[Seq[Double]])
 case class QueryCareHouseParam(isPublic: Option[Boolean], county: Option[String], name: Option[String],
-                               principal: Option[String], district: Option[String], addr: Option[String])
+                               principal: Option[String], district: Option[String], addr: Option[String],
+                               hasLocation: Option[Boolean]) {
+  def getFilter = {
+    import org.mongodb.scala.model.Filters._
+    import org.mongodb.scala.model._
+
+    val isPublicFilter = isPublic map { isPublic => equal("isPublic", isPublic) }
+    val countyFilter = county map { county => regex("county", county) }
+    val nameFilter = name map { name => regex("name", name) }
+    val principalFilter = principal map { principal => regex("principal", principal) }
+    val districtFilter = district map { district => regex("district", district) }
+    val hasLocationFilter = hasLocation map { hasLocation =>
+      Filters.exists("location", hasLocation)
+    }
+
+    val filterList = List(isPublicFilter, countyFilter, nameFilter, principalFilter,
+      districtFilter, hasLocationFilter).flatMap { f => f }
+
+    if (!filterList.isEmpty)
+      and(filterList: _*)
+    else
+      Filters.exists("_id")
+  }
+}
 
 object CareHouse {
   import org.mongodb.scala.bson.codecs.Macros._
@@ -166,23 +189,11 @@ object CareHouse {
       parser(sheet, county)
     }
   }
+  import org.mongodb.scala.model._
 
   def queryCareHouse(param: QueryCareHouseParam)(skip: Int, limit: Int) = {
-    import org.mongodb.scala.model.Filters._
-    import org.mongodb.scala.model._
 
-    val isPublicFilter = param.isPublic map { isPublic => equal("isPublic", isPublic) }
-    val countyFilter = param.county map { county => regex("county", county) }
-    val nameFilter = param.name map { name => regex("name", name) }
-    val principalFilter = param.principal map { principal => regex("principal", principal) }
-    val districtFilter = param.district map { district => regex("district", district) }
-
-    val filterList = List(isPublicFilter, countyFilter, nameFilter, principalFilter,
-      districtFilter).flatMap { f => f }
-    val filter = if (!filterList.isEmpty)
-      and(filterList: _*)
-    else
-      Filters.exists("_id")
+    val filter = param.getFilter
 
     val f = collection.find(filter).sort(Sorts.ascending("_id")).skip(skip).limit(limit).toFuture()
     f.onFailure {
@@ -194,29 +205,21 @@ object CareHouse {
   }
 
   def queryCareHouseCount(param: QueryCareHouseParam) = {
-    import org.mongodb.scala.model.Filters._
-    import org.mongodb.scala.model._
-
-    val isPublicFilter = param.isPublic map { isPublic => equal("isPublic", isPublic) }
-    val countyFilter = param.county map { county => regex("county", county) }
-    val nameFilter = param.name map { name => regex("name", name) }
-    val principalFilter = param.principal map { principal => regex("principal", principal) }
-    val districtFilter = param.district map { district => regex("district", district) }
-
-    val filterList = List(isPublicFilter, countyFilter, nameFilter, principalFilter,
-      districtFilter).flatMap { f => f }
-    val filter = if (!filterList.isEmpty)
-      and(filterList: _*)
-    else
-      Filters.exists("_id")
-
+    val filter = param.getFilter
     val f = collection.count(filter).toFuture()
     f.onFailure {
       errorHandler
     }
     for (count <- f) yield count
   }
-  
+
+  def upsertCareHouse(_id: String, careHouse: CareHouse) = {
+    val f = collection.replaceOne(Filters.eq("_id", _id), careHouse, UpdateOptions().upsert(true)).toFuture()
+    f.onFailure {
+      errorHandler
+    }
+    f
+  }
   def convertAddrToLocation() = {
     import org.mongodb.scala.model.Filters._
     import org.mongodb.scala.model._
@@ -236,7 +239,7 @@ object CareHouse {
             f.onFailure(errorHandler)
             Logger.info(s"${careHouse.addr} 轉換成功!")
           } else {
-            failed+=1
+            failed += 1
             Logger.warn(s"${careHouse.addr} 無法轉換!")
           }
       }

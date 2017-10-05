@@ -8,6 +8,12 @@
                                              v-model="queryParam.isPublic">
                 </div>
             </div>
+            <div class="form-group"><label class="col-lg-1 control-label">有座標:</label>
+                <div class="col-lg-4"><input type="checkbox"
+                                             class="form-control"
+                                             v-model="queryParam.hasLocation">
+                </div>
+            </div>
             <div class="form-group"><label class="col-lg-1 control-label">機構名稱:</label>
                 <div class="col-lg-4"><input type="text" class="form-control" placeholder="養護中心"
                                              v-model="queryParam.name"></div>
@@ -58,7 +64,9 @@
             return {
                 display: false,
                 showMap: false,
-                queryParam: {}
+                queryParam: {
+                    hasLocation: true
+                }
             }
         },
         methods: {
