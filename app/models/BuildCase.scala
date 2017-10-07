@@ -17,12 +17,13 @@ import java.io._
 import java.nio.file.Files
 import java.nio.file._
 import org.apache.poi.ss.usermodel._
+import java.util.Date
 
 case class BuildCase(_id: String, county: String, name: String,
-                     architect: String, area: Double, addr: Option[String], alarm2: Option[Long], alarm3: Option[Long],
+                     architect: String, area: Double, addr: Option[String], date: Date,
                      var location: Option[Seq[Double]])
 case class QueryBuildCaseParam(county: Option[String], name: Option[String],
-                               architect: Option[String], addr: Option[String], alarm2: Option[Long], alarm3: Option[Long])
+                               architect: Option[String], addr: Option[String])
 
 object BuildCase {
   import org.mongodb.scala.bson.codecs.Macros._
@@ -43,6 +44,7 @@ object BuildCase {
         case x =>
           val cf1 = collection.createIndex(ascending("county", "name")).toFuture()
           val cf2 = collection.createIndex(ascending("architect")).toFuture()
+          
           cf1.onFailure(errorHandler)
           cf2.onFailure(errorHandler)
 
