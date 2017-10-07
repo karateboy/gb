@@ -34,11 +34,37 @@
             </div>
             <div class="form-group"><label class="col-lg-1 control-label">床數:</label>
                 <div class="col-lg-4"><input type="number" class="form-control"
-                                             v-model="careHouse.beds"></div>
+                                             v-model.number="careHouse.beds"></div>
             </div>
             <div class="form-group"><label class="col-lg-1 control-label">廢棄物:</label>
                 <div class="col-lg-4"><input type="text" class="form-control"
                                              v-model="careHouse.waste"></div>
+            </div>
+            <div class="form-group"><label class="col-lg-1 control-label">廢棄物數量(噸/月):</label>
+                <div class="col-lg-4"><input type="number" class="form-control"
+                                             v-model.number="careHouse.monthlyWaste"></div>
+            </div>
+            <div class="form-group"><label class="col-lg-1 control-label">處理預算(含感染廢證明):</label>
+                <div class="col-lg-4"><input type="number" class="form-control"
+                                             v-model.number="careHouse.budget"></div>
+            </div>
+            <div class="form-group"><label class="col-lg-1 control-label">尿布用量(大):</label>
+                <div class="col-lg-4"><input type="number" class="form-control"
+                                             v-model.number="careHouse.diaperBig"></div>
+            </div>
+            <div class="form-group"><label class="col-lg-1 control-label">尿布用量(小):</label>
+                <div class="col-lg-4"><input type="number" class="form-control"
+                                             v-model.number="careHouse.diaperSmall"></div>
+            </div>
+            <div class="form-group"><label class="col-lg-1 control-label">簽約:</label>
+                <div class="col-lg-4"><input type="checkbox"
+                                             class="form-control"
+                                             v-model="careHouse.contracted">
+                </div>
+            </div>
+            <div class="form-group"><label class="col-lg-1 control-label">最後訪談日:</label>
+                <div class="col-lg-4"><input type="date" class="form-control"
+                                             v-model="careHouse.lastVisit"></div>
             </div>
             <div class="form-group">
                 <div class="col-lg-1 col-lg-offset-1">
@@ -62,6 +88,11 @@
             }
         },
         methods: {
+            prepareCareHouse(){
+                if(this.careHouse.diaperSmall){
+                    this.careHouse.diaperSmall
+                }
+            },
             save() {
                 axios.put("/CareHouse", this.careHouse).then(
                     resp=>{

@@ -17,12 +17,17 @@ import java.io._
 import java.nio.file.Files
 import java.nio.file._
 import org.apache.poi.ss.usermodel._
+import java.util.Date
 
 case class CareType(name: String, quantity: Int)
 case class CareHouse(_id: String, isPublic: Boolean, county: String, name: String,
                      principal: String, district: String, addr: String, phone: String,
-                     careTypes: Seq[CareType], beds: Option[Int], waste: Option[String],
-                     var location: Option[Seq[Double]])
+                     careTypes: Seq[CareType], beds: Option[Int], waste: Option[String] = None,
+                     var location: Option[Seq[Double]] = None, monthlyWaste: Option[Double] = None,
+                     budget: Option[Int] = None,
+                     diaperBig: Option[Int] = None, diaperSmall: Option[Int] = None,
+                     contracted: Option[Boolean] = None, lastVisit: Option[Date] = None)
+                     
 case class QueryCareHouseParam(isPublic: Option[Boolean], county: Option[String], name: Option[String],
                                principal: Option[String], district: Option[String], addr: Option[String],
                                hasLocation: Option[Boolean]) {
