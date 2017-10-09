@@ -26,11 +26,11 @@
             </div>
             <div class="form-group"><label class="col-lg-1 control-label">樓板面積(大於):</label>
                 <div class="col-lg-4"><input type="number" class="form-control"
-                                             v-model="queryParam.areaGT"></div>
+                                             v-model.number="queryParam.areaGT"></div>
             </div>
             <div class="form-group"><label class="col-lg-1 control-label">樓板面積(小於):</label>
                 <div class="col-lg-4"><input type="number" class="form-control"
-                                             v-model="queryParam.areaLT"></div>
+                                             v-model.number="queryParam.areaLT"></div>
             </div>
             <div class="form-group">
                 <div class="col-lg-1 col-lg-offset-1">
@@ -48,7 +48,7 @@
             <build-case-list url="/QueryBuildCase" :param="queryParam"></build-case-list>
         </div>
         <div v-if='showMap'>
-            <build-case-map url="/QuerybuildCase" :param="queryParam"></build-case-map>
+            <build-case-map url="/QueryBuildCase" :param="queryParam"></build-case-map>
         </div>
     </div>
 </template>

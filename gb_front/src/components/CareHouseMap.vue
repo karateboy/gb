@@ -9,7 +9,7 @@
                                          :key="index"
                                          :clickable="true"
                                          :title="careHouse.name"
-                                         icon="/assets/img/calbration.png"
+                                         icon="/assets/img/green.png"
                                          :position="getPosition(careHouse)"/>
                         </gmap-map>
                     </div>

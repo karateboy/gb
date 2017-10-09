@@ -15,6 +15,9 @@ import QueryOrder from "./components/QueryOrder.vue"
 import CareHouse from './components/CareHouse.vue'
 import QueryCareHouse from './components/QueryCareHouse.vue'
 
+import BuildCase from './components/BuildCase.vue'
+import QueryBuildCase from './components/QueryBuildCase.vue'
+
 export const routes = [
     {path: '/', component: Dashboard, name: 'Dashboard'},
     {path: '/Login', component: Login, name: 'Login'},
@@ -39,6 +42,12 @@ export const routes = [
         path: '/CareHouse', component: CareHouse, name: 'CareHouse',
         children: [
             {path: 'Query', component: QueryCareHouse, name: 'QueryCareHouse'}
+        ]
+    },
+    {
+        path: '/BuildCase', component: BuildCase, name: 'BuildCase',
+        children: [
+            {path: 'Query', component: QueryBuildCase, name: 'QueryBuildCase'}
         ]
     },
     {

@@ -46,6 +46,16 @@
                             <span class="nav-label"></span>查詢安養機構</a></router-link>
                 </ul>
             </li>
+                        <li>
+                <a><i class="fa fa-h-square" aria-hidden="true"></i><span class="nav-label">起造人</span><span
+                        class="fa arrow"></span></a>
+                <ul class="nav nav-second-level collapse">
+                    <router-link tag="li"
+                                 :to="{name:'QueryBuildCase'}" active-class="active">
+                        <a><i class="fa fa-search" aria-hidden="true"></i>
+                            <span class="nav-label"></span>查詢起造人</a></router-link>
+                </ul>
+            </li>
             <li>
                 <a><i class="fa fa-truck" aria-hidden="true"></i><span class="nav-label">車輛管理</span> <span
                         class="fa arrow"></span></a>

@@ -22,8 +22,10 @@ import java.util.Date
 case class BuildCase(_id: String, county: String, name: String,
                      architect: String, area: Double, addr: String, date: Date,
                      var location: Option[Seq[Double]])
-case class QueryBuildCaseParam(county: Option[String], name: Option[String],
-                               architect: Option[String], addr: Option[String])
+case class QueryBuildCaseParam(name: Option[String],
+                               architect: Option[String], addr: Option[String], county: Option[String], 
+                               areaGT: Option[Double], areaLT: Option[Double], alarm2: Option[Boolean],
+                               alarm3: Option[Double])
 
 object BuildCase {
   import org.mongodb.scala.bson.codecs.Macros._
@@ -128,11 +130,22 @@ object BuildCase {
     import org.mongodb.scala.model.Filters._
     import org.mongodb.scala.model._
 
-    val countyFilter = param.county map { county => regex("county", county) }
+    /*
+     * case class QueryBuildCaseParam(name: Option[String],
+                               architect: Option[String], addr: Option[String], county: Option[String], 
+                               areaGT: Option[Double], areaLT: Option[Double], alarm2: Option[Boolean],
+                               alarm3: Option[Double])
+     * */
+    
     val nameFilter = param.name map { name => regex("name", name) }
-    val addrFilter = param.addr map { district => regex("addr", district) }
+    val architectFilter = param.architect map { architect => regex("architect", "(?i)" + architect) }
+    val addrFilter = param.addr map { addr => regex("addr", "(?i)" + addr) }
+    val countyFilter = param.county map { county => regex("county", "(?i)" + county) }
+    val areaGtFilter = param.areaGT map { v => Filters.gt("area", v)}
+    val areaLtFilter = param.areaLT map { v => Filters.lt("area", v)}
 
-    val filterList = List(countyFilter, nameFilter, addrFilter).flatMap { f => f }
+    val filterList = List(nameFilter, architectFilter, addrFilter, 
+        countyFilter, areaGtFilter, areaLtFilter).flatMap { f => f }
 
     val filter = if (!filterList.isEmpty)
       and(filterList: _*)
@@ -141,10 +154,11 @@ object BuildCase {
 
     filter
   }
+  
+  import org.mongodb.scala.model._
 
   def queryBuildCase(param: QueryBuildCaseParam)(skip: Int, limit: Int) = {
     import org.mongodb.scala.model.Filters._
-    import org.mongodb.scala.model._
 
     val filter = getFilter(param)
 
@@ -170,27 +184,12 @@ object BuildCase {
     for (count <- f) yield count
   }
 
-  def convertAddrToLocation() = {
-    import org.mongodb.scala.model.Filters._
-    import org.mongodb.scala.model._
-
-    val noLocationListF = collection.find(Filters.exists("location", false)).toFuture()
-    for (noLocationList <- noLocationListF) {
-      Logger.info(s"no location list #=${noLocationList.length}")
-      noLocationList.map {
-        careHouse =>
-          assert(careHouse.location.isEmpty)
-          val locationList = GoogleApi.queryAddr(careHouse.addr)
-          if (!locationList.isEmpty) {
-            val location = locationList(0)
-            careHouse.location = Some(location)
-            val f = collection.updateOne(Filters.eq("_id", careHouse._id), Updates.set("location", location)).toFuture()
-            f.onFailure(errorHandler)
-            Logger.info(".")
-          } else {
-            Logger.warn(s"${careHouse.addr} 無法轉換!")
-          }
-      }
+  def upsertBuildCase(_id: String, buildCase: BuildCase) = {
+    val f = collection.replaceOne(Filters.eq("_id", _id), buildCase, UpdateOptions().upsert(true)).toFuture()
+    f.onFailure {
+      errorHandler
     }
+    f
   }
+
 }

@@ -36,10 +36,10 @@ case class QueryCareHouseParam(isPublic: Option[Boolean], county: Option[String]
     import org.mongodb.scala.model._
 
     val isPublicFilter = isPublic map { isPublic => equal("isPublic", isPublic) }
-    val countyFilter = county map { county => regex("county", county) }
-    val nameFilter = name map { name => regex("name", name) }
-    val principalFilter = principal map { principal => regex("principal", principal) }
-    val districtFilter = district map { district => regex("district", district) }
+    val countyFilter = county map { county => regex("county", "(?i)" + county) }
+    val nameFilter = name map { name => regex("name", "(?i)" + name) }
+    val principalFilter = principal map { principal => regex("principal", "(?i)" + principal) }
+    val districtFilter = district map { district => regex("district", "(?i)" + district) }
     val hasLocationFilter = hasLocation map { hasLocation =>
       Filters.exists("location", hasLocation)
     }

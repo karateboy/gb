@@ -139,4 +139,69 @@ object Query extends Controller {
           for (ret <- f) yield Ok(Json.obj("Ok" -> true))
         })
   }
+
+    def queryBuildCase(skip: Int, limit: Int, outputTypeStr: String) = Security.Authenticated.async(BodyParsers.parse.json) {
+    implicit request =>
+      val outputType = OutputType.withName(outputTypeStr)
+      implicit val paramRead = Json.reads[QueryBuildCaseParam]
+      implicit val buildCaseWrite = Json.writes[BuildCase]
+      val result = request.body.validate[QueryBuildCaseParam]
+      result.fold(
+        err =>
+          Future {
+            Logger.error(JsError.toJson(err).toString())
+            BadRequest(JsError.toJson(err).toString())
+          },
+        param => {
+          val f = BuildCase.queryBuildCase(param)(skip, limit)
+          for (buildCaseList <- f) yield {
+            outputType match {
+              case OutputType.html =>
+                Ok(Json.toJson(buildCaseList))
+              case OutputType.excel =>
+                ???
+            }
+          }
+        })
+  }
+
+  def queryBuildCaseList = queryBuildCase(0, 10000, "html")
+  def queryBuildCaseExcel = queryBuildCase(0, 10000, "excel")
+
+  def queryBuildCaseCount() = Security.Authenticated.async(BodyParsers.parse.json) {
+    implicit request =>
+      implicit val paramRead = Json.reads[QueryBuildCaseParam]
+      val result = request.body.validate[QueryBuildCaseParam]
+      result.fold(
+        err =>
+          Future {
+            Logger.error(JsError.toJson(err).toString())
+            BadRequest(JsError.toJson(err).toString())
+          },
+        param => {
+          val f = BuildCase.queryBuildCaseCount(param)
+          f map {
+            count =>
+              Ok(Json.toJson(count))
+          }
+        })
+  }
+  def updateBuildCase = Security.Authenticated.async(BodyParsers.parse.json) {
+    implicit request =>
+
+      implicit val paramRead = Json.reads[BuildCase]
+      val result = request.body.validate[BuildCase]
+      result.fold(
+        err =>
+          Future {
+            Logger.error(JsError.toJson(err).toString())
+            BadRequest(JsError.toJson(err).toString())
+          },
+        buildCase => {
+          val f = BuildCase.upsertBuildCase(buildCase._id, buildCase)
+          //f.onSuccess(Ok(Json.obj("ok"->true)))
+          for (ret <- f) yield Ok(Json.obj("Ok" -> true))
+        })
+  }
+
 }

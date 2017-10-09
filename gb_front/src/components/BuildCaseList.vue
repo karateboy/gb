@@ -38,8 +38,9 @@
 </style>
 <script>
     import axios from 'axios'
+    import moment from 'moment'
     import {Pagination, PaginationEvent} from 'vue-pagination-2'
-    import buildCaseDetail from './buildCaseDetail.vue'
+    import BuildCaseDetail from './BuildCaseDetail.vue'
 
     export default {
         props: {
@@ -62,15 +63,15 @@
             }
         },
         mounted: function () {
-            this.fetchbuildCase(this.skip, this.limit)
+            this.fetchBuildCase(this.skip, this.limit)
             PaginationEvent.$on('vue-pagination::cardList', this.handlePageChange)
         },
         watch: {
             url: function (newUrl) {
-                this.fetchbuildCase(this.skip, this.limit)
+                this.fetchBuildCase(this.skip, this.limit)
             },
             param: function (newParam) {
-                this.fetchbuildCase(this.skip, this.limit)
+                this.fetchBuildCase(this.skip, this.limit)
             }
         },
 
@@ -83,7 +84,7 @@
                     this.buildCaseList.push(buildCase)
                 }
             },
-            fetchbuildCase(skip, limit) {
+            fetchBuildCase(skip, limit) {
                 let request_url = `${this.url}/${skip}/${limit}`
 
                 if (this.param) {
@@ -95,9 +96,9 @@
                         alert(err)
                     })
                 }
-                this.fetchbuildCaseCount()
+                this.fetchBuildCaseCount()
             },
-            fetchbuildCaseCount() {
+            fetchBuildCaseCount() {
                 let request_url = `${this.url}/count`
                 if (this.param) {
                     axios.post(request_url, this.param).then(resp => {
@@ -120,11 +121,23 @@
             editbuildCase(idx) {
                 this.selectedIndex = idx
                 this.display = 'detail';
+            },
+            alertInfo(buildCase){
+                let sentDate = moment(buildCase.date)
+                let now = moment()
+                let yellowDue = sentDate.add(6, "month")
+                let redDue = yellowDue.add(2, "month")
+                if(now.isBefore(yellowDue))
+                    return "黃色警報"
+                else if(now.isAfter(yellowDue) && now.isBefore(redDue))
+                    return "紅色警報"
+                else
+                    return "逾期"
             }
         },
         components: {
             Pagination,
-            buildCaseDetail
+            BuildCaseDetail
         }
     }
 </script>
