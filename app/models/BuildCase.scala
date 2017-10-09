@@ -20,7 +20,7 @@ import org.apache.poi.ss.usermodel._
 import java.util.Date
 
 case class BuildCase(_id: String, county: String, name: String,
-                     architect: String, area: Double, addr: Option[String], date: Date,
+                     architect: String, area: Double, addr: String, date: Date,
                      var location: Option[Seq[Double]])
 case class QueryBuildCaseParam(county: Option[String], name: Option[String],
                                architect: Option[String], addr: Option[String])
@@ -33,7 +33,7 @@ object BuildCase {
   val codecRegistry = fromRegistries(fromProviders(classOf[BuildCase]), DEFAULT_CODEC_REGISTRY)
 
   val ColName = "buildCase"
-  val collection = MongoDB.database.getCollection[CareHouse](ColName).withCodecRegistry(codecRegistry)
+  val collection = MongoDB.database.getCollection[BuildCase](ColName).withCodecRegistry(codecRegistry)
 
   import org.mongodb.scala.model.Indexes._
   def init(colNames: Seq[String]) {
@@ -44,7 +44,7 @@ object BuildCase {
         case x =>
           val cf1 = collection.createIndex(ascending("county", "name")).toFuture()
           val cf2 = collection.createIndex(ascending("architect")).toFuture()
-          
+
           cf1.onFailure(errorHandler)
           cf2.onFailure(errorHandler)
 
@@ -58,89 +58,45 @@ object BuildCase {
     }
   }
 
-  //FIXME
   val path = current.path.getAbsolutePath + "/import/"
   import java.io.File
-  def parser(sheet: XSSFSheet, county: String) {
+  def parser(sheet: XSSFSheet) {
     var rowN = 2
     var finish = false
-    var seq = IndexedSeq.empty[CareHouse]
+    var seq = IndexedSeq.empty[BuildCase]
     do {
       var row = sheet.getRow(rowN)
       if (row == null)
         finish = true
       else {
-        val isPublic = row.getCell(1).getStringCellValue == "公立"
-        val name = row.getCell(2).getStringCellValue
-        val principal = row.getCell(3).getStringCellValue
-        val district = row.getCell(4).getStringCellValue
-        val addr = row.getCell(5).getStringCellValue
-        val phone = try {
-          row.getCell(6).getStringCellValue
+        try {
+          import com.github.nscala_time.time.Imports._
+          val idStr = row.getCell(0).getStringCellValue
+          val id = idStr.takeWhile { _ != '(' }.trim()
+          val dateRegex = """\((.*?)\)""".r
+          val dateStr = dateRegex.findFirstIn(idStr).get.drop(1).reverse.drop(1).reverse
+          val date = new DateTime(dateStr).toDate()
+          val county = row.getCell(1).getStringCellValue
+          val builderName = row.getCell(2).getStringCellValue
+          val architect = row.getCell(3).getStringCellValue
+          val area = row.getCell(4).getNumericCellValue
+          val addr = row.getCell(5).getStringCellValue
+          val location = Seq(row.getCell(6).getNumericCellValue,
+            row.getCell(7).getNumericCellValue)
+
+          val buildCase = BuildCase(_id = s"$county#$id",
+            county = county,
+            name = builderName,
+            architect = architect,
+            area = area,
+            addr = addr,
+            date = date,
+            location = Some(location))
+          seq = seq :+ buildCase
         } catch {
-          case ex: java.lang.IllegalStateException =>
-            row.getCell(6).getNumericCellValue.toString()
+          case ex: Throwable =>
+            Logger.error("failed to convert...", ex)
         }
-
-        def getCareTypes() = {
-          val careTypes = row.getCell(7).getStringCellValue.split("\n")
-          val careNums = try {
-            val num = row.getCell(8).getNumericCellValue.toInt
-            Array(num)
-          } catch {
-            case ex: Throwable =>
-              row.getCell(8).getStringCellValue.split("\n").map {
-                str =>
-                  try {
-                    str.toInt
-                  } catch {
-                    case ex: Throwable =>
-                      0
-                  }
-              }
-          }
-
-          if (careTypes.length <= careNums.length) {
-            for (idx <- 0 to careTypes.length - 1)
-              yield CareType(careTypes(idx), careNums(idx))
-          } else {
-            for (idx <- 0 to careTypes.length - 1)
-              yield CareType(careTypes(idx), careNums(0))
-          }
-        }
-        def getBeds() = {
-          //管(\d+)床
-          val bedRegEx = """\u7ba1(\d+)\u5e8a""".r.unanchored
-          try {
-            val cell8 = row.getCell(8).getStringCellValue
-            cell8 match {
-              case bedRegEx(bed) =>
-                Some(bed.toInt)
-              case _ =>
-                None
-            }
-          } catch {
-            case _: Throwable =>
-              None
-          }
-
-        }
-
-        val careHouse = CareHouse(_id = s"$county#$name",
-          isPublic = isPublic,
-          county = county,
-          name = name,
-          principal = principal,
-          district = district,
-          addr = addr,
-          phone = phone,
-          careTypes = getCareTypes,
-          beds = getBeds,
-          waste = None,
-          location = None)
-
-        //Logger.debug(careHouse.toString)
-        seq = seq :+ careHouse
       }
       rowN += 1
     } while (!finish)
@@ -149,23 +105,17 @@ object BuildCase {
     f.onFailure(errorHandler)
     f.onSuccess({
       case ret =>
-        Logger.info(s"Success import $county")
+        Logger.info(s"Success import buildCase.xlsx")
     })
   }
 
-  def importXLSX(dir: String)(parser: (XSSFSheet, String) => Unit) = {
+  def importXLSX(dir: String)(parser: (XSSFSheet) => Unit) = {
     //Open Excel
     val pkg = OPCPackage.open(new FileInputStream(dir + "buildCase.xlsx"))
     val wb = new XSSFWorkbook(pkg);
 
-    for {
-      idx <- 0 to 21
-      sheet = wb.getSheetAt(idx)
-      county = wb.getSheetName(idx)
-    } {
-      Logger.debug(s"$county")
-      parser(sheet, county)
-    }
+    val sheet = wb.getSheetAt(0)
+    parser(sheet)
   }
 
   /*
@@ -181,10 +131,8 @@ object BuildCase {
     val countyFilter = param.county map { county => regex("county", county) }
     val nameFilter = param.name map { name => regex("name", name) }
     val addrFilter = param.addr map { district => regex("addr", district) }
-    val alarm2Filter = param.alarm2 map { alarm2 => gt("alarm2", alarm2) }
-    val alarm3Filter = param.alarm3 map { alarm3 => gt("alarm3", alarm3) }
 
-    val filterList = List(countyFilter, nameFilter, addrFilter, alarm2Filter, alarm3Filter).flatMap { f => f }
+    val filterList = List(countyFilter, nameFilter, addrFilter).flatMap { f => f }
 
     val filter = if (!filterList.isEmpty)
       and(filterList: _*)

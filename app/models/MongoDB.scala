@@ -18,6 +18,7 @@ object MongoDB {
       Order.init(colNames)
       WasteCode.init(colNames)
       CareHouse.init(colNames)
+      BuildCase.init(colNames)
     }
     //Program need to wait before init complete
     import scala.concurrent.Await
