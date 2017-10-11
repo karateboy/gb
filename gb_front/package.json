@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "axios": "^0.16.1",
-    "eslint": "^3.17.0",
+    "eslint": "^4.8.0",
     "eslint-config-rallycoding": "^3.2.0",
-    "eslint-plugin-html": "^2.0.1",
+    "eslint-plugin-html": "^4.0.0-alpha.1",
     "eslint-rallycoding": "^1.2.0",
     "get-env": "^0.5.10",
     "jshint": "^2.9.5",
@@ -22,20 +22,20 @@
     "vue-router": "^2.1.1",
     "vue-strap": "^1.1.36",
     "vue2-google-maps": "^0.8.0",
-    "vuejs-datepicker": "^0.7.12",
+    "vuejs-datepicker": "^0.9.16",
     "vuex": "^2.1.1"
   },
   "devDependencies": {
     "babel-core": "^6.0.0",
-    "babel-loader": "^6.0.0",
+    "babel-loader": "^7.1.2",
     "babel-preset-es2015": "^6.0.0",
     "babel-preset-stage-2": "^6.18.0",
-    "cross-env": "^3.0.0",
-    "css-loader": "^0.26.1",
-    "file-loader": "^0.10.0",
-    "vue-loader": "^11.0.0",
+    "cross-env": "^5.0.5",
+    "css-loader": "^0.28.7",
+    "file-loader": "^1.1.5",
+    "vue-loader": "^13.2.0",
     "vue-template-compiler": "^2.1.0",
-    "webpack": "^2.1.0-beta.25",
+    "webpack": "^3.6.0",
     "webpack-dev-server": "^2.1.0-beta.9"
   }
 }

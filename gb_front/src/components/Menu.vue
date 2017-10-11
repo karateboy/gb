@@ -47,7 +47,7 @@
                 </ul>
             </li>
                         <li>
-                <a><i class="fa fa-h-square" aria-hidden="true"></i><span class="nav-label">起造人</span><span
+                <a><i class="fa fa-building" aria-hidden="true"></i><span class="nav-label">起造人</span><span
                         class="fa arrow"></span></a>
                 <ul class="nav nav-second-level collapse">
                     <router-link tag="li"

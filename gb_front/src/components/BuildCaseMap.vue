@@ -109,14 +109,14 @@ export default {
         getIcon(buildCase) {
             let sentDate = moment(buildCase.date)
             let now = moment()
-            let yellowDue = sentDate.add(6, "month")
+            let yellowDue = sentDate.add(4, "month")
             let redDue = yellowDue.add(2, "month")
             if (now.isBefore(yellowDue))
-                return "/assets/img/green.png"
-            else if (now.isAfter(yellowDue) && now.isBefore(redDue))
                 return "/assets/img/yellow.png"
-            else
+            else if (now.isAfter(yellowDue) && now.isBefore(redDue))
                 return "/assets/img/red.png"
+            else if(now.isAfter(redDue))
+                return "/assets/img/puple.png"
 
         }
     },
