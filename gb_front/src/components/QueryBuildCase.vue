@@ -15,7 +15,7 @@
                 <div class="col-lg-4"><input type="text" class="form-control" placeholder="新北市" v-model="queryParam.county"></div>
             </div>
             <div class="form-group">
-                <label class="col-lg-1 control-label">地址:</label>
+                <label class="col-lg-1 control-label">地號:</label>
                 <div class="col-lg-4"><input type="text" class="form-control" placeholder="地址" v-model="queryParam.addr"></div>
             </div>
             <div class="form-group">
@@ -27,10 +27,25 @@
                 <div class="col-lg-4"><input type="number" class="form-control" v-model.number="queryParam.areaLT"></div>
             </div>
             <div class="form-group">
+                <label class="col-lg-1 control-label">黃色警報:</label>
+                <div class="col-lg-4"><input type="checkbox" class="form-control" v-model="queryParam.yellowAlert">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-lg-1 control-label">紅色警報:</label>
+                <div class="col-lg-4"><input type="checkbox" class="form-control" v-model="queryParam.redAlert">
+                </div>
+            </div>
+            <div class="form-group">
                 <label class="col-lg-1 control-label">是否簽約:</label>
                 <div class="col-lg-4"><input type="checkbox" class="form-control" v-model="queryParam.contracted">
                 </div>
             </div>
+            <div class="form-group">
+                <label class="col-lg-1 control-label">業務:</label>
+                <div class="col-lg-4"><input type="text" class="form-control" placeholder="業務" v-model="queryParam.sales"></div>
+            </div>
+
             <div class="form-group">
                 <div class="col-lg-1 col-lg-offset-1">
                     <button class='btn btn-primary' @click='query'>查詢</button>
@@ -38,9 +53,9 @@
                 <div class="col-lg-1 col-lg-offset-1">
                     <button class='btn btn-primary' @click='queryMap'>顯示地圖</button>
                 </div>
-                <!--                <div class="col-lg-1 col-lg-offset-1">
-                                        <button class="btn btn-info" @click='exportExcel'>Excel</button>
-                                    </div>-->
+                <div v-if="user.groupId == 'Admin'" class="col-lg-1 col-lg-offset-1">
+                    <button class="btn btn-info" @click='exportExcel'>下載Excel</button>
+                </div>
             </div>
         </div>
         <div v-if='display'>
@@ -57,6 +72,9 @@
 <script>
 import axios from 'axios'
 import moment from 'moment'
+import { mapGetters } from 'vuex'
+import baseUrl from "../baseUrl"
+
 import BuildCaseList from "./BuildCaseList.vue"
 import BuildCaseMap from "./BuildCaseMap.vue"
 
@@ -66,9 +84,13 @@ export default {
             display: false,
             showMap: false,
             queryParam: {
-                hasLocation: true
+                yellowAlert: true,
+                redAlert: false,
             }
         }
+    },
+    computed: {
+        ...mapGetters(['user'])
     },
     methods: {
         query() {
@@ -82,6 +104,12 @@ export default {
                 this.showMap = true
 
             this.queryParam = Object.assign({}, this.queryParam)
+        },
+        exportExcel() {
+            let json = JSON.stringify(this.queryParam)
+            let segment = encodeURIComponent(json)
+            let url = baseUrl() + "/BuildCase/" + segment
+            window.open(url)
         }
     },
     components: {

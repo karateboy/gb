@@ -67,7 +67,6 @@
         data() {
             return {
                 careHouseList: [],
-                skip: 0,
                 limit: 5,
                 total: 0,
                 display: "",
@@ -75,15 +74,15 @@
             }
         },
         mounted: function () {
-            this.fetchCareHouse(this.skip, this.limit)
+            this.fetchCareHouse(0, this.limit)
             PaginationEvent.$on('vue-pagination::cardList', this.handlePageChange)
         },
         watch: {
             url: function (newUrl) {
-                this.fetchCareHouse(this.skip, this.limit)
+                this.fetchCareHouse(0, this.limit)
             },
             param: function (newParam) {
-                this.fetchCareHouse(this.skip, this.limit)
+                this.fetchCareHouse(0, this.limit)
             }
         },
 
@@ -127,8 +126,8 @@
                 }
             },
             handlePageChange(page) {
-                this.skip = (page - 1) * this.limit
-                this.fetchCareHouse(this.skip, this.limit)
+                let skip = (page - 1) * this.limit
+                this.fetchCareHouse(skip, this.limit)
             },
             displayBed(careTypeName, careHouse) {
                 for (let careType of careHouse.careTypes) {

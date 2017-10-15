@@ -29,8 +29,8 @@ case class BuildCase(_id: String, county: String, name: String,
 
 case class QueryBuildCaseParam(name: Option[String],
                                architect: Option[String], addr: Option[String], county: Option[String],
-                               areaGT: Option[Double], areaLT: Option[Double], alarm2: Option[Boolean],
-                               alarm3: Option[Double], contracted: Option[Boolean], sales: Option[String])
+                               areaGT: Option[Double], areaLT: Option[Double], yellowAlert: Option[Boolean],
+                               redAlert: Option[Boolean], contracted: Option[Boolean], sales: Option[String])
 
 object BuildCase {
   import org.mongodb.scala.bson.codecs.Macros._
@@ -139,22 +139,15 @@ object BuildCase {
     }
   }
 
-  /*
-case class QueryBuildCaseParam(name: Option[String],
-                               architect: Option[String], addr: Option[String], county: Option[String],
-                               areaGT: Option[Double], areaLT: Option[Double], alarm2: Option[Boolean],
-                               alarm3: Option[Double], contracted: Option[Boolean], sales:Option[String])
-   * 
-   */
-
   def getFilter(param: QueryBuildCaseParam) = {
     import org.mongodb.scala.model.Filters._
 
     /*
      * case class QueryBuildCaseParam(name: Option[String],
-                               architect: Option[String], addr: Option[String], county: Option[String], 
-                               areaGT: Option[Double], areaLT: Option[Double], alarm2: Option[Boolean],
-                               alarm3: Option[Double])
+                               architect: Option[String], addr: Option[String], county: Option[String],
+                               areaGT: Option[Double], areaLT: Option[Double], yellowAlert: Option[Boolean],
+                               redAlert: Option[Double], contracted: Option[Boolean], sales: Option[String])
+     * 
      * */
 
     val nameFilter = param.name map { name => regex("name", "(?i)" + name) }
@@ -163,17 +156,45 @@ case class QueryBuildCaseParam(name: Option[String],
     val countyFilter = param.county map { county => regex("county", "(?i)" + county) }
     val areaGtFilter = param.areaGT map { v => Filters.gt("area", v) }
     val areaLtFilter = param.areaLT map { v => Filters.lt("area", v) }
+    val contractedFilter = param.contracted map {
+      v =>
+        if (v)
+          equal("contracted", v)
+        else
+          equal("contracted", v)
+    }
 
-    val alarm2Filter = param.alarm2 map { v =>
-      val today = DateTime.now
-      // today < date + 4*month
-      // today - 4*month < date
-      val yellowDue = today - 4.month
-      and(lt("date", today.toLocalDate().toDate()), gt("date", yellowDue.toLocalDate().toDate()))
+    val salesFilter = param.sales map {
+      sales =>
+        regex("sales", "(?i)" + sales)
+    }
+
+    val yellowAlertFilter = param.yellowAlert map { v =>
+      if (v == true) {
+        val today = DateTime.now
+        // today < date + 4*month
+        // today - 4*month < date
+        val yellowDue = today - 4.month
+        and(lt("date", today.toLocalDate().toDate()), gt("date", yellowDue.toLocalDate().toDate()))
+      } else
+        exists("_id")
+    }
+
+    val redAlertFilter = param.redAlert map { v =>
+      if (v == true) {
+        val today = DateTime.now
+        // today > date + 4*month
+        // today - 6*month < date
+        val yellowDue = today - 4.month
+        val redDue = today - 6.month
+        and(gt("date", yellowDue.toLocalDate().toDate()), lt("date", redDue.toLocalDate().toDate()))
+      } else
+        exists("_id")
     }
 
     val filterList = List(nameFilter, architectFilter, addrFilter,
-      countyFilter, areaGtFilter, areaLtFilter).flatMap { f => f }
+      countyFilter, areaGtFilter, areaLtFilter, redAlertFilter, yellowAlertFilter,
+      contractedFilter, salesFilter).flatMap { f => f }
 
     val filter = if (!filterList.isEmpty)
       and(filterList: _*)

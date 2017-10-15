@@ -23,10 +23,28 @@
                 <div class="col-lg-4"><input type="date" class="form-control" v-model="myDate"></div>
             </div>
             <div class="form-group">
+                <label class="col-lg-1 control-label">承造單位(含可能得標者):</label>
+                <div class="col-lg-4"><input type="text" class="form-control" v-model="buildCase.builder"></div>
+            </div>
+            <div class="form-group">
+                <label class="col-lg-1 control-label">電話:</label>
+                <div class="col-lg-4"><input type="tel" class="form-control" v-model="buildCase.phone"></div>
+            </div>
+            <div class="form-group">
                 <label class="col-lg-1 control-label">簽約:</label>
                 <div class="col-lg-4"><input type="checkbox" class="form-control" v-model="buildCase.contracted">
                 </div>
             </div>
+            <div class="form-group">
+                <label class="col-lg-1 control-label">最後拜訪日:</label>
+                <div class="col-lg-4"><input type="date" class="form-control" v-model="lastVisit">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-lg-1 control-label">業務:</label>
+                <div class="col-lg-4"><input type="text" class="form-control" v-model="buildCase.sales"></div>
+            </div>
+            
             <div class="form-group">
                 <div class="col-lg-1 col-lg-offset-1">
                     <button class='btn btn-primary' @click='save'>更新</button>
@@ -58,7 +76,19 @@ export default {
             set(v) {
                 this.buildCase.date = v
             }
-        }
+        },
+        lastVisit: {
+            get() {
+                if (this.buildCase.lastVisit) {
+                    const date = new moment(this.buildCase.lastVisit)
+                    return date.format('YYYY-MM-DD')
+                }else
+                    return undefined
+            },
+            set(v) {
+                this.buildCase.lastVisit = v
+            }
+        },
     },
     methods: {
         save() {

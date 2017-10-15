@@ -140,7 +140,7 @@ object Query extends Controller {
         })
   }
 
-    def queryBuildCase(skip: Int, limit: Int, outputTypeStr: String) = Security.Authenticated.async(BodyParsers.parse.json) {
+  def queryBuildCase(skip: Int, limit: Int, outputTypeStr: String) = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
       val outputType = OutputType.withName(outputTypeStr)
       implicit val paramRead = Json.reads[QueryBuildCaseParam]
@@ -159,11 +159,38 @@ object Query extends Controller {
               case OutputType.html =>
                 Ok(Json.toJson(buildCaseList))
               case OutputType.excel =>
-                ???
+                val excel = ExcelUtility.exportBuildCase(buildCaseList)
+                Ok.sendFile(excel, fileName = _ =>
+                  play.utils.UriEncoding.encodePathSegment("起造人.xlsx", "UTF-8"),
+                  onClose = () => { Files.deleteIfExists(excel.toPath()) })
             }
           }
         })
   }
+
+  def getBuildCase(encodedJson: String) = Security.Authenticated.async({
+    val json = java.net.URLDecoder.decode(encodedJson, "UTF-8")
+    implicit val paramRead = Json.reads[QueryBuildCaseParam]
+    implicit val buildCaseWrite = Json.writes[BuildCase]
+
+    val ret = Json.parse(json).validate[QueryBuildCaseParam]
+    ret.fold(
+      err =>
+        Future {
+          Logger.error(JsError.toJson(err).toString())
+          BadRequest(JsError.toJson(err).toString())
+        },
+      param => {
+        val f = BuildCase.queryBuildCase(param)(0, 2048)
+        for (buildCaseList <- f) yield {
+          val excel = ExcelUtility.exportBuildCase(buildCaseList)
+          Ok.sendFile(excel, fileName = _ =>
+            play.utils.UriEncoding.encodePathSegment("起造人.xlsx", "UTF-8"),
+            onClose = () => { Files.deleteIfExists(excel.toPath()) })
+        }
+      })
+
+  })
 
   def queryBuildCaseList = queryBuildCase(0, 10000, "html")
   def queryBuildCaseExcel = queryBuildCase(0, 10000, "excel")
