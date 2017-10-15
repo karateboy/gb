@@ -56,7 +56,6 @@ export default {
     data() {
         return {
             buildCaseList: [],
-            skip: 0,
             limit: 5,
             total: 0,
             display: "",
@@ -64,15 +63,15 @@ export default {
         }
     },
     mounted: function() {
-        this.fetchBuildCase(this.skip, this.limit)
+        this.fetchBuildCase(0, this.limit)
         PaginationEvent.$on('vue-pagination::cardList', this.handlePageChange)
     },
     watch: {
         url: function(newUrl) {
-            this.fetchBuildCase(this.skip, this.limit)
+            this.fetchBuildCase(0, this.limit)
         },
         param: function(newParam) {
-            this.fetchBuildCase(this.skip, this.limit)
+            this.fetchBuildCase(0, this.limit)
         }
     },
 
@@ -116,8 +115,8 @@ export default {
             }
         },
         handlePageChange(page) {
-            this.skip = (page - 1) * this.limit
-            this.fetchBuildCase(this.skip, this.limit)
+            let skip = (page - 1) * this.limit
+            this.fetchBuildCase(skip, this.limit)
         },
         editBuildCase(idx) {
             this.selectedIndex = idx

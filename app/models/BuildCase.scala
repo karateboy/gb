@@ -18,14 +18,19 @@ import java.nio.file.Files
 import java.nio.file._
 import org.apache.poi.ss.usermodel._
 import java.util.Date
+import org.mongodb.scala.model._
+import org.mongodb.scala.model.Indexes._
 
 case class BuildCase(_id: String, county: String, name: String,
                      architect: String, area: Double, addr: String, date: Date,
-                     var location: Option[Seq[Double]])
+                     var location: Option[Seq[Double]],
+                     builder: Option[String] = None, phone: Option[String] = None, contracted: Boolean = false,
+                     lastVisit: Option[Date] = None, sales: Option[String] = None)
+
 case class QueryBuildCaseParam(name: Option[String],
-                               architect: Option[String], addr: Option[String], county: Option[String], 
+                               architect: Option[String], addr: Option[String], county: Option[String],
                                areaGT: Option[Double], areaLT: Option[Double], alarm2: Option[Boolean],
-                               alarm3: Option[Double])
+                               alarm3: Option[Double], contracted: Option[Boolean], sales: Option[String])
 
 object BuildCase {
   import org.mongodb.scala.bson.codecs.Macros._
@@ -37,7 +42,6 @@ object BuildCase {
   val ColName = "buildCase"
   val collection = MongoDB.database.getCollection[BuildCase](ColName).withCodecRegistry(codecRegistry)
 
-  import org.mongodb.scala.model.Indexes._
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {
       val f = MongoDB.database.createCollection(ColName).toFuture()
@@ -74,7 +78,6 @@ object BuildCase {
         try {
           import com.github.nscala_time.time.Imports._
           val idStr = row.getCell(0).getStringCellValue
-          val id = idStr.takeWhile { _ != '(' }.trim()
           val dateRegex = """\((.*?)\)""".r
           val dateStr = dateRegex.findFirstIn(idStr).get.drop(1).reverse.drop(1).reverse
           val date = new DateTime(dateStr).toDate()
@@ -86,7 +89,7 @@ object BuildCase {
           val location = Seq(row.getCell(6).getNumericCellValue,
             row.getCell(7).getNumericCellValue)
 
-          val buildCase = BuildCase(_id = s"$county#$id",
+          val buildCase = BuildCase(_id = addr,
             county = county,
             name = builderName,
             architect = architect,
@@ -103,7 +106,11 @@ object BuildCase {
       rowN += 1
     } while (!finish)
 
-    val f = collection.insertMany(seq).toFuture()
+    import scala.concurrent._
+    val seqF = seq.map { bc =>
+      collection.replaceOne(Filters.eq("_id", bc._id), bc, UpdateOptions().upsert(true)).toFuture()
+    }
+    val f = Future.sequence(seqF)
     f.onFailure(errorHandler)
     f.onSuccess({
       case ret =>
@@ -113,22 +120,35 @@ object BuildCase {
 
   def importXLSX(dir: String)(parser: (XSSFSheet) => Unit) = {
     //Open Excel
-    val pkg = OPCPackage.open(new FileInputStream(dir + "buildCase.xlsx"))
-    val wb = new XSSFWorkbook(pkg);
+    try {
+      val file = new File(dir + "buildCase.xlsx")
+      val fs = new FileInputStream(file)
+      val pkg = OPCPackage.open(fs)
+      val wb = new XSSFWorkbook(pkg);
 
-    val sheet = wb.getSheetAt(0)
-    parser(sheet)
+      val sheet = wb.getSheetAt(0)
+      parser(sheet)
+      fs.close()
+      file.delete()
+      Logger.info("Success import buildCase.xlsx")
+    } catch {
+      case ex: FileNotFoundException =>
+      //Ignore it
+      case ex: Throwable =>
+        Logger.error("Fail to import buildCase.xlsx", ex)
+    }
   }
 
   /*
-   * case class QueryBuildCaseParam(county: Option[String], name: Option[String],
-                               architect: Option[String], addr: Option[String], alarm2: Option[Long], alarm3: Option[Long])
+case class QueryBuildCaseParam(name: Option[String],
+                               architect: Option[String], addr: Option[String], county: Option[String],
+                               areaGT: Option[Double], areaLT: Option[Double], alarm2: Option[Boolean],
+                               alarm3: Option[Double], contracted: Option[Boolean], sales:Option[String])
    * 
    */
 
   def getFilter(param: QueryBuildCaseParam) = {
     import org.mongodb.scala.model.Filters._
-    import org.mongodb.scala.model._
 
     /*
      * case class QueryBuildCaseParam(name: Option[String],
@@ -136,16 +156,24 @@ object BuildCase {
                                areaGT: Option[Double], areaLT: Option[Double], alarm2: Option[Boolean],
                                alarm3: Option[Double])
      * */
-    
-    val nameFilter = param.name map { name => regex("name", name) }
+
+    val nameFilter = param.name map { name => regex("name", "(?i)" + name) }
     val architectFilter = param.architect map { architect => regex("architect", "(?i)" + architect) }
     val addrFilter = param.addr map { addr => regex("addr", "(?i)" + addr) }
     val countyFilter = param.county map { county => regex("county", "(?i)" + county) }
-    val areaGtFilter = param.areaGT map { v => Filters.gt("area", v)}
-    val areaLtFilter = param.areaLT map { v => Filters.lt("area", v)}
+    val areaGtFilter = param.areaGT map { v => Filters.gt("area", v) }
+    val areaLtFilter = param.areaLT map { v => Filters.lt("area", v) }
 
-    val filterList = List(nameFilter, architectFilter, addrFilter, 
-        countyFilter, areaGtFilter, areaLtFilter).flatMap { f => f }
+    val alarm2Filter = param.alarm2 map { v =>
+      val today = DateTime.now
+      // today < date + 4*month
+      // today - 4*month < date
+      val yellowDue = today - 4.month
+      and(lt("date", today.toLocalDate().toDate()), gt("date", yellowDue.toLocalDate().toDate()))
+    }
+
+    val filterList = List(nameFilter, architectFilter, addrFilter,
+      countyFilter, areaGtFilter, areaLtFilter).flatMap { f => f }
 
     val filter = if (!filterList.isEmpty)
       and(filterList: _*)
@@ -154,7 +182,7 @@ object BuildCase {
 
     filter
   }
-  
+
   import org.mongodb.scala.model._
 
   def queryBuildCase(param: QueryBuildCaseParam)(skip: Int, limit: Int) = {
@@ -172,9 +200,6 @@ object BuildCase {
   }
 
   def queryBuildCaseCount(param: QueryBuildCaseParam) = {
-    import org.mongodb.scala.model.Filters._
-    import org.mongodb.scala.model._
-
     val filter = getFilter(param)
 
     val f = collection.count(filter).toFuture()
