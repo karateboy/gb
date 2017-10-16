@@ -112,7 +112,7 @@
                     </router-link>
                 </ul>
             </li>
-            <li v-if="user.groupId == 'Admin'">
+            <li v-show="user.groupId == 'Admin'">
                 <a>
                     <i class="fa fa-cog" aria-hidden="true"></i>
                     <span class="nav-label">系統管理</span>
