@@ -58,13 +58,14 @@ object BuildCase {
           val endF = Future.sequence(Seq(cf1, cf2))
           endF.onComplete({
             case x =>
-              importXLSX(path)(parser)
+              val path = current.path.getAbsolutePath + "/import/buildCase.xlsx"
+              importXLSX(path)
           })
       })
     }
   }
 
-  val path = current.path.getAbsolutePath + "/import/"
+  //
   import java.io.File
   def parser(sheet: XSSFSheet) {
     var rowN = 2
@@ -118,10 +119,14 @@ object BuildCase {
     })
   }
 
-  def importXLSX(dir: String)(parser: (XSSFSheet) => Unit) = {
+  def importXLSX(filePath: String): Boolean = {
+    val file = new File(filePath)
+    importXLSX(file)
+  }
+
+  def importXLSX(file: File): Boolean = {
     //Open Excel
     try {
-      val file = new File(dir + "buildCase.xlsx")
       val fs = new FileInputStream(file)
       val pkg = OPCPackage.open(fs)
       val wb = new XSSFWorkbook(pkg);
@@ -130,13 +135,16 @@ object BuildCase {
       parser(sheet)
       fs.close()
       file.delete()
-      Logger.info("Success import buildCase.xlsx")
+      Logger.info(s"Success import ${file.getAbsolutePath}")
     } catch {
       case ex: FileNotFoundException =>
-      //Ignore it
+        Logger.warn(s"Cannot open ${file.getAbsolutePath}")
+        false
       case ex: Throwable =>
-        Logger.error("Fail to import buildCase.xlsx", ex)
+        Logger.error(s"Fail to import ${file.getAbsolutePath}", ex)
+        false
     }
+    true
   }
 
   def getFilter(param: QueryBuildCaseParam) = {

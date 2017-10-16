@@ -4,6 +4,8 @@
             <ul class="nav nav-tabs">
                 <router-link to='/BuildCase/Query' tag='li' role="presentation" active-class='active'><a>查詢起造人</a>
                 </router-link>
+                <router-link to='/BuildCase/Import' tag='li' role="presentation" active-class='active'><a>匯入起造人</a>
+                </router-link>
             </ul>
             <router-view></router-view>
         </div>

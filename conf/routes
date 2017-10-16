@@ -32,7 +32,9 @@ POST     /QueryBuildCase                controllers.Query.queryBuildCaseList()
 POST     /QueryBuildCase/:skip/:limit   controllers.Query.queryBuildCase(skip:Int, limit:Int, outputTypeStr="html")
 POST     /QueryBuildCase/count          controllers.Query.queryBuildCaseCount()
 PUT      /BuildCase                     controllers.Query.updateBuildCase
-GET		 /BuildCase/:json				controllers.Query.getBuildCase(json)
+GET      /BuildCase/:json               controllers.Query.getBuildCase(json)
+GET      /BuildCaseTemplate             controllers.Application.getBuildCaseTemplate
+POST	 /UploadBuildCase				controllers.Application.uploadBuildCase
 
 POST     /NewOrder                      controllers.OrderManager.newOrder
 POST     /UpdateOrder                   controllers.OrderManager.upsertOrder

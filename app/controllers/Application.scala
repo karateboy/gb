@@ -116,7 +116,7 @@ object Application extends Controller {
     implicit val write = Json.writes[GroupInfo]
     Ok(Json.toJson(infoList))
   }
-  
+
   def testGeoCoding = Security.Authenticated {
     //val retList = GoogleApi.queryAddr("台北市萬華區西園路二段372巷23弄13號3樓")
     //for(ret <- retList){
@@ -125,4 +125,26 @@ object Application extends Controller {
     CareHouse.convertAddrToLocation()
     Ok("ok")
   }
+
+  def getBuildCaseTemplate = Security.Authenticated {
+    import java.io.File
+    val path = current.path.getAbsolutePath + "/report_template/buildCaseImport.xlsx"
+    val excel = new File(path)
+    Ok.sendFile(excel, fileName = _ =>
+      play.utils.UriEncoding.encodePathSegment("起造人樣本.xlsx", "UTF-8"))
+
+  }
+  
+  def uploadBuildCase() = Security.Authenticated(parse.multipartFormData) {
+    implicit request =>
+      request.body.files.map { upload =>
+        val filename = upload.filename
+        val contentType = upload.contentType
+        Logger.info(s"upload $filename")
+        BuildCase.importXLSX(upload.ref.file)
+      }
+
+      Ok(Json.obj("Ok" -> true))
+  }
+
 }
