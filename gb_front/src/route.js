@@ -18,6 +18,7 @@ import QueryCareHouse from './components/QueryCareHouse.vue'
 import BuildCase from './components/BuildCase.vue'
 import QueryBuildCase from './components/QueryBuildCase.vue'
 import ImportBuildCase from './components/ImportBuildCase.vue'
+import NewBuildCase from './components/NewBuildCase.vue'
 
 export const routes = [
     {path: '/', component: Dashboard, name: 'Dashboard'},
@@ -48,6 +49,7 @@ export const routes = [
     {
         path: '/BuildCase', component: BuildCase, name: 'BuildCase',
         children: [
+            {path: 'New', component: NewBuildCase, name: 'NewBuildCase'},
             {path: 'Query', component: QueryBuildCase, name: 'QueryBuildCase'},
             {path: 'Import', component: ImportBuildCase, name: 'ImportBuildCase'}
         ]

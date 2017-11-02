@@ -74,6 +74,12 @@
                     <span class="fa arrow"></span>
                 </a>
                 <ul class="nav nav-second-level collapse">
+                    <router-link v-show="user.groupId == 'Admin'" tag="li" :to="{name:'NewBuildCase'}" active-class="active">
+                        <a>
+                            <i class="fa fa-plus" aria-hidden="true"></i>
+                            <span class="nav-label"></span>新增起造人案件</a>
+                    </router-link>
+
                     <router-link tag="li" :to="{name:'QueryBuildCase'}" active-class="active">
                         <a>
                             <i class="fa fa-search" aria-hidden="true"></i>
@@ -145,24 +151,22 @@
 
 </style>
 <script>
-import { mapGetters } from 'vuex'
-import axios from 'axios'
+import { mapGetters } from "vuex";
+import axios from "axios";
 export default {
-    data() {
-        axios.get('/Group').then((resp) => {
-            const ret = resp.data
-            for (let groupInfo of ret) {
-                this.groupInfoMap[groupInfo.id] = groupInfo.name
-            }
-        })
-        return {
-            groupInfoMap: {}
-        }
-    },
-    computed: {
-        ...mapGetters(['user'])
-    }
-}
-
-
+  data() {
+    axios.get("/Group").then(resp => {
+      const ret = resp.data;
+      for (let groupInfo of ret) {
+        this.groupInfoMap[groupInfo.id] = groupInfo.name;
+      }
+    });
+    return {
+      groupInfoMap: {}
+    };
+  },
+  computed: {
+    ...mapGetters(["user"])
+  }
+};
 </script>
