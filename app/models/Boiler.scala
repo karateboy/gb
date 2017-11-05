@@ -13,21 +13,24 @@ import java.util.Date
 import org.mongodb.scala.model._
 import org.mongodb.scala.model.Indexes._
 
-case class GasStation(_id: String, name: String, county: String, addr: String,
-                      tank: Int, location: Option[Seq[Double]] = None)
+case class Boiler(_id: String, county: String, name: String, addr: String,
+                  tank: Int, location: Option[Seq[Double]] = None,
+                  quantity: Option[Double] = None, brand: Option[String] = None, usage: Option[Double] = None,
+                  frequency: Option[Int] = None, discount: Option[Double] = None, sales: Option[String] = None,
+                  lastUpdate: Option[Date] = None)
 
-case class QueryGasStationParam(name: Option[String],
-                                addr: Option[String], county: Option[String], tankGT: Option[Int])
+case class QueryBoilerParam(name: Option[String],
+                            addr: Option[String], county: Option[String], tankGT: Option[Int])
 
-object GasStation {
+object Boiler {
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
   import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
 
-  val codecRegistry = fromRegistries(fromProviders(classOf[GasStation]), DEFAULT_CODEC_REGISTRY)
+  val codecRegistry = fromRegistries(fromProviders(classOf[Boiler]), DEFAULT_CODEC_REGISTRY)
 
-  val ColName = "gasStation"
-  val collection = MongoDB.database.getCollection[GasStation](ColName).withCodecRegistry(codecRegistry)
+  val ColName = "boiler"
+  val collection = MongoDB.database.getCollection[Boiler](ColName).withCodecRegistry(codecRegistry)
 
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {
@@ -35,8 +38,8 @@ object GasStation {
       f.onFailure(errorHandler)
       f.onSuccess({
         case x =>
-          val cf1 = collection.createIndex(ascending("county", "name")).toFuture()
-          val cf2 = collection.createIndex(ascending("addr")).toFuture()
+          val cf1 = collection.createIndex(ascending("addr")).toFuture()
+          val cf2 = collection.createIndex(ascending("county", "addr")).toFuture()
 
           cf1.onFailure(errorHandler)
           cf2.onFailure(errorHandler)
@@ -45,18 +48,18 @@ object GasStation {
           val endF = Future.sequence(Seq(cf1, cf2))
           endF.onComplete({
             case x =>
-              val path = current.path.getAbsolutePath + "/import/gasStation.xlsx"
+              val path = current.path.getAbsolutePath + "/import/boiler.xlsx"
               importXLSX(path)(parser)
           })
       })
     }
   }
-
+  //
   import java.io.File
   def parser(sheet: XSSFSheet) {
-    var rowN = 2
+    var rowN = 1
     var finish = false
-    var seq = IndexedSeq.empty[GasStation]
+    var seq = IndexedSeq.empty[Boiler]
     do {
       var row = sheet.getRow(rowN)
       if (row == null)
@@ -64,27 +67,27 @@ object GasStation {
       else {
         try {
           import com.github.nscala_time.time.Imports._
-          val id = getStrFromCell(row.getCell(0))
-          val name = row.getCell(1).getStringCellValue
-          val county = row.getCell(2).getStringCellValue
+          val county = row.getCell(0).getStringCellValue
+          val id = getStrFromCell(row.getCell(1))
+          val name = row.getCell(2).getStringCellValue
           val addr = row.getCell(3).getStringCellValue
-          val x = getIntFromCell(row.getCell(4))
-          val y = getIntFromCell(row.getCell(5))
-          val tank = getIntFromCell(row.getCell(6))
+          val x = row.getCell(4).getNumericCellValue
+          val y = row.getCell(5).getNumericCellValue
           val lonlat = CoordinateTransform.tWD97_To_lonlat(x, y)
-          val location = Some(Seq(lonlat._1, lonlat._2))
+          val location = Seq(lonlat._1, lonlat._2)
+          val tank = row.getCell(6).getNumericCellValue.toInt
 
-          val gasStation = GasStation(_id = id,
-            name = name,
+          val tankCase = Boiler(_id = id,
             county = county,
+            name = name,
             addr = addr,
-            location = location,
+            location = Some(location),
             tank = tank)
-          seq = seq :+ gasStation
+          seq = seq :+ tankCase
         } catch {
-          case ex:java.lang.NullPointerException=>
-            // last row Ignore it...
-            
+          case ex: java.lang.NullPointerException =>
+          // last row Ignore it...
+
           case ex: Throwable =>
             Logger.error(s"failed to convert row=$rowN...", ex)
         }
@@ -100,15 +103,13 @@ object GasStation {
     f.onFailure(errorHandler)
   }
 
-
-  def getFilter(param: QueryGasStationParam) = {
+  def getFilter(param: QueryBoilerParam) = {
     import org.mongodb.scala.model.Filters._
-    val nameFilter = param.name map { name => regex("name", "(?i)" + name) }
     val addrFilter = param.addr map { addr => regex("addr", "(?i)" + addr) }
     val countyFilter = param.county map { county => regex("county", "(?i)" + county) }
     val tankGtFilter = param.tankGT map { v => Filters.gt("tank", v) }
 
-    val filterList = List(nameFilter, addrFilter,
+    val filterList = List(addrFilter,
       countyFilter, tankGtFilter).flatMap { f => f }
 
     val filter = if (!filterList.isEmpty)
@@ -121,7 +122,7 @@ object GasStation {
 
   import org.mongodb.scala.model._
 
-  def query(param: QueryGasStationParam)(skip: Int, limit: Int) = {
+  def query(param: QueryBoilerParam)(skip: Int, limit: Int) = {
     import org.mongodb.scala.model.Filters._
 
     val filter = getFilter(param)
@@ -135,7 +136,7 @@ object GasStation {
     }
   }
 
-  def queryCount(param: QueryGasStationParam) = {
+  def queryCount(param: QueryBoilerParam) = {
     val filter = getFilter(param)
 
     val f = collection.count(filter).toFuture()
@@ -145,8 +146,8 @@ object GasStation {
     for (count <- f) yield count
   }
 
-  def upsert(_id: String, gasStation: GasStation) = {
-    val f = collection.replaceOne(Filters.eq("_id", _id), gasStation, UpdateOptions().upsert(true)).toFuture()
+  def upsert(_id: String, boiler: Boiler) = {
+    val f = collection.replaceOne(Filters.eq("_id", _id), boiler, UpdateOptions().upsert(true)).toFuture()
     f.onFailure {
       errorHandler
     }

@@ -21,6 +21,11 @@ object MongoDB {
       BuildCase.init(colNames)
       GasStation.init(colNames)
       Tank.init(colNames)
+      Boiler.init(colNames)
+      RecyclePlant.init(colNames)
+      Purifier.init(colNames)
+      Textile.init(colNames)
+      Burner.init(colNames)
     }
     //Program need to wait before init complete
     import scala.concurrent.Await

@@ -2,20 +2,12 @@ package models
 import play.api._
 import com.github.nscala_time.time.Imports._
 import models.ModelHelper._
-import models._
-import org.mongodb.scala.bson.Document
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
-import play.api.libs.json.Json
+import models.ExcelTool._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
 import play.api.Play.current
 import org.apache.poi.openxml4j.opc._
 import org.apache.poi.xssf.usermodel._
-import com.github.nscala_time.time.Imports._
-import java.io._
-import java.nio.file.Files
-import java.nio.file._
 import org.apache.poi.ss.usermodel._
 import java.util.Date
 import org.mongodb.scala.model._
@@ -35,7 +27,7 @@ object Tank {
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
   import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
 
-  val codecRegistry = fromRegistries(fromProviders(classOf[GasStation]), DEFAULT_CODEC_REGISTRY)
+  val codecRegistry = fromRegistries(fromProviders(classOf[Tank]), DEFAULT_CODEC_REGISTRY)
 
   val ColName = "tank"
   val collection = MongoDB.database.getCollection[Tank](ColName).withCodecRegistry(codecRegistry)
@@ -57,7 +49,7 @@ object Tank {
           endF.onComplete({
             case x =>
               val path = current.path.getAbsolutePath + "/import/tank.xlsx"
-              importXLSX(path)
+              importXLSX(path)(parser)
           })
       })
     }
@@ -76,20 +68,26 @@ object Tank {
         try {
           import com.github.nscala_time.time.Imports._
           val county = row.getCell(0).getStringCellValue
-          val id = county
           val addr = row.getCell(1).getStringCellValue
-          val location = Seq(row.getCell(2).getNumericCellValue,
-            row.getCell(3).getNumericCellValue)
+          val id = addr
+          val x = row.getCell(2).getNumericCellValue
+          val y = row.getCell(3).getNumericCellValue
+          val lonlat = CoordinateTransform.tWD97_To_lonlat(x, y)
+          val location = Seq(lonlat._1, lonlat._2)
           val tank = row.getCell(4).getNumericCellValue.toInt
 
           val tankCase = Tank(_id = id,
             county = county,
             addr = addr,
+            location = Some(location),
             tank = tank)
           seq = seq :+ tankCase
         } catch {
+          case ex: java.lang.NullPointerException =>
+          // last row Ignore it...
+
           case ex: Throwable =>
-            Logger.error("failed to convert...", ex)
+            Logger.error(s"failed to convert row=$rowN...", ex)
         }
       }
       rowN += 1
@@ -101,38 +99,6 @@ object Tank {
     }
     val f = Future.sequence(seqF)
     f.onFailure(errorHandler)
-    f.onSuccess({
-      case ret =>
-        Logger.info(s"Success import!")
-    })
-  }
-
-  def importXLSX(filePath: String): Boolean = {
-    val file = new File(filePath)
-    importXLSX(file)
-  }
-
-  def importXLSX(file: File): Boolean = {
-    //Open Excel
-    try {
-      val fs = new FileInputStream(file)
-      val pkg = OPCPackage.open(fs)
-      val wb = new XSSFWorkbook(pkg);
-
-      val sheet = wb.getSheetAt(0)
-      parser(sheet)
-      fs.close()
-      file.delete()
-      Logger.info(s"Success import ${file.getAbsolutePath}")
-    } catch {
-      case ex: FileNotFoundException =>
-        Logger.warn(s"Cannot open ${file.getAbsolutePath}")
-        false
-      case ex: Throwable =>
-        Logger.error(s"Fail to import ${file.getAbsolutePath}", ex)
-        false
-    }
-    true
   }
 
   def getFilter(param: QueryTankParam) = {
