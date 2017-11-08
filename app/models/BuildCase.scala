@@ -2,6 +2,7 @@ package models
 import play.api._
 import com.github.nscala_time.time.Imports._
 import models.ModelHelper._
+import models.ExcelTool._
 import models._
 import org.mongodb.scala.bson.Document
 import play.api.libs.json._
@@ -65,6 +66,8 @@ object BuildCase {
     }
   }
 
+  def importXLSX(file: File, delete:Boolean) = ExcelTool.importXLSX(file, delete)(parser)
+  def importXLSX(path: String) = ExcelTool.importXLSX(path)(parser)
   //
   import java.io.File
   def parser(sheet: XSSFSheet) {
@@ -87,8 +90,8 @@ object BuildCase {
           val architect = row.getCell(3).getStringCellValue
           val area = row.getCell(4).getNumericCellValue
           val addr = row.getCell(5).getStringCellValue
-          val location = Seq(row.getCell(6).getNumericCellValue,
-            row.getCell(7).getNumericCellValue)
+          val location = Seq(row.getCell(7).getNumericCellValue,
+            row.getCell(6).getNumericCellValue)
 
           val buildCase = BuildCase(_id = addr,
             county = county,
@@ -117,34 +120,6 @@ object BuildCase {
       case ret =>
         Logger.info(s"Success import buildCase.xlsx")
     })
-  }
-
-  def importXLSX(filePath: String): Boolean = {
-    val file = new File(filePath)
-    importXLSX(file)
-  }
-
-  def importXLSX(file: File): Boolean = {
-    //Open Excel
-    try {
-      val fs = new FileInputStream(file)
-      val pkg = OPCPackage.open(fs)
-      val wb = new XSSFWorkbook(pkg);
-
-      val sheet = wb.getSheetAt(0)
-      parser(sheet)
-      fs.close()
-      file.delete()
-      Logger.info(s"Success import ${file.getAbsolutePath}")
-    } catch {
-      case ex: FileNotFoundException =>
-        Logger.warn(s"Cannot open ${file.getAbsolutePath}")
-        false
-      case ex: Throwable =>
-        Logger.error(s"Fail to import ${file.getAbsolutePath}", ex)
-        false
-    }
-    true
   }
 
   def getFilter(param: QueryBuildCaseParam) = {

@@ -102,8 +102,8 @@ export default {
         },
         getPosition(buildCase) {
             return {
-                lat: buildCase.location[0],
-                lng: buildCase.location[1]
+                lat: buildCase.location[1],
+                lng: buildCase.location[0]
             }
         },
         getIcon(buildCase) {

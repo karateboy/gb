@@ -72,11 +72,16 @@ object RecyclePlant {
           val phone = row.getCell(3).getStringCellValue
           val addr = row.getCell(4).getStringCellValue
           val expiredDate = getOptionDateFromCell(row.getCell(5))
-          val locationList = GoogleApi.queryAddr(addr)
-          val location = if (locationList.isEmpty)
-            None
-          else
-            Some(locationList(0))
+          val location =
+            if (addr.isEmpty())
+              None
+            else {
+              val locationList = GoogleApi.queryAddr(addr)
+              if (locationList.isEmpty)
+                None
+              else
+                Some(locationList(0))
+            }
 
           val tankCase = RecyclePlant(_id = id,
             county = county,
@@ -98,10 +103,11 @@ object RecyclePlant {
     } while (!finish)
 
     import scala.concurrent._
-    val seqF = seq.map { bc =>
-      collection.replaceOne(Filters.eq("_id", bc._id), bc, UpdateOptions().upsert(true)).toFuture()
-    }
-    val f = Future.sequence(seqF)
+    val f = collection.insertMany(seq).toFuture()
+    //val seqF = seq.map { bc =>
+    //  collection.replaceOne(Filters.eq("_id", bc._id), bc, UpdateOptions().upsert(true)).toFuture()
+    //}
+    //val f = Future.sequence(seqF)
     f.onFailure(errorHandler)
   }
 

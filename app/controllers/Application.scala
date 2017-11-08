@@ -141,7 +141,7 @@ object Application extends Controller {
         val filename = upload.filename
         val contentType = upload.contentType
         Logger.info(s"upload $filename")
-        BuildCase.importXLSX(upload.ref.file)
+        BuildCase.importXLSX(upload.ref.file, true)
       }
 
       Ok(Json.obj("Ok" -> true))

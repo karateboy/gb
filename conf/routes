@@ -34,7 +34,13 @@ POST     /QueryBuildCase/count          controllers.Query.queryBuildCaseCount()
 PUT      /BuildCase                     controllers.Query.updateBuildCase
 GET      /BuildCase/:json               controllers.Query.getBuildCase(json)
 GET      /BuildCaseTemplate             controllers.Application.getBuildCaseTemplate
-POST	 /UploadBuildCase				controllers.Application.uploadBuildCase
+POST     /UploadBuildCase               controllers.Application.uploadBuildCase
+
+POST     /QueryOilUser                  controllers.Query.queryOilUserList()
+POST     /QueryOilUser/:skip/:limit     controllers.Query.queryOilUser(skip:Int, limit:Int, outputTypeStr="html")
+POST     /QueryOilUser/count            controllers.Query.queryOilUserCount()
+PUT      /OilUser                       controllers.Query.updateOilUser
+GET      /OilUser/:json                 controllers.Query.getOilUser(json)
 
 POST     /NewOrder                      controllers.OrderManager.newOrder
 POST     /UpdateOrder                   controllers.OrderManager.upsertOrder

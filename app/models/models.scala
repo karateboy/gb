@@ -39,6 +39,9 @@ object ModelHelper {
   }
 
   def errorHandler(prompt: String = "Error=>"): PartialFunction[Throwable, Any] = {
+    case ex: org.mongodb.scala.MongoException =>
+      Logger.error(ex.getMessage)
+      
     case ex: Throwable =>
       Logger.error(prompt, ex)
       throw ex
@@ -163,6 +166,7 @@ object ExcelTool {
   }
 
   def importXLSX(file: File, delete: Boolean = false)(parser: (XSSFSheet) => Unit): Boolean = {
+    Logger.info(s"Start import ${file.getAbsolutePath}...")
     //Open Excel
     try {
       val fs = new FileInputStream(file)

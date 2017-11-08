@@ -20,6 +20,9 @@ import QueryBuildCase from './components/QueryBuildCase.vue'
 import ImportBuildCase from './components/ImportBuildCase.vue'
 import NewBuildCase from './components/NewBuildCase.vue'
 
+import OilUser from './components/OilUser.vue'
+import QueryOilUser from './components/QueryOilUser.vue'
+
 export const routes = [
     {path: '/', component: Dashboard, name: 'Dashboard'},
     {path: '/Login', component: Login, name: 'Login'},
@@ -44,6 +47,12 @@ export const routes = [
         path: '/CareHouse', component: CareHouse, name: 'CareHouse',
         children: [
             {path: 'Query', component: QueryCareHouse, name: 'QueryCareHouse'}
+        ]
+    },
+    {
+        path: '/OilUser', component: OilUser, name: 'OilUser',
+        children: [
+            {path: 'Query', component: QueryOilUser, name: 'QueryOilUser'}
         ]
     },
     {
