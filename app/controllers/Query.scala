@@ -144,6 +144,8 @@ object Query extends Controller {
     implicit request =>
       val outputType = OutputType.withName(outputTypeStr)
       implicit val paramRead = Json.reads[QueryBuildCaseParam]
+      implicit val info1Write = Json.writes[BuildCaseInfo1]
+      implicit val info2Write = Json.writes[BuildCaseInfo2]
       implicit val buildCaseWrite = Json.writes[BuildCase]
       val result = request.body.validate[QueryBuildCaseParam]
       result.fold(
@@ -171,6 +173,9 @@ object Query extends Controller {
   def getBuildCase(encodedJson: String) = Security.Authenticated.async({
     val json = java.net.URLDecoder.decode(encodedJson, "UTF-8")
     implicit val paramRead = Json.reads[QueryBuildCaseParam]
+    implicit val info1Write = Json.writes[BuildCaseInfo1]
+    implicit val info2Write = Json.writes[BuildCaseInfo2]
+
     implicit val buildCaseWrite = Json.writes[BuildCase]
 
     val ret = Json.parse(json).validate[QueryBuildCaseParam]
@@ -215,6 +220,8 @@ object Query extends Controller {
   }
   def updateBuildCase = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
+      implicit val info1Read = Json.reads[BuildCaseInfo1]
+      implicit val info2Read = Json.reads[BuildCaseInfo2]
 
       implicit val paramRead = Json.reads[BuildCase]
       val result = request.body.validate[BuildCase]
@@ -231,7 +238,7 @@ object Query extends Controller {
         })
   }
   //=====================================================================================
-    def queryOilUser(skip: Int, limit: Int, outputTypeStr: String) = Security.Authenticated.async(BodyParsers.parse.json) {
+  def queryOilUser(skip: Int, limit: Int, outputTypeStr: String) = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
       val outputType = OutputType.withName(outputTypeStr)
       implicit val paramRead = Json.reads[QueryOilUserParam]

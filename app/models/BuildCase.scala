@@ -22,11 +22,28 @@ import java.util.Date
 import org.mongodb.scala.model._
 import org.mongodb.scala.model.Indexes._
 
+case class BuildCaseInfo1(builder_phone: Option[String] = None, builder_addr: Option[String] = None,
+                     architect_phone: Option[String] = None, architect_addr: Option[String] = None,
+                     constructor: Option[String] = None, constructor_phone: Option[String] = None,
+                     law_waste: Option[String] = None, rent_office: Option[String] = None,
+                     diesel_usage: Option[Double] = None, excavator: Option[String] = None,
+                     moldboard: Option[String] = None,  steel_bar: Option[String] = None,
+                     concrete: Option[String] = None, brick: Option[String] = None,
+                     wall: Option[String] = None, ceramic: Option[String] = None,
+                     window: Option[String] = None, bathroon: Option[String] = None,
+                     concrete_brick: Option[String] = None, sand: Option[String] = None,
+                     plastic: Option[String] = None, kick_board: Option[String] = None
+                     )
+
+case class BuildCaseInfo2(cleaner: Option[String] = None, recycler: Option[String] = None,
+                     cleaner_1801: Option[String] = None)                     
 case class BuildCase(_id: String, county: String, name: String,
                      architect: String, area: Double, addr: String, date: Date,
                      var location: Option[Seq[Double]],
                      builder: Option[String] = None, phone: Option[String] = None, contracted: Boolean = false,
-                     lastVisit: Option[Date] = None, sales: Option[String] = None)
+                     lastVisit: Option[Date] = None, sales: Option[String] = None,
+                     info1: Option[BuildCaseInfo1]=None, info2: Option[BuildCaseInfo2]=None
+                     )
 
 case class QueryBuildCaseParam(name: Option[String],
                                architect: Option[String], addr: Option[String], county: Option[String],
