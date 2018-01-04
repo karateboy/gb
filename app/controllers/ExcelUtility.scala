@@ -87,7 +87,7 @@ object ExcelUtility {
     finishExcel(reportFilePath, pkg, wb)
   }
 
-  def exportBuildCase(buildCaseList: Seq[BuildCase]) = {
+  def exportBuildCase(buildCaseList: Seq[BuildCase2]) = {
     val (reportFilePath, pkg, wb) = prepareTemplate("buildCase.xlsx")
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
     val format = wb.createDataFormat()
@@ -106,43 +106,43 @@ object ExcelUtility {
       rowN = buildCase_idx._2 + 1
       buildCase = buildCase_idx._1
     } {
-      val row = sheet.createRow(rowN)
-      row.createCell(0).setCellValue(buildCase.name)
-      row.createCell(1).setCellValue(buildCase.architect)
-      row.createCell(2).setCellValue(buildCase.area)
-      row.createCell(3).setCellValue(buildCase.addr)
-      buildCase.location map {
-        location =>
-          row.createCell(4).setCellValue(location(0))
-          row.createCell(5).setCellValue(location(1))
-      }
-      buildCase.builder map {
-        builder =>
-          row.createCell(6).setCellValue(builder)
-      }
-
-      buildCase.phone map {
-        phone =>
-          row.createCell(7).setCellValue(phone)
-      }
-
-      row.createCell(8).setCellValue(
-        if (buildCase.contracted)
-          "是"
-        else
-          "否")
-          
-      buildCase.lastVisit map {
-        lastVisit =>
-          val cell = row.createCell(9)
-          cell.setCellValue(lastVisit)
-          //val format = BuiltinFormats.getBuiltinFormat(0xe)
-          cell.setCellStyle(cellStyle)
-      }
+//      val row = sheet.createRow(rowN)
+//      row.createCell(0).setCellValue(buildCase.name)
+//      row.createCell(1).setCellValue(buildCase.architect)
+//      row.createCell(2).setCellValue(buildCase.area)
+//      row.createCell(3).setCellValue(buildCase.addr)
+//      buildCase.location map {
+//        location =>
+//          row.createCell(4).setCellValue(location(0))
+//          row.createCell(5).setCellValue(location(1))
+//      }
+//      buildCase.builder map {
+//        builder =>
+//          row.createCell(6).setCellValue(builder)
+//      }
+//
+//      buildCase.phone map {
+//        phone =>
+//          row.createCell(7).setCellValue(phone)
+//      }
+//
+//      row.createCell(8).setCellValue(
+//        if (buildCase.contracted)
+//          "是"
+//        else
+//          "否")
+//          
+//      buildCase.lastVisit map {
+//        lastVisit =>
+//          val cell = row.createCell(9)
+//          cell.setCellValue(lastVisit)
+//          //val format = BuiltinFormats.getBuiltinFormat(0xe)
+//          cell.setCellStyle(cellStyle)
+//      }
 
       buildCase.sales map {
         sales =>
-          row.createCell(10).setCellValue(sales)
+//          row.createCell(10).setCellValue(sales)
       }
     }
 

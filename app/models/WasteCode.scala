@@ -45,23 +45,23 @@ object WasteCode {
   }
 
   def importFromSQL = {
-    import scalikejdbc._
-    val list =
-      DB localTx { implicit session =>
-        sql"""
-        Select * 
-        From WasteCodeNum
-        """.map(rs => WasteCode(rs.string("WasteNum"), rs.string("WasteNum").substring(0, 2), rs.string("WasteName"))).list().apply()
-      }
-
-    var map = Map.empty[String, WasteCode]
-    list.foreach(wc => map += wc._id -> wc)
-    val filterdList = map.values.toList
-    val f = collection.insertMany(filterdList).toFuture()
-    f.onFailure(errorHandler)
-    f.onSuccess({
-      case x =>
-        Logger.info("Import WasteCode complete!")  
-    })
+//    import scalikejdbc._
+//    val list =
+//      DB localTx { implicit session =>
+//        sql"""
+//        Select * 
+//        From WasteCodeNum
+//        """.map(rs => WasteCode(rs.string("WasteNum"), rs.string("WasteNum").substring(0, 2), rs.string("WasteName"))).list().apply()
+//      }
+//
+//    var map = Map.empty[String, WasteCode]
+//    list.foreach(wc => map += wc._id -> wc)
+//    val filterdList = map.values.toList
+//    val f = collection.insertMany(filterdList).toFuture()
+//    f.onFailure(errorHandler)
+//    f.onSuccess({
+//      case x =>
+//        Logger.info("Import WasteCode complete!")  
+//    })
   }
 }

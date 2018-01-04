@@ -17,12 +17,12 @@ import Highchart._
 import models._
 
 case class Stat(
-    avg: Option[Double],
-    min: Option[Double],
-    max: Option[Double],
-    count: Int,
-    total: Int,
-    overCount: Int) {
+  avg:       Option[Double],
+  min:       Option[Double],
+  max:       Option[Double],
+  count:     Int,
+  total:     Int,
+  overCount: Int) {
   val effectPercent = {
     if (total > 0)
       Some(count.toDouble * 100 / total)
@@ -143,11 +143,12 @@ object Query extends Controller {
   def queryBuildCase(skip: Int, limit: Int, outputTypeStr: String) = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
       val outputType = OutputType.withName(outputTypeStr)
-      implicit val paramRead = Json.reads[QueryBuildCaseParam]
-      implicit val info1Write = Json.writes[BuildCaseInfo1]
-      implicit val info2Write = Json.writes[BuildCaseInfo2]
-      implicit val buildCaseWrite = Json.writes[BuildCase]
-      val result = request.body.validate[QueryBuildCaseParam]
+      implicit val paramRead = Json.reads[QueryBuildCaseParam2]
+      implicit val inRead = Json.reads[Input]
+      implicit val outRead = Json.reads[Output]
+      implicit val noteRead = Json.reads[Note]
+      implicit val buildCaseWrite = Json.writes[BuildCase2]
+      val result = request.body.validate[QueryBuildCaseParam2]
       result.fold(
         err =>
           Future {
@@ -155,7 +156,7 @@ object Query extends Controller {
             BadRequest(JsError.toJson(err).toString())
           },
         param => {
-          val f = BuildCase.queryBuildCase(param)(skip, limit)
+          val f = BuildCase2.queryBuildCase(param)(skip, limit)
           for (buildCaseList <- f) yield {
             outputType match {
               case OutputType.html =>
@@ -170,15 +171,17 @@ object Query extends Controller {
         })
   }
 
+  import org.mongodb.scala.bson.ObjectId
   def getBuildCase(encodedJson: String) = Security.Authenticated.async({
     val json = java.net.URLDecoder.decode(encodedJson, "UTF-8")
-    implicit val paramRead = Json.reads[QueryBuildCaseParam]
-    implicit val info1Write = Json.writes[BuildCaseInfo1]
-    implicit val info2Write = Json.writes[BuildCaseInfo2]
+    implicit val paramRead = Json.reads[QueryBuildCaseParam2]
+    implicit val objWrite = Json.writes[ObjectId]
+    implicit val inWrite = Json.writes[Input]
+    implicit val outWrite = Json.writes[Output]
+    implicit val noteWrite = Json.writes[Note]
+    implicit val buildCaseWrite = Json.writes[BuildCase2]
 
-    implicit val buildCaseWrite = Json.writes[BuildCase]
-
-    val ret = Json.parse(json).validate[QueryBuildCaseParam]
+    val ret = Json.parse(json).validate[QueryBuildCaseParam2]
     ret.fold(
       err =>
         Future {
@@ -186,7 +189,7 @@ object Query extends Controller {
           BadRequest(JsError.toJson(err).toString())
         },
       param => {
-        val f = BuildCase.queryBuildCase(param)(0, 2048)
+        val f = BuildCase2.queryBuildCase(param)(0, 2048)
         for (buildCaseList <- f) yield {
           val excel = ExcelUtility.exportBuildCase(buildCaseList)
           Ok.sendFile(excel, fileName = _ =>
@@ -202,8 +205,8 @@ object Query extends Controller {
 
   def queryBuildCaseCount() = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
-      implicit val paramRead = Json.reads[QueryBuildCaseParam]
-      val result = request.body.validate[QueryBuildCaseParam]
+      implicit val paramRead = Json.reads[QueryBuildCaseParam2]
+      val result = request.body.validate[QueryBuildCaseParam2]
       result.fold(
         err =>
           Future {
@@ -211,7 +214,7 @@ object Query extends Controller {
             BadRequest(JsError.toJson(err).toString())
           },
         param => {
-          val f = BuildCase.queryBuildCaseCount(param)
+          val f = BuildCase2.queryBuildCaseCount(param)
           f map {
             count =>
               Ok(Json.toJson(count))
@@ -220,11 +223,9 @@ object Query extends Controller {
   }
   def updateBuildCase = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
-      implicit val info1Read = Json.reads[BuildCaseInfo1]
-      implicit val info2Read = Json.reads[BuildCaseInfo2]
 
-      implicit val paramRead = Json.reads[BuildCase]
-      val result = request.body.validate[BuildCase]
+      implicit val paramRead = Json.reads[BuildCase2]
+      val result = request.body.validate[BuildCase2]
       result.fold(
         err =>
           Future {
@@ -232,7 +233,7 @@ object Query extends Controller {
             BadRequest(JsError.toJson(err).toString())
           },
         buildCase => {
-          val f = BuildCase.upsertBuildCase(buildCase._id, buildCase)
+          val f = BuildCase2.upsertBuildCase(buildCase)
           //f.onSuccess(Ok(Json.obj("ok"->true)))
           for (ret <- f) yield Ok(Json.obj("Ok" -> true))
         })

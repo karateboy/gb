@@ -18,7 +18,7 @@ object MongoDB {
       Order.init(colNames)
       WasteCode.init(colNames)
       CareHouse.init(colNames)
-      BuildCase.init(colNames)
+      BuildCase2.init(colNames)
       OilUser.init(colNames)
       RecyclePlant.init(colNames)
       Purifier.init(colNames)
