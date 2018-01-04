@@ -3,7 +3,7 @@ import com.google.maps._
 
 object GoogleApi {
   val context = new GeoApiContext.Builder()
-    .apiKey("AIzaSyAi9hG7X74_CL-3i_6utBMNKzrRKOqwo98")
+    .apiKey("AIzaSyAF2H8azbXiecvCre_b1S8UGyb24aqjqj0")    
     .build()
     
   def queryAddr(addr:String)={

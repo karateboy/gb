@@ -9,11 +9,7 @@
     "build": "cross-env NODE_ENV=production webpack --progress --hide-modules"
   },
   "dependencies": {
-    "axios": "^0.16.1",
-    "eslint": "^4.8.0",
-    "eslint-config-rallycoding": "^3.2.0",
-    "eslint-plugin-html": "^4.0.0-alpha.1",
-    "eslint-rallycoding": "^1.2.0",
+    "axios": "^0.17.1",
     "get-env": "^0.5.10",
     "jshint": "^2.9.5",
     "moment": "^2.17.1",

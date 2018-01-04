@@ -30,7 +30,7 @@ moment.locale('zh_tw')
 import * as VueGoogleMaps from 'vue2-google-maps'
 Vue.use(VueGoogleMaps, {
     load: {
-        key: 'AIzaSyAi9hG7X74_CL-3i_6utBMNKzrRKOqwo98',
+        key: 'AIzaSyAF2H8azbXiecvCre_b1S8UGyb24aqjqj0',
         libraries: 'places', // This is required if you use the Autocomplete plugin
         // OR: libraries: 'places,drawing'
         // OR: libraries: 'places,drawing,visualization'
