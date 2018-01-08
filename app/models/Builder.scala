@@ -17,7 +17,7 @@ import MongoDB._
 import scala.util._
 
 case class ContactInfo(contact: String, phone: String)
-case class Builder(_id: String, addr: String, contactList: Seq[ContactInfo]) {
+case class Builder(_id: String, addr: String, contactList: Seq[ContactInfo], state: Int = Builder.NoPhoneState) {
   def updateContact(contact: String, phone: String) {
     var updated = false
     val newList = if (contactList.exists { elm => elm.contact == contact })
@@ -35,7 +35,7 @@ case class Builder(_id: String, addr: String, contactList: Seq[ContactInfo]) {
     }
 
     if (updated) {
-      val bd = Builder(_id, addr, newList)
+      val bd = Builder(_id, addr, newList, Builder.HasPhoneState)
       Builder.upsert(bd)
     }
   }
@@ -47,7 +47,7 @@ case class Builder(_id: String, addr: String, contactList: Seq[ContactInfo]) {
       else
         ci
     }
-    Builder.upsert(Builder(_id, addr, newList))
+    Builder.upsert(Builder(_id, addr, newList, Builder.HasPhoneState))
   }
 
   def hasPhone() = {
@@ -78,6 +78,11 @@ object Builder {
     }
   }
 
+  val NoPhoneState = 0
+  val HasPhoneState = 1
+  val InvalidPhoneState = 2
+  val CheckOutState = 3
+
   def initBuilder(_id: String, addr: String, representative: String, phone: String = "") = {
     val info = ContactInfo(representative.trim(), phone)
     val builder = Builder(_id, addr.trim(), Seq(info))
@@ -99,6 +104,18 @@ object Builder {
         val f2 = BuildCase2.updateStateByBuilder(builder._id, newState)
         f2.onFailure(errorHandler)
     })
+    f
+  }
+
+  def checkOut = {
+    val f = collection.findOneAndUpdate(Filters.eq("state", NoPhoneState), Updates.set("state", CheckOutState)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+  
+  def giveUp(_id:String) = {
+    val f = collection.updateOne(Filters.eq("state", NoPhoneState), Updates.set("state", InvalidPhoneState)).toFuture()
+    f.onFailure(errorHandler)
     f
   }
 }

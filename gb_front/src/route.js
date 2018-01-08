@@ -6,7 +6,7 @@ import DelUser from './components/DelUser.vue'
 import UpdateUser from './components/UpdateUser.vue'
 import VehicleOps from './components/VehicleOps.vue'
 
-import Order from  './components/Order.vue'
+import Order from './components/Order.vue'
 import NewOrder from './components/NewOrder.vue'
 import UnhandledOrder from './components/UnhandledOrder.vue'
 import MyOrder from "./components/MyOrder.vue"
@@ -23,53 +23,145 @@ import NewBuildCase from './components/NewBuildCase.vue'
 import OilUser from './components/OilUser.vue'
 import QueryOilUser from './components/QueryOilUser.vue'
 
-export const routes = [
-    {path: '/', component: Dashboard, name: 'Dashboard'},
-    {path: '/Login', component: Login, name: 'Login'},
+import Intern from './components/Intern.vue'
+
+export const routes = [{
+        path: '/',
+        component: Dashboard,
+        name: 'Dashboard'
+    },
     {
-        path: '/Vehicle', component: VehicleOps, name: 'VehicleOps',
-        children: [
-            {path: 'AddVehicle', component:AddUser, name:'AddVehicle' },
-            {path: 'DelVehicle', component:DelUser, name:'DelVehicle' },
-            {path: 'UpdateVehicle', component:UpdateUser, name:'UpdateVehicle' },
+        path: '/Login',
+        component: Login,
+        name: 'Login'
+    },
+    {
+        path: '/Vehicle',
+        component: VehicleOps,
+        name: 'VehicleOps',
+        children: [{
+                path: 'AddVehicle',
+                component: AddUser,
+                name: 'AddVehicle'
+            },
+            {
+                path: 'DelVehicle',
+                component: DelUser,
+                name: 'DelVehicle'
+            },
+            {
+                path: 'UpdateVehicle',
+                component: UpdateUser,
+                name: 'UpdateVehicle'
+            },
         ]
     },
     {
-        path: '/Order', component: Order, name: 'Order',
-        children: [
-            {path: 'Unhandled', component: UnhandledOrder, name: 'UnhandledOrder'},
-            {path: 'New', component: NewOrder, name: 'NewOrder'},
-            {path: 'Mine', component: MyOrder, name: 'MyOrder'},
-            {path: 'Query', component: QueryOrder, name: 'QueryOrder'}
+        path: '/Order',
+        component: Order,
+        name: 'Order',
+        children: [{
+                path: 'Unhandled',
+                component: UnhandledOrder,
+                name: 'UnhandledOrder'
+            },
+            {
+                path: 'New',
+                component: NewOrder,
+                name: 'NewOrder'
+            },
+            {
+                path: 'Mine',
+                component: MyOrder,
+                name: 'MyOrder'
+            },
+            {
+                path: 'Query',
+                component: QueryOrder,
+                name: 'QueryOrder'
+            }
         ]
     },
     {
-        path: '/CareHouse', component: CareHouse, name: 'CareHouse',
-        children: [
-            {path: 'Query', component: QueryCareHouse, name: 'QueryCareHouse'}
+        path: '/CareHouse',
+        component: CareHouse,
+        name: 'CareHouse',
+        children: [{
+            path: 'Query',
+            component: QueryCareHouse,
+            name: 'QueryCareHouse'
+        }]
+    },
+    {
+        path: '/OilUser',
+        component: OilUser,
+        name: 'OilUser',
+        children: [{
+            path: 'Query',
+            component: QueryOilUser,
+            name: 'QueryOilUser'
+        }]
+    },
+    {
+        path: '/Intern',
+        component: BuildCase,
+        name: 'Intern',
+        children: [{
+                path: 'Builder',
+                component: NewBuildCase,
+                name: 'UpdateBuilder'
+            },
+            {
+                path: 'BuildCase',
+                component: NewBuildCase,
+                name: 'UpdateBuildCase'
+            },
         ]
     },
     {
-        path: '/OilUser', component: OilUser, name: 'OilUser',
-        children: [
-            {path: 'Query', component: QueryOilUser, name: 'QueryOilUser'}
+        path: '/BuildCase',
+        component: BuildCase,
+        name: 'BuildCase',
+        children: [{
+                path: 'New',
+                component: NewBuildCase,
+                name: 'NewBuildCase'
+            },
+            {
+                path: 'Query',
+                component: QueryBuildCase,
+                name: 'QueryBuildCase'
+            },
+            {
+                path: 'Import',
+                component: ImportBuildCase,
+                name: 'ImportBuildCase'
+            }
         ]
     },
     {
-        path: '/BuildCase', component: BuildCase, name: 'BuildCase',
-        children: [
-            {path: 'New', component: NewBuildCase, name: 'NewBuildCase'},
-            {path: 'Query', component: QueryBuildCase, name: 'QueryBuildCase'},
-            {path: 'Import', component: ImportBuildCase, name: 'ImportBuildCase'}
+        path: '/System',
+        component: SystemManagement,
+        name: 'SystemManagement',
+        children: [{
+                path: 'AddUser',
+                component: AddUser,
+                name: 'AddUser'
+            },
+            {
+                path: 'DelUser',
+                component: DelUser,
+                name: 'DelUser'
+            },
+            {
+                path: 'UpdateUser',
+                component: UpdateUser,
+                name: 'UpdateUser'
+            },
         ]
     },
     {
-        path: '/System', component: SystemManagement, name: 'SystemManagement',
-        children: [
-            {path: 'AddUser', component:AddUser, name:'AddUser' },
-            {path: 'DelUser', component:DelUser, name:'DelUser' },
-            {path: 'UpdateUser', component:UpdateUser, name:'UpdateUser' },
-        ]
-    },
-    {path: '*', redirect: '/'}
+        path: '*',
+        redirect: '/'
+    }
 ];

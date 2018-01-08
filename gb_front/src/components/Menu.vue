@@ -31,30 +31,6 @@
             </router-link>
             <li>
                 <a>
-                    <i class="fa fa-address-book-o" aria-hidden="true"></i>
-                    <span class="nav-label">清運訂單管理</span>
-                    <span class="fa arrow"></span>
-                </a>
-                <ul class="nav nav-second-level collapse">
-                    <router-link tag="li" :to="{name:'UnhandledOrder'}" active-class="active">
-                        <a>
-                            <i class="fa fa-telegram" aria-hidden="true"></i>
-                            <span class="nav-label"></span>未聯絡通報</a>
-                    </router-link>
-                    <router-link tag="li" to="/Order/Mine" active-class="active">
-                        <a>
-                            <i class="fa fa-th-large"></i>
-                            <span class="nav-label"></span>我的訂單</a>
-                    </router-link>
-                    <router-link tag="li" :to="{name:'QueryOrder'}" active-class="active">
-                        <a>
-                            <i class="fa fa-search" aria-hidden="true"></i>
-                            <span class="nav-label"></span>訂單查詢</a>
-                    </router-link>
-                </ul>
-            </li>
-            <li>
-                <a>
                     <i class="fa fa-h-square" aria-hidden="true"></i>
                     <span class="nav-label">安養機構</span>
                     <span class="fa arrow"></span>
@@ -92,17 +68,32 @@
                     </router-link>
                 </ul>
             </li>
-            <li>
+            <li v-show="user.groupId == 'Sales'">
                 <a>
-                    <i class="fa fa-fire" aria-hidden="true"></i>
-                    <span class="nav-label">油品類</span>
+                    <i class="fa fa-users" aria-hidden="true"></i>
+                    <span class="nav-label">業務</span>
                     <span class="fa arrow"></span>
                 </a>
                 <ul class="nav nav-second-level collapse">
                     <router-link tag="li" :to="{name:'QueryOilUser'}" active-class="active">
                         <a>
                             <i class="fa fa-search" aria-hidden="true"></i>
-                            <span class="nav-label"></span>加油站/油槽/鍋爐</a>
+                            <span class="nav-label"></span>Call客戶</a>
+                    </router-link>
+                </ul>
+            </li>
+            <li v-show="user.groupId == 'Intern'">
+                <a>
+                    <i class="fa fa-users" aria-hidden="true"></i>
+                    <span class="nav-label">工讀生</span>
+                    <span class="fa arrow"></span>
+                </a>
+                <ul class="nav nav-second-level collapse">
+                    <router-link to='/Intern/Builder' tag='li' role="presentation" active-class='active'><a>起造人電話</a>
+                    </router-link>
+                    <router-link to='/Intern/BuildCase' tag='li' role="presentation" active-class='active'><a>建案資訊</a>
+                    </router-link>
+                    <router-link to='/Intern/Report' tag='li' role="presentation" active-class='active'><a>工作報告</a>
                     </router-link>
                 </ul>
             </li>

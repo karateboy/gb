@@ -39,7 +39,7 @@
                     ...
                 </div>
                 <div>
-                    <strong>Copyright</strong> g+der &copy; 2017
+                    <strong>Copyright</strong> Gder+ &copy; 2018
                 </div>
             </div>
 

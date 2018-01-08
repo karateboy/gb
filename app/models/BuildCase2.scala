@@ -28,11 +28,8 @@ object BuildCaseState extends Enumeration {
   val closed = Value
 }
 
-case class BuildCaseID(county: String, permitID: String)
+case class BuildCaseID(county: String, permitID: String, wpType: Int = 1) extends IWorkPointID
 case class SiteInfo(usage: String, floorDesc: String, addr: String, area: Option[Double])
-case class Note(date: Date, comment: String, person: String)
-case class Input(name: String, code: Option[String], freq: Option[String], volume: Double)
-case class Output(name: String, code: Option[String], freq: Option[String], volume: Double)
 
 case class BuildCase2(_id: BuildCaseID, county: String,
                       permitID: String, builder: String, personal: Boolean,
@@ -42,7 +39,8 @@ case class BuildCase2(_id: BuildCaseID, county: String,
                       contractor: Option[String] = None,
                       state: String = BuildCaseState.raw.toString(), owner: Option[String] = None,
                       tag: Seq[String] = Seq.empty[String],
-                      notes: Seq[Note] = Seq.empty[Note])
+                      notes: Seq[Note] = Seq.empty[Note],
+                      wpType: Int = WorkPoint.BuildCase) extends IWorkPoint
 
 case class QueryBuildCaseParam2(
   county: Option[String],
@@ -65,8 +63,8 @@ object BuildCase2 {
   val codecRegistry = fromRegistries(fromProviders(classOf[BuildCase2], classOf[Input],
     classOf[Output], classOf[Note], classOf[SiteInfo], classOf[BuildCaseID]), DEFAULT_CODEC_REGISTRY)
 
-  val ColName = "buildCase2"
-  val collection = MongoDB.database.getCollection[BuildCase2](ColName).withCodecRegistry(codecRegistry)
+  val ColName = WorkPoint.ColName
+  val collection = MongoDB.database.getCollection[BuildCase2](WorkPoint.ColName).withCodecRegistry(codecRegistry)
 
   implicit val siWrite = Json.writes[SiteInfo]
   implicit val inWrite = Json.writes[Input]
@@ -87,27 +85,22 @@ object BuildCase2 {
 
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {
-      val f = MongoDB.database.createCollection(ColName).toFuture()
-      f.onFailure(errorHandler)
-      f.onSuccess({
+      val cf1 = collection.createIndex(ascending("county")).toFuture()
+      val cf2 = collection.createIndex(ascending("builder")).toFuture()
+      val cf3 = collection.createIndex(ascending("architect")).toFuture()
+      val cf4 = collection.createIndex(ascending("county", "permitID"), new IndexOptions().unique(true)).toFuture()
+
+      cf1.onFailure(errorHandler)
+      cf2.onFailure(errorHandler)
+      cf3.onFailure(errorHandler)
+      cf4.onFailure(errorHandler)
+
+      import scala.concurrent._
+      val endF = Future.sequence(Seq(cf1, cf2, cf3, cf4))
+      endF.onComplete({
         case x =>
-          val cf1 = collection.createIndex(ascending("county")).toFuture()
-          val cf2 = collection.createIndex(ascending("builder")).toFuture()
-          val cf3 = collection.createIndex(ascending("architect")).toFuture()
-          val cf4 = collection.createIndex(ascending("county", "permitID"), new IndexOptions().unique(true)).toFuture()
-
-          cf1.onFailure(errorHandler)
-          cf2.onFailure(errorHandler)
-          cf3.onFailure(errorHandler)
-          cf4.onFailure(errorHandler)
-
-          import scala.concurrent._
-          val endF = Future.sequence(Seq(cf1, cf2, cf3, cf4))
-          endF.onComplete({
-            case x =>
-              val path = current.path.getAbsolutePath + "/import/buildCase.xlsx"
-              importMonthlyReport(path)(monthlyReportParser)
-          })
+          val path = current.path.getAbsolutePath + "/import/buildCase.xlsx"
+          importMonthlyReport(path)(monthlyReportParser)
       })
     }
   }

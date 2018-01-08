@@ -19,12 +19,13 @@ object MongoDB {
       WasteCode.init(colNames)
       CareHouse.init(colNames)
       Builder.init(colNames)
+      WorkPoint.init(colNames)
       BuildCase2.init(colNames)
-      OilUser.init(colNames)
-      RecyclePlant.init(colNames)
-      Purifier.init(colNames)
-      Textile.init(colNames)
-      Burner.init(colNames)
+      //OilUser.init(colNames)
+      //RecyclePlant.init(colNames)
+      //Purifier.init(colNames)
+      //Textile.init(colNames)
+      //Burner.init(colNames)
       UsageRecord.init(colNames)
     }
     //Program need to wait before init complete

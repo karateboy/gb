@@ -135,7 +135,7 @@ object Application extends Controller {
       play.utils.UriEncoding.encodePathSegment("起造人樣本.xlsx", "UTF-8"))
 
   }
-  
+
   def uploadBuildCase() = Security.Authenticated(parse.multipartFormData) {
     implicit request =>
       request.body.files.map { upload =>
@@ -149,30 +149,52 @@ object Application extends Controller {
       Ok(Json.obj("Ok" -> true))
   }
 
-  def testParseMonthlyBuildCase() = Security.Authenticated{
+  def testParseMonthlyBuildCase() = Security.Authenticated {
     import java.io.File
     val path = "C:\\Users\\user\\OneDrive\\gder工讀生\\2018-01-05新建案\\新-2017年12月台灣未開工建築工程建照月報(北基宜-桃竹苗-中彰投-南高屏金區).xlsx"
     BuildCase2.importMonthlyReport(path)(BuildCase2.monthlyReportParser)
     Ok("")
   }
-  
+
   def testImportCheckBuildCase() = Action {
     import java.io.File
     val path = "D:\\checked\\"
     import org.apache.commons.io.FileUtils
     val files = FileUtils.iterateFiles(new File(path), Array("xlsx"), true)
-    
-    for(file<-files){
+
+    for (file <- files) {
       val filePath = file.getAbsolutePath
       val countyOpt = BuildCase2.countyList.find { x => filePath.contains(x) }
-      
-      if(countyOpt.isDefined){
+
+      if (countyOpt.isDefined) {
         BuildCase2.importCheckedBuildCase(countyOpt.get, file)
-      }else{
+      } else {
         Logger.error(s"No county info=>${filePath}")
-      }              
+      }
     }
-    
+
     Ok("")
+  }
+
+  def checkOutBuilder = Security.Authenticated.async {
+    val f = Builder.checkOut
+    for (builder <- f)
+      yield Ok(Json.toJson(builder))
+  }
+
+  def upsertBuilder = Security.Authenticated.async(BodyParsers.parse.json) {
+    implicit request =>
+      val ret = request.body.validate[Builder]
+      ret.fold(
+        error => {
+          Logger.error(JsError.toJson(error).toString())
+          Future { BadRequest(Json.obj("ok" -> false, "msg" -> JsError.toJson(error).toString())) }
+        },
+        builder => {
+          val f = Builder.upsert(builder)
+          for (result <- f) yield {
+            Ok(Json.obj("ok" -> true))
+          }
+        })
   }
 }
