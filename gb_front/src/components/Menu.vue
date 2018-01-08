@@ -106,60 +106,6 @@
                     </router-link>
                 </ul>
             </li>
-            <li>
-                <a>
-                    <i class="fa fa-industry" aria-hidden="true"></i>
-                    <span class="nav-label">汙泥處理</span>
-                    <span class="fa arrow"></span>
-                </a>
-                <ul class="nav nav-second-level collapse">
-                    <router-link tag="li" :to="{name:'QueryCareHouse'}" active-class="active">
-                        <a>
-                            <i class="fa fa-search" aria-hidden="true"></i>
-                            <span class="nav-label"></span>查詢安養機構</a>
-                    </router-link>
-                </ul>
-            </li>
-            <li>
-                <a>
-                    <i class="fa fa-recycle" aria-hidden="true"></i>
-                    <span class="nav-label">焚化爐</span>
-                    <span class="fa arrow"></span>
-                </a>
-                <ul class="nav nav-second-level collapse">
-                    <router-link tag="li" :to="{name:'QueryCareHouse'}" active-class="active">
-                        <a>
-                            <i class="fa fa-search" aria-hidden="true"></i>
-                            <span class="nav-label"></span>查詢安養機構</a>
-                    </router-link>
-                </ul>
-            </li>
-            <li>
-                <a>
-                    <i class="fa fa-truck" aria-hidden="true"></i>
-                    <span class="nav-label">車輛管理</span>
-                    <span class="fa arrow"></span>
-                </a>
-                <ul class="nav nav-second-level collapse">
-                    <router-link tag="li" :to="{name:'AddVehicle'}" active-class="active">
-                        <a>
-                            <i class="fa fa-plus" aria-hidden="true"></i>
-                            <span class="nav-label"></span>新增車輛</a>
-                    </router-link>
-
-                    <router-link tag="li" :to="{name:'DelVehicle'}" active-class="active">
-                        <a>
-                            <i class="fa fa-trash" aria-hidden="true"></i>
-                            <span class="nav-label"></span>刪除車輛</a>
-                    </router-link>
-
-                    <router-link tag="li" :to="{name:'UpdateVehicle'}" active-class="active">
-                        <a>
-                            <i class="fa fa-pencil" aria-hidden="true"></i>
-                            <span class="nav-label"></span>更新車輛資料</a>
-                    </router-link>
-                </ul>
-            </li>
             <li v-show="user.groupId == 'Admin'">
                 <a>
                     <i class="fa fa-cog" aria-hidden="true"></i>

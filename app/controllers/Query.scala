@@ -140,14 +140,11 @@ object Query extends Controller {
         })
   }
 
+  import BuildCase2._
   def queryBuildCase(skip: Int, limit: Int, outputTypeStr: String) = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
       val outputType = OutputType.withName(outputTypeStr)
-      implicit val paramRead = Json.reads[QueryBuildCaseParam2]
-      implicit val inRead = Json.reads[Input]
-      implicit val outRead = Json.reads[Output]
-      implicit val noteRead = Json.reads[Note]
-      implicit val buildCaseWrite = Json.writes[BuildCase2]
+
       val result = request.body.validate[QueryBuildCaseParam2]
       result.fold(
         err =>
@@ -174,13 +171,6 @@ object Query extends Controller {
   import org.mongodb.scala.bson.ObjectId
   def getBuildCase(encodedJson: String) = Security.Authenticated.async({
     val json = java.net.URLDecoder.decode(encodedJson, "UTF-8")
-    implicit val paramRead = Json.reads[QueryBuildCaseParam2]
-    implicit val objWrite = Json.writes[ObjectId]
-    implicit val inWrite = Json.writes[Input]
-    implicit val outWrite = Json.writes[Output]
-    implicit val noteWrite = Json.writes[Note]
-    implicit val buildCaseWrite = Json.writes[BuildCase2]
-
     val ret = Json.parse(json).validate[QueryBuildCaseParam2]
     ret.fold(
       err =>
@@ -205,7 +195,6 @@ object Query extends Controller {
 
   def queryBuildCaseCount() = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
-      implicit val paramRead = Json.reads[QueryBuildCaseParam2]
       val result = request.body.validate[QueryBuildCaseParam2]
       result.fold(
         err =>
@@ -223,8 +212,6 @@ object Query extends Controller {
   }
   def updateBuildCase = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
-
-      implicit val paramRead = Json.reads[BuildCase2]
       val result = request.body.validate[BuildCase2]
       result.fold(
         err =>

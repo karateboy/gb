@@ -1,61 +1,89 @@
 package models
 import play.api._
-import com.github.nscala_time.time.Imports._
-import models.ModelHelper._
-import models.ExcelTool._
-import models._
-import org.mongodb.scala.bson.Document
+import play.api.Play.current
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
-import play.api.libs.json.Json
+import models.ModelHelper._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
-import play.api.Play.current
 import org.apache.poi.openxml4j.opc._
 import org.apache.poi.xssf.usermodel._
 import com.github.nscala_time.time.Imports._
+
 import java.io._
 import java.nio.file.Files
 import java.nio.file._
-import org.apache.poi.ss.usermodel._
 import java.util.Date
+
 import org.mongodb.scala.model._
 import org.mongodb.scala.model.Indexes._
 import org.mongodb.scala.bson._
+import MongoDB._
 
-case class Note(date: Date, content: String, person: String)
+object BuildCaseState extends Enumeration {
+  val raw = Value
+  val checked = Value
+  val assigned = Value
+  val phoned = Value
+  val contracted = Value
+  val closed = Value
+}
+
+case class BuildCaseID(county: String, permitID: String)
+case class SiteInfo(usage: String, floorDesc: String, addr: String, area: Option[Double])
+case class Note(date: Date, comment: String, person: String)
 case class Input(name: String, code: Option[String], freq: Option[String], volume: Double)
 case class Output(name: String, code: Option[String], freq: Option[String], volume: Double)
 
-case class BuildCase2(_id: ObjectId, county: String, permitID: String, builder: String, contact: String,
-                      phone: Option[String] = None, usage: String, floorDesc: String,
-                      permitDate: Date, architect: String, area: Double, addr: String,
+case class BuildCase2(_id: BuildCaseID, county: String,
+                      permitID: String, builder: String, personal: Boolean,
+                      siteInfo: SiteInfo,
+                      permitDate: Date, architect: String,
                       var location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output],
-                      visited: Boolean = false, assistant: Option[String] = None,
-                      sales: Option[String] = None,
-                      tag:   Seq[String]    = Seq.empty[String],
-                      notes: Seq[Note]      = Seq.empty[Note])
+                      contractor: Option[String] = None,
+                      state: String = BuildCaseState.raw.toString(), owner: Option[String] = None,
+                      tag: Seq[String] = Seq.empty[String],
+                      notes: Seq[Note] = Seq.empty[Note])
 
 case class QueryBuildCaseParam2(
-  county:    Option[String],
-  builder:   Option[String],
-  contact:   Option[String],
-  phone:     Option[String],
-  architect: Option[String], addr: Option[String],
+  county: Option[String],
+  builder: Option[String],
+  contact: Option[String],
+  phone: Option[String],
+  architect: Option[String],
   areaGT: Option[Double], areaLT: Option[Double],
+  addr: Option[String],
   yellowAlert: Option[Boolean], redAlert: Option[Boolean],
-  tag:        Option[Seq[String]],
-  contracted: Option[Boolean], sales: Option[String], assistant: Option[String])
+  tag: Option[Seq[String]],
+  state: Option[String],
+  sales: Option[String], assistant: Option[String])
 
 object BuildCase2 {
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
   import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
 
-  val codecRegistry = fromRegistries(fromProviders(classOf[BuildCase2], classOf[Input], classOf[Output], classOf[Note]), DEFAULT_CODEC_REGISTRY)
+  val codecRegistry = fromRegistries(fromProviders(classOf[BuildCase2], classOf[Input],
+    classOf[Output], classOf[Note], classOf[SiteInfo], classOf[BuildCaseID]), DEFAULT_CODEC_REGISTRY)
 
   val ColName = "buildCase2"
   val collection = MongoDB.database.getCollection[BuildCase2](ColName).withCodecRegistry(codecRegistry)
+
+  implicit val siWrite = Json.writes[SiteInfo]
+  implicit val inWrite = Json.writes[Input]
+  implicit val outWrite = Json.writes[Output]
+  implicit val noteWrite = Json.writes[Note]
+  implicit val idWrite = Json.writes[BuildCaseID]
+  implicit val bcWrite = Json.writes[BuildCase2]
+
+  implicit val siRead = Json.reads[SiteInfo]
+  implicit val inRead = Json.reads[Input]
+  implicit val outRead = Json.reads[Output]
+  implicit val noteRead = Json.reads[Note]
+  implicit val idRead = Json.reads[BuildCaseID]
+  implicit val bcRead = Json.reads[BuildCase2]
+
+  implicit val qbcRead = Json.reads[QueryBuildCaseParam2]
+  implicit val qbcWrite = Json.writes[QueryBuildCaseParam2]
 
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {
@@ -66,103 +94,328 @@ object BuildCase2 {
           val cf1 = collection.createIndex(ascending("county")).toFuture()
           val cf2 = collection.createIndex(ascending("builder")).toFuture()
           val cf3 = collection.createIndex(ascending("architect")).toFuture()
+          val cf4 = collection.createIndex(ascending("county", "permitID"), new IndexOptions().unique(true)).toFuture()
 
           cf1.onFailure(errorHandler)
           cf2.onFailure(errorHandler)
           cf3.onFailure(errorHandler)
+          cf4.onFailure(errorHandler)
 
           import scala.concurrent._
-          val endF = Future.sequence(Seq(cf1, cf2, cf3))
+          val endF = Future.sequence(Seq(cf1, cf2, cf3, cf4))
           endF.onComplete({
             case x =>
-            //              val path = current.path.getAbsolutePath + "/import/buildCase.xlsx"
-            //              importXLSX(path)
+              val path = current.path.getAbsolutePath + "/import/buildCase.xlsx"
+              importMonthlyReport(path)(monthlyReportParser)
           })
       })
     }
   }
 
-  def importXLSX(file: File, delete: Boolean) = ExcelTool.importXLSX(file, delete)(parser)
-  def importXLSX(path: String) = ExcelTool.importXLSX(path)(parser)
-  //
+  def importMonthlyReport(path: String)(parser: (XSSFWorkbook) => Unit): Boolean = {
+    val file = new File(path)
+    importMonthlyReport(file)(parser)
+  }
+
+  def importMonthlyReport(file: File, delete: Boolean = false)(parser: (XSSFWorkbook) => Unit): Boolean = {
+    Logger.info(s"Start import ${file.getAbsolutePath}...")
+    //Open Excel
+    try {
+      val fs = new FileInputStream(file)
+      val pkg = OPCPackage.open(fs)
+      val wb = new XSSFWorkbook(pkg);
+      parser(wb)
+
+      fs.close()
+      if (delete)
+        file.delete()
+      Logger.info(s"Success import ${file.getAbsolutePath}")
+    } catch {
+      case ex: FileNotFoundException =>
+        Logger.warn(s"Cannot open ${file.getAbsolutePath}")
+        false
+      case ex: Throwable =>
+        Logger.error(s"Fail to import ${file.getAbsolutePath}", ex)
+        false
+    }
+    true
+  }
+
+  val countyList = List(
+    "基隆", "宜蘭", "台北", "新北", "桃園",
+    "新竹縣", "新竹市", "苗栗", "台中", "南投",
+    "彰化", "台南", "高雄", "屏東", "金門")
+
   import java.io.File
-  def parser(sheet: XSSFSheet) {
-    //    var rowN = 2
-    //    var finish = false
-    //    var seq = IndexedSeq.empty[BuildCase2]
-    //    do {
-    //      var row = sheet.getRow(rowN)
-    //      if (row == null)
-    //        finish = true
-    //      else {
-    //        try {
-    //          import com.github.nscala_time.time.Imports._
-    //          val idStr = row.getCell(0).getStringCellValue
-    //          val dateRegex = """\((.*?)\)""".r
-    //          val dateStr = dateRegex.findFirstIn(idStr).get.drop(1).reverse.drop(1).reverse
-    //          val date = new DateTime(dateStr).toDate()
-    //          val county = row.getCell(1).getStringCellValue
-    //          val builderName = row.getCell(2).getStringCellValue
-    //          val architect = row.getCell(3).getStringCellValue
-    //          val area = row.getCell(4).getNumericCellValue
-    //          val addr = row.getCell(5).getStringCellValue
-    //          val location = Seq(
-    //            row.getCell(7).getNumericCellValue,
-    //            row.getCell(6).getNumericCellValue)
-    //
-    //          val buildCase = BuildCase(
-    //            _id = addr,
-    //            county = county,
-    //            name = builderName,
-    //            architect = architect,
-    //            area = area,
-    //            addr = addr,
-    //            date = date,
-    //            location = Some(location))
-    //          seq = seq :+ buildCase
-    //        } catch {
-    //          case ex: Throwable =>
-    //            Logger.error("failed to convert...", ex)
-    //        }
-    //      }
-    //      rowN += 1
-    //    } while (!finish)
-    //
-    //    import scala.concurrent._
-    //    val seqF = seq.map { bc =>
-    //      collection.replaceOne(Filters.eq("_id", bc._id), bc, UpdateOptions().upsert(true)).toFuture()
-    //    }
-    //    val f = Future.sequence(seqF)
-    //    f.onFailure(errorHandler)
-    //    f.onSuccess({
-    //      case ret =>
-    //        Logger.info(s"Success import buildCase.xlsx")
-    //    })
+  def isVaildPhone(phone: String) =
+    phone.forall { x => x.isDigit || x == '-' || x == '(' || x == ')' || x.isSpaceChar } && !phone.isEmpty()
+
+  def importCheckedBuildCase(county: String, file: File) = {
+    try {
+      val fs = new FileInputStream(file)
+      val pkg = OPCPackage.open(fs)
+      val wb = new XSSFWorkbook(pkg);
+      buildCaseParser(county, wb)
+      fs.close()
+    } catch {
+      case ex: Throwable =>
+        Logger.error(s"${file.getAbsolutePath}", ex)
+    }
+  }
+
+  def buildCaseParser(county: String, wb: XSSFWorkbook) = {
+    val sheet = wb.getSheetAt(0)
+    val row = sheet.getRow(1)
+
+    val permitID = row.getCell(1).getStringCellValue
+    assert(!permitID.isEmpty())
+    val builderID = row.getCell(2).getStringCellValue
+    val representative = try {
+      row.getCell(3).getStringCellValue
+    } catch {
+      case ex: NullPointerException =>
+        ""
+    }
+
+    try {
+      val phone = row.getCell(4).getStringCellValue
+      if (isVaildPhone(phone)) {
+        for (builderOpt <- Builder.get(builderID)) {
+          if (builderOpt.isEmpty) {
+            Logger.error(s"builder $builderID is not existed!")
+          } else {
+            val builder = builderOpt.get
+            if (representative.isEmpty())
+              builder.updatePhone(phone)
+            else
+              builder.updateContact(representative, phone)
+          }
+        }
+      }
+    } catch {
+      case ex: Throwable =>
+    }
+
+    try {
+      val lat = row.getCell(11).getNumericCellValue
+      val long = row.getCell(10).getNumericCellValue
+      updateLocation(BuildCaseID(county, permitID), Seq(long, lat))
+    } catch {
+      case x: Throwable =>
+    }
+
+    try {
+      val area = row.getCell(15).getNumericCellValue
+      updateArea(BuildCaseID(county, permitID), area)
+    } catch {
+      case x: Throwable =>
+        None
+    }
+  }
+
+  def monthlyReportParser(wb: XSSFWorkbook) {
+    def getCountyInfo(sheetName: String) = {
+      val tag = sheetName.take(3)
+      if (countyList.contains(tag))
+        tag
+      else {
+        val tag = sheetName.take(2)
+        if (countyList.contains(tag))
+          tag
+        else
+          throw new Exception(s"未知的縣市:{tag}")
+      }
+    }
+
+    var buildCaseSeq = IndexedSeq.empty[BuildCase2]
+    for {
+      sheetIdx <- 0 to countyList.length * 2 - 1
+      sheet = wb.getSheetAt(sheetIdx) if sheet != null
+      sheetName = wb.getSheetName(sheetIdx)
+    } {
+
+      val personal = sheetName.contains("個人")
+      val county = getCountyInfo(sheetName)
+
+      var rowN = 3
+      var finishSheet = false
+
+      do {
+        var row = sheet.getRow(rowN)
+        if (row == null)
+          finishSheet = true
+        else {
+          def companyBuildCase() = {
+            val permitDate = new DateTime(row.getCell(0).getDateCellValue).toDate()
+            val permitID = row.getCell(1).getStringCellValue
+            assert(!permitID.isEmpty())
+            val builderID = row.getCell(2).getStringCellValue.trim()
+            val builderAddr = row.getCell(3).getStringCellValue
+            val representative = row.getCell(4).getStringCellValue.trim()
+            val usage = row.getCell(5).getStringCellValue
+            val architect = row.getCell(6).getStringCellValue
+            val floorDesc = row.getCell(7).getStringCellValue
+            val addr = row.getCell(8).getStringCellValue.trim()
+            val siteInfo = SiteInfo(usage, floorDesc, addr, None)
+            val location = None
+
+            val builderF = for (builderOpt <- Builder.get(builderID)) yield {
+              builderOpt.getOrElse({
+                Logger.debug(s"$builderID is new")
+                val rawBuilder = Builder.initBuilder(builderID, builderAddr, representative)
+                Builder.upsert(rawBuilder)
+                rawBuilder
+              })
+            }
+
+            for (builder <- builderF) yield {
+              val state = if (builder.hasPhone())
+                BuildCaseState.checked.toString()
+              else
+                BuildCaseState.raw.toString()
+
+              BuildCase2(
+                _id = BuildCaseID(county, permitID),
+                county = county,
+                permitID = permitID,
+                builder = builderID,
+                personal = false,
+                siteInfo = siteInfo,
+                permitDate = permitDate, architect = architect,
+                location = None,
+                in = Seq.empty[Input], out = Seq.empty[Output],
+                state = state)
+            }
+          }
+
+          def personalBuildCase() = {
+            val permitDate = new DateTime(row.getCell(0).getDateCellValue).toDate()
+            val permitID = row.getCell(1).getStringCellValue
+            assert(!permitID.isEmpty())
+            val builderID = row.getCell(2).getStringCellValue.trim()
+            val usage = row.getCell(3).getStringCellValue
+            val architect = row.getCell(4).getStringCellValue.trim()
+            val floorDesc = row.getCell(5).getStringCellValue
+            val addr = row.getCell(6).getStringCellValue.trim()
+            val siteInfo = SiteInfo(usage, floorDesc, addr, None)
+            val location = None
+            val rawBuilder = Builder.initBuilder(builderID, "", "")
+
+            BuildCase2(
+              _id = BuildCaseID(county, permitID),
+              county = county,
+              permitID = permitID,
+              builder = builderID,
+              personal = true,
+              siteInfo = siteInfo,
+              permitDate = permitDate, architect = architect,
+              location = None,
+              in = Seq.empty[Input], out = Seq.empty[Output])
+          }
+
+          try {
+            def containNull() = {
+              val range =
+                if (personal)
+                  (0 to 6).toList
+                else
+                  (0 to 8).toList
+
+              range.exists { idx => row.getCell(idx) == null }
+            }
+
+            def isPermitIdEmpty = row.getCell(1).getStringCellValue.isEmpty()
+
+            if (containNull || isPermitIdEmpty)
+              finishSheet = true
+            else {
+              val buildCase = if (personal)
+                personalBuildCase
+              else
+                waitReadyResult(companyBuildCase)
+
+              buildCaseSeq = buildCaseSeq :+ buildCase
+            }
+          } catch {
+            case ex: IllegalStateException =>
+              Logger.info(s"$sheetIdx:$rowN => Finished")
+              finishSheet = true
+
+            case ex: Throwable =>
+              Logger.debug(s"$sheetIdx:$rowN =>", ex)
+              finishSheet = true
+          }
+        }
+        rowN += 1
+      } while (!finishSheet) //end of sheet
+      val group = if (personal) "個人" else "公司"
+      Logger.info(s"$county:$group=>${rowN - 3} cases")
+    } // end of workbook
+
+    import scala.concurrent._
+    import org.mongodb.scala.model.Filters._
+    val writeModelSeq = buildCaseSeq.map { bc =>
+      InsertOneModel(bc)
+    }
+
+    val f = collection.bulkWrite(writeModelSeq, new BulkWriteOptions().ordered(false)).toFuture()
+
+    import scala.util._
+
+    f.onComplete {
+      case Success(x) =>
+        Logger.info(s"Success ${x.getInsertedCount} inserted.")
+      case Failure(ex) =>
+        ex match {
+          case x: org.mongodb.scala.MongoBulkWriteException =>
+            Logger.warn(x.getWriteResult.toString)
+          case _: Throwable =>
+            Logger.error(s"bulk Insert failed ${ex.getMessage}")
+
+        }
+    }
+  }
+
+  def updateArea(_id: BuildCaseID, area: Double) = {
+    val f = collection.findOneAndUpdate(Filters.eq("_id", _id), Updates.set("siteInfo.area", area)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+
+  def updateLocation(_id: BuildCaseID, location: Seq[Double]) = {
+    val f = collection.findOneAndUpdate(Filters.eq("_id", _id), Updates.set("location", location)).toFuture()
+    f.onFailure(errorHandler)
+    f
   }
 
   def getFilter(param: QueryBuildCaseParam2) = {
     import org.mongodb.scala.model.Filters._
 
     /*
-     * case class QueryBuildCaseParam(name: Option[String],
-                               architect: Option[String], addr: Option[String], county: Option[String],
-                               areaGT: Option[Double], areaLT: Option[Double], yellowAlert: Option[Boolean],
-                               redAlert: Option[Double], contracted: Option[Boolean], sales: Option[String])
+     case class QueryBuildCaseParam2(
+  		county: Option[String],
+  		builder: Option[String],
+  		contact: Option[String],
+  		phone: Option[String],
+  		architect: Option[String],
+  		areaGT: Option[Double], areaLT: Option[Double],
+  		addr: Option[String],
+  		yellowAlert: Option[Boolean], redAlert: Option[Boolean],
+  		tag: Option[Seq[String]],
+  		state: Option[BuildCaseState.Value],
+  		sales: Option[String], assistant: Option[String])
+     * 
      *
      * */
 
+    val countyFilter = param.county map { county => regex("county", "(?i)" + county) }
+    val builderFilter = param.county map { county => regex("county", "(?i)" + county) }
     val architectFilter = param.architect map { architect => regex("architect", "(?i)" + architect) }
     val addrFilter = param.addr map { addr => regex("addr", "(?i)" + addr) }
-    val countyFilter = param.county map { county => regex("county", "(?i)" + county) }
+
     val areaGtFilter = param.areaGT map { v => Filters.gt("area", v) }
     val areaLtFilter = param.areaLT map { v => Filters.lt("area", v) }
-    val contractedFilter = param.contracted map {
-      v =>
-        if (v)
-          equal("contracted", v)
-        else
-          equal("contracted", v)
-    }
+    val stateFilter = param.state map { v => equal("state", v) }
 
     val salesFilter = param.sales map {
       sales =>
@@ -194,7 +447,7 @@ object BuildCase2 {
 
     val filterList = List(architectFilter, addrFilter,
       countyFilter, areaGtFilter, areaLtFilter, redAlertFilter, yellowAlertFilter,
-      contractedFilter, salesFilter).flatMap { f => f }
+      stateFilter, salesFilter).flatMap { f => f }
 
     val filter = if (!filterList.isEmpty)
       and(filterList: _*)
@@ -211,7 +464,7 @@ object BuildCase2 {
 
     val filter = getFilter(param)
 
-    val f = collection.find(filter).sort(Sorts.ascending("_id")).skip(skip).limit(limit).toFuture()
+    val f = collection.find(filter).sort(Sorts.ascending("permitDate")).skip(skip).limit(limit).toFuture()
     f.onFailure {
       errorHandler
     }
@@ -238,4 +491,9 @@ object BuildCase2 {
     f
   }
 
+  def updateStateByBuilder(builderID: String, state: String) = {
+    val f = collection.updateMany(Filters.eq("builder", builderID), Updates.set("state", state)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
 }

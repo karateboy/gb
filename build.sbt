@@ -4,7 +4,7 @@ version := "1.0.16"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.11.11"
+scalaVersion := "2.11.12"
 
 libraryDependencies ++= Seq(
   cache,
@@ -15,8 +15,9 @@ libraryDependencies ++= Seq(
   "org.scalikejdbc" %% "scalikejdbc-config"           % "2.5.2",
   "org.scalikejdbc" %% "scalikejdbc-play-initializer" % "2.5.1",
   "com.github.nscala-time" %% "nscala-time" % "2.16.0",
-  "org.mongodb.scala" %% "mongo-scala-driver" % "2.1.0",
-  "com.google.maps" % "google-maps-services" % "0.2.2"
+  "org.mongodb.scala" %% "mongo-scala-driver" % "2.2.0",
+  "com.google.maps" % "google-maps-services" % "0.2.2",
+   "commons-io" % "commons-io" % "2.5"
 )
 
 mappings in Universal ++=

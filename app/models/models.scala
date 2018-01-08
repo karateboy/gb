@@ -173,8 +173,7 @@ object ExcelTool {
       val pkg = OPCPackage.open(fs)
       val wb = new XSSFWorkbook(pkg);
 
-      val sheet = wb.getSheetAt(0)
-      parser(sheet)
+      parser(wb.getSheetAt(0))
       fs.close()
       if (delete)
         file.delete()

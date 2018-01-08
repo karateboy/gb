@@ -12,7 +12,7 @@
                                 class="fa fa-bars"></i> </a>
                         <form role="search" class="navbar-form-custom" method="post" action="#">
                             <div class="form-group">
-                                <input type="text" placeholder="廢棄物清運管理系統" class="form-control" name="top-search"
+                                <input type="text" placeholder="Gder+" class="form-control" name="top-search"
                                        id="top-search">
                             </div>
                         </form>
@@ -29,7 +29,7 @@
             </div>
             <div class="wrapper wrapper-content animated fadeInRight">
                 <div class="row">
-                    <div class="col-lg-12">
+                    <div class="col-sm-12">
                         <router-view></router-view>
                     </div>
                 </div>

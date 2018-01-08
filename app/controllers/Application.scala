@@ -16,6 +16,7 @@ import com.github.nscala_time.time.Imports._
 import Highchart._
 import models._
 import models.ModelHelper._
+import collection.JavaConversions._
 
 object Application extends Controller {
 
@@ -111,7 +112,7 @@ object Application extends Controller {
   }
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  def getGroupInfoList = Security.Authenticated {
+  def getGroupInfoList = Action {
     val infoList = Group.getInfoList
     implicit val write = Json.writes[GroupInfo]
     Ok(Json.toJson(infoList))
@@ -141,10 +142,37 @@ object Application extends Controller {
         val filename = upload.filename
         val contentType = upload.contentType
         Logger.info(s"upload $filename")
-        BuildCase2.importXLSX(upload.ref.file, true)
+        ???
+        //BuildCase2.importXLSX(upload.ref.file, true)
       }
 
       Ok(Json.obj("Ok" -> true))
   }
 
+  def testParseMonthlyBuildCase() = Security.Authenticated{
+    import java.io.File
+    val path = "C:\\Users\\user\\OneDrive\\gder工讀生\\2018-01-05新建案\\新-2017年12月台灣未開工建築工程建照月報(北基宜-桃竹苗-中彰投-南高屏金區).xlsx"
+    BuildCase2.importMonthlyReport(path)(BuildCase2.monthlyReportParser)
+    Ok("")
+  }
+  
+  def testImportCheckBuildCase() = Action {
+    import java.io.File
+    val path = "D:\\checked\\"
+    import org.apache.commons.io.FileUtils
+    val files = FileUtils.iterateFiles(new File(path), Array("xlsx"), true)
+    
+    for(file<-files){
+      val filePath = file.getAbsolutePath
+      val countyOpt = BuildCase2.countyList.find { x => filePath.contains(x) }
+      
+      if(countyOpt.isDefined){
+        BuildCase2.importCheckedBuildCase(countyOpt.get, file)
+      }else{
+        Logger.error(s"No county info=>${filePath}")
+      }              
+    }
+    
+    Ok("")
+  }
 }

@@ -140,10 +140,10 @@ object ExcelUtility {
 //          cell.setCellStyle(cellStyle)
 //      }
 
-      buildCase.sales map {
-        sales =>
-//          row.createCell(10).setCellValue(sales)
-      }
+//      buildCase.sales map {
+//        sales =>
+////          row.createCell(10).setCellValue(sales)
+//      }
     }
 
     finishExcel(reportFilePath, pkg, wb)
