@@ -65,8 +65,8 @@ object Builder {
     f.onSuccess({
       case x =>
         if (!builder.phone.isEmpty()) {
-          BuildCaseState.HasPhoneState.toString()
-          val f2 = BuildCase2.updateStateByBuilder(builder._id, BuildCaseState.HasPhoneState.toString())
+          BuildCaseState.GetPhone.toString()
+          val f2 = BuildCase2.updateStateByBuilder(builder._id, BuildCaseState.GetPhone.toString())
           f2.onFailure(errorHandler)
         }
     })

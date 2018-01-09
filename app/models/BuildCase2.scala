@@ -20,9 +20,9 @@ import org.mongodb.scala.bson._
 import MongoDB._
 
 object BuildCaseState extends Enumeration {
-  val RawState = Value
-  val HasPhoneState = Value
-  val ClosedState = Value
+  val Initial = Value
+  val GetPhone = Value
+  val Closed = Value
 }
 
 case class BuildCaseID(county: String, permitID: String, wpType: Int = 1) extends IWorkPointID
@@ -33,7 +33,7 @@ case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
                       permitDate: Date, architect: String,
                       var location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output],
                       contractor: Option[String] = None,
-                      state: String = BuildCaseState.RawState.toString(), owner: Option[String] = None,
+                      state: String = BuildCaseState.Initial.toString(), owner: Option[String] = None,
                       tag: Seq[String] = Seq.empty[String],
                       notes: Seq[Note] = Seq.empty[Note], var editor: Option[String] = None) extends IWorkPoint
 
@@ -169,12 +169,8 @@ object BuildCase2 {
       val phone = row.getCell(4).getStringCellValue
       if (!representative.isEmpty() && isVaildPhone(phone)) {
         for (builderOpt <- Builder.get(builderID)) {
-          if (builderOpt.isEmpty) {
-            Logger.error(s"builder $builderID is not existed!")
-          } else {
-            val builder = builderOpt.get
-            builder.updateContact(representative, phone)
-            Builder.upsert(builder)
+          builderOpt map {
+            builder => Builder.upsert(builder.updateContact(representative, phone))
           }
         }
       }
@@ -185,7 +181,7 @@ object BuildCase2 {
     try {
       val long = row.getCell(10).getNumericCellValue
       val lat = row.getCell(11).getNumericCellValue
-      
+
       updateLocation(BuildCaseID(county, permitID), Seq(long, lat))
     } catch {
       case x: Throwable =>
@@ -257,9 +253,9 @@ object BuildCase2 {
 
             for (builder <- builderF) yield {
               val state = if (!builder.phone.isEmpty())
-                BuildCaseState.HasPhoneState.toString()
+                BuildCaseState.GetPhone.toString()
               else
-                BuildCaseState.RawState.toString()
+                BuildCaseState.Initial.toString()
 
               BuildCase2(
                 _id = BuildCaseID(county, permitID),
@@ -381,21 +377,21 @@ object BuildCase2 {
     ff flatMap { x => x }
   }
 
-  def checkIn(editor:String, bc:BuildCase2) = {
+  def checkIn(editor: String, bc: BuildCase2) = {
     bc.editor = None
-    
-    if(bc.location.isDefined && bc.siteInfo.area.isDefined)
+
+    if (bc.location.isDefined && bc.siteInfo.area.isDefined)
       UsageRecord.addBuildCaseUsage(editor, bc._id)
 
     upsert(bc)
   }
-  
-  def upsert(bc:BuildCase2) = {
+
+  def upsert(bc: BuildCase2) = {
     val f = collection.replaceOne(Filters.eq("_id", bc._id), bc, UpdateOptions().upsert(true)).toFuture()
     f.onFailure(errorHandler)
     f
   }
-  
+
   def updateArea(_id: BuildCaseID, area: Double) = {
     val f = collection.findOneAndUpdate(Filters.eq("_id", _id), Updates.set("siteInfo.area", area)).toFuture()
     f.onFailure(errorHandler)
