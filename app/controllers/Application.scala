@@ -225,8 +225,9 @@ object Application extends Controller {
       val userInfoOpt = Security.getUserinfo(request)
       val f = BuildCase2.checkOut(userInfoOpt.get.id)
       val retF =
-        for (builder <- f)
-          yield Ok(Json.toJson(builder))
+        for (buildCase <- f) yield {
+          Ok(Json.toJson(buildCase))
+        }
 
       retF.recover({
         case _: Throwable =>
@@ -248,14 +249,28 @@ object Application extends Controller {
           val userID = userInfoOpt.get.id
 
           val f =
-            if (Some(userID) == buildCase.editor)
+            if (Some(userID) == buildCase.editor) {
               BuildCase2.checkIn(userID, buildCase)
-            else
+            } else
               BuildCase2.upsert(buildCase)
 
           for (result <- f) yield {
             Ok(Json.obj("ok" -> true))
           }
         })
+  }
+
+  def getUsageRecord(offset: Int) = Security.Authenticated.async {
+    implicit request =>
+      val userInfoOpt = Security.getUserinfo(request)
+      val userID = userInfoOpt.get.id
+
+      val f = UsageRecord.getRecord(userID, offset)
+      for (records <- f) yield {
+        if (records.isEmpty)
+          Ok(Json.toJson(UsageRecord.emptyRecord(userID, offset)))
+        else
+          Ok(Json.toJson(records.head))
+      }
   }
 }

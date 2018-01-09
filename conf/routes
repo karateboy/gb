@@ -59,6 +59,7 @@ POST	 /Builder						controllers.Application.upsertBuilder
 GET		 /CheckOutBuildCase				controllers.Application.checkOutBuildCase
 POST	 /BuildCase						controllers.Application.upsertBuildCase
 
+GET		 /UsageRecord/:offset			controllers.Application.getUsageRecord(offset: Int)
 #Report
 
 #JSON

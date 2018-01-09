@@ -25,6 +25,8 @@ import QueryOilUser from './components/QueryOilUser.vue'
 
 import Intern from './components/Intern.vue'
 import UpdateBuilder from './components/UpdateBuilder.vue'
+import UpdateBuildCase from './components/UpdateBuildCase.vue'
+import UsageReport from './components/UsageReport.vue'
 
 export const routes = [{
         path: '/',
@@ -114,8 +116,13 @@ export const routes = [{
             },
             {
                 path: 'BuildCase',
-                component: NewBuildCase,
+                component: UpdateBuildCase,
                 name: 'UpdateBuildCase'
+            },
+            {
+                path: 'Report',
+                component: UsageReport,
+                name: 'Report'
             },
         ]
     },

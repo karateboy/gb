@@ -183,8 +183,9 @@ object BuildCase2 {
     }
 
     try {
-      val lat = row.getCell(11).getNumericCellValue
       val long = row.getCell(10).getNumericCellValue
+      val lat = row.getCell(11).getNumericCellValue
+      
       updateLocation(BuildCaseID(county, permitID), Seq(long, lat))
     } catch {
       case x: Throwable =>
