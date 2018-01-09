@@ -24,6 +24,7 @@ import OilUser from './components/OilUser.vue'
 import QueryOilUser from './components/QueryOilUser.vue'
 
 import Intern from './components/Intern.vue'
+import UpdateBuilder from './components/UpdateBuilder.vue'
 
 export const routes = [{
         path: '/',
@@ -104,11 +105,11 @@ export const routes = [{
     },
     {
         path: '/Intern',
-        component: BuildCase,
+        component: Intern,
         name: 'Intern',
         children: [{
                 path: 'Builder',
-                component: NewBuildCase,
+                component: UpdateBuilder,
                 name: 'UpdateBuilder'
             },
             {

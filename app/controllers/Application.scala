@@ -177,9 +177,18 @@ object Application extends Controller {
   }
 
   def checkOutBuilder = Security.Authenticated.async {
-    val f = Builder.checkOut
-    for (builder <- f)
-      yield Ok(Json.toJson(builder))
+    implicit request =>
+      val userInfoOpt = Security.getUserinfo(request)
+      val f = Builder.checkOut(userInfoOpt.get.id)
+      val retF =
+        for (builder <- f)
+          yield Ok(Json.toJson(builder))
+
+      retF.recover({
+        case _: Throwable =>
+          Logger.info("recover from no content...")
+          NoContent
+      })
   }
 
   def upsertBuilder = Security.Authenticated.async(BodyParsers.parse.json) {
@@ -191,7 +200,59 @@ object Application extends Controller {
           Future { BadRequest(Json.obj("ok" -> false, "msg" -> JsError.toJson(error).toString())) }
         },
         builder => {
-          val f = Builder.upsert(builder)
+          val userInfoOpt = Security.getUserinfo(request)
+          val userID = userInfoOpt.get.id
+          val validCheckIn = isVaildPhone(builder.phone)
+
+          val f =
+            if (Some(userID) == builder.editor)
+              Builder.checkIn(userID, builder)
+            else
+              Builder.upsert(builder)
+
+          for (result <- f) yield {
+            val msg = if (!validCheckIn)
+              "無效的電話號碼"
+            else
+              ""
+            Ok(Json.obj("ok" -> validCheckIn, "msg" -> msg))
+          }
+        })
+  }
+
+  def checkOutBuildCase = Security.Authenticated.async {
+    implicit request =>
+      val userInfoOpt = Security.getUserinfo(request)
+      val f = BuildCase2.checkOut(userInfoOpt.get.id)
+      val retF =
+        for (builder <- f)
+          yield Ok(Json.toJson(builder))
+
+      retF.recover({
+        case _: Throwable =>
+          Logger.info("recover from no content...")
+          NoContent
+      })
+  }
+
+  def upsertBuildCase = Security.Authenticated.async(BodyParsers.parse.json) {
+    implicit request =>
+      val ret = request.body.validate[BuildCase2]
+      ret.fold(
+        error => {
+          Logger.error(JsError.toJson(error).toString())
+          Future { BadRequest(Json.obj("ok" -> false, "msg" -> JsError.toJson(error).toString())) }
+        },
+        buildCase => {
+          val userInfoOpt = Security.getUserinfo(request)
+          val userID = userInfoOpt.get.id
+
+          val f =
+            if (Some(userID) == buildCase.editor)
+              BuildCase2.checkIn(userID, buildCase)
+            else
+              BuildCase2.upsert(buildCase)
+
           for (result <- f) yield {
             Ok(Json.obj("ok" -> true))
           }

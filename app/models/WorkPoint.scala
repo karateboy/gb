@@ -24,7 +24,6 @@ abstract class IWorkPointID() {
 
 abstract class IWorkPoint() {
   val _id: IWorkPointID
-  val wpType: Int
   def location: Option[Seq[Double]]
   val in: Seq[Input]
   val out: Seq[Output]
@@ -57,7 +56,7 @@ object WorkPoint {
       f.onFailure(errorHandler)
       waitReadyResult(f)
 
-      val cf1 = collection.createIndex(Indexes.ascending("wpType")).toFuture()
+      val cf1 = collection.createIndex(Indexes.ascending("_id.wpType")).toFuture()
       val cf2 = collection.createIndex(Indexes.geo2dsphere("location")).toFuture()
       val cf3 = collection.createIndex(
           Indexes.compoundIndex(Indexes.ascending("wpType"), Indexes.geo2dsphere("location"))).toFuture()

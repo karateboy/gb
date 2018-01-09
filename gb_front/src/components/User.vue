@@ -93,14 +93,12 @@
         },
         computed:{
             passwordDifferent(){
-                console.log(this.user.passwordRetype)
                 return this.user.password != this.user.passwordRetype
             }
         },
         methods:{
                 ...mapActions(['logout']),
             newUser(){
-                console.log(this.user)
                 if(this.user.password != this.user.passwordRetype){
                     alert('密碼不一致')
                     return
@@ -118,7 +116,6 @@
                 })
             },
             updateUser(){
-                console.log(this.user)
                 if(this.user.password != this.user.passwordRetype){
                     alert('密碼不一致')
                     return

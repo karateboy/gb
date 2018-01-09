@@ -34,8 +34,11 @@ object User {
       case count =>
         if (count == 0) {
           val defaultUser = User("karateboy", "abc123", "karateboy", "0920660136")
+          val internUser = User("intern", "abc123", "工讀生1", "0920660136", Group.Intern.toString())
           Logger.info("Create default user:" + defaultUser.toString())
+          Logger.info("Create intern:" + internUser.toString())
           newUser(defaultUser)
+          newUser(internUser)
         }
     })
     f.onFailure(errorHandler)

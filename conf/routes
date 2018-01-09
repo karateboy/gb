@@ -50,8 +50,14 @@ DELETE   /Order/:orderId                controllers.OrderManager.deleteOrder(ord
 POST     /CloseOrder/:orderId           controllers.OrderManager.closeOrder(orderId:Long)
 
 GET      /TestGoogle                    controllers.Application.testGeoCoding
-GET		 /TestImportBuildCase			controllers.Application.testParseMonthlyBuildCase
-GET		 /TestCheckBuildCase			controllers.Application.testImportCheckBuildCase()
+GET      /TestImportBuildCase           controllers.Application.testParseMonthlyBuildCase
+GET      /TestCheckBuildCase            controllers.Application.testImportCheckBuildCase()
+
+GET      /CheckOutBuilder               controllers.Application.checkOutBuilder
+POST	 /Builder						controllers.Application.upsertBuilder
+
+GET		 /CheckOutBuildCase				controllers.Application.checkOutBuildCase
+POST	 /BuildCase						controllers.Application.upsertBuildCase
 
 #Report
 

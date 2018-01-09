@@ -16,43 +16,10 @@ import org.mongodb.scala.bson._
 import MongoDB._
 import scala.util._
 
-case class ContactInfo(contact: String, phone: String)
-case class Builder(_id: String, addr: String, contactList: Seq[ContactInfo], state: Int = Builder.NoPhoneState) {
-  def updateContact(contact: String, phone: String) {
-    var updated = false
-    val newList = if (contactList.exists { elm => elm.contact == contact })
-      contactList map {
-        contactInfo =>
-          if (contactInfo.contact == contact && contactInfo.phone != phone) {
-            updated = true
-            ContactInfo(contact, phone)
-          } else
-            contactInfo
-      }
-    else {
-      updated = true
-      contactList :+ ContactInfo(contact, phone)
-    }
-
-    if (updated) {
-      val bd = Builder(_id, addr, newList, Builder.HasPhoneState)
-      Builder.upsert(bd)
-    }
-  }
-
-  def updatePhone(phone: String) {
-    val newList = contactList map { ci =>
-      if (ci.phone.isEmpty())
-        ContactInfo(ci.contact, phone)
-      else
-        ci
-    }
-    Builder.upsert(Builder(_id, addr, newList, Builder.HasPhoneState))
-  }
-
-  def hasPhone() = {
-    contactList.exists { ci => !ci.phone.isEmpty() }
-  }
+case class Builder(_id: String, addr: String, contact: String, phone: String,
+                   var state: Int = Builder.NoPhoneState, var editor: Option[String] = None) {
+  def updateContact(newContact: String, newPhone: String) =
+    Builder(_id, addr, newContact.trim(), newPhone.trim())
 }
 
 object Builder {
@@ -60,14 +27,12 @@ object Builder {
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
   import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
 
-  val codecRegistry = fromRegistries(fromProviders(classOf[Builder], classOf[ContactInfo]), DEFAULT_CODEC_REGISTRY)
+  val codecRegistry = fromRegistries(fromProviders(classOf[Builder]), DEFAULT_CODEC_REGISTRY)
 
   val ColName = "builder"
   val collection = MongoDB.database.getCollection[Builder](ColName).withCodecRegistry(codecRegistry)
 
-  implicit val ciWrite = Json.writes[ContactInfo]
   implicit val bdWrite = Json.writes[Builder]
-  implicit val ciRead = Json.reads[ContactInfo]
   implicit val bdRead = Json.reads[Builder]
 
   def init(colNames: Seq[String]) {
@@ -75,6 +40,8 @@ object Builder {
       val f = MongoDB.database.createCollection(ColName).toFuture()
       f.onFailure(errorHandler)
       waitReadyResult(f)
+      val cif = collection.createIndex(Indexes.ascending("state", "editor")).toFuture()
+      cif.onFailure(errorHandler)
     }
   }
 
@@ -83,10 +50,11 @@ object Builder {
   val InvalidPhoneState = 2
   val CheckOutState = 3
 
-  def initBuilder(_id: String, addr: String, representative: String, phone: String = "") = {
-    val info = ContactInfo(representative.trim(), phone)
-    val builder = Builder(_id, addr.trim(), Seq(info))
-    builder
+  def initBuilder(_id: String, addr: String, contact: String, phone: String = "") = {
+    if (phone.trim().isEmpty())
+      Builder(_id, addr.trim(), contact.trim, "", NoPhoneState)
+    else
+      Builder(_id, addr.trim(), contact.trim, phone.trim, HasPhoneState)
   }
 
   def get(_id: String) = collection.find(Filters.eq("_id", _id)).headOption()
@@ -96,26 +64,45 @@ object Builder {
     f.onFailure(errorHandler)
     f.onSuccess({
       case x =>
-        val newState = if (builder.hasPhone())
-          BuildCaseState.checked.toString()
-        else
-          BuildCaseState.raw.toString()
-
-        val f2 = BuildCase2.updateStateByBuilder(builder._id, newState)
-        f2.onFailure(errorHandler)
+        if (!builder.phone.isEmpty()) {
+          BuildCaseState.HasPhoneState.toString()
+          val f2 = BuildCase2.updateStateByBuilder(builder._id, BuildCaseState.HasPhoneState.toString())
+          f2.onFailure(errorHandler)
+        }
     })
     f
   }
 
-  def checkOut = {
-    val f = collection.findOneAndUpdate(Filters.eq("state", NoPhoneState), Updates.set("state", CheckOutState)).toFuture()
-    f.onFailure(errorHandler)
-    f
+  import scala.concurrent._
+  def checkOut(editor: String) = {
+    val editingF = collection.find(Filters.and(Filters.eq("state", CheckOutState), Filters.eq("editor", editor))).toFuture()
+    editingF.onFailure(errorHandler)
+    val ff =
+      for (editing <- editingF) yield {
+        if (!editing.isEmpty)
+          Future {
+            editing.head
+          }
+        else {
+          import com.mongodb.client.model.ReturnDocument.AFTER
+          val f = collection.findOneAndUpdate(Filters.eq("state", NoPhoneState),
+            Updates.combine(Updates.set("state", CheckOutState), Updates.set("editor", editor)),
+            FindOneAndUpdateOptions().returnDocument(AFTER)).toFuture()
+          f.onFailure(errorHandler)
+          f
+        }
+      }
+    ff flatMap { x => x }
   }
-  
-  def giveUp(_id:String) = {
-    val f = collection.updateOne(Filters.eq("state", NoPhoneState), Updates.set("state", InvalidPhoneState)).toFuture()
-    f.onFailure(errorHandler)
-    f
+
+  def checkIn(editor: String, builder: Builder) = {
+    builder.editor = None
+    if (isVaildPhone(builder.phone)) {
+      builder.state = Builder.HasPhoneState
+      UsageRecord.addBuilderUsage(editor, builder._id)
+    } else
+      builder.state = Builder.InvalidPhoneState
+
+    Builder.upsert(builder)
   }
 }

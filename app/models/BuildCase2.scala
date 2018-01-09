@@ -20,27 +20,22 @@ import org.mongodb.scala.bson._
 import MongoDB._
 
 object BuildCaseState extends Enumeration {
-  val raw = Value
-  val checked = Value
-  val assigned = Value
-  val phoned = Value
-  val contracted = Value
-  val closed = Value
+  val RawState = Value
+  val HasPhoneState = Value
+  val ClosedState = Value
 }
 
 case class BuildCaseID(county: String, permitID: String, wpType: Int = 1) extends IWorkPointID
 case class SiteInfo(usage: String, floorDesc: String, addr: String, area: Option[Double])
 
-case class BuildCase2(_id: BuildCaseID, county: String,
-                      permitID: String, builder: String, personal: Boolean,
+case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
                       siteInfo: SiteInfo,
                       permitDate: Date, architect: String,
                       var location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output],
                       contractor: Option[String] = None,
-                      state: String = BuildCaseState.raw.toString(), owner: Option[String] = None,
+                      state: String = BuildCaseState.RawState.toString(), owner: Option[String] = None,
                       tag: Seq[String] = Seq.empty[String],
-                      notes: Seq[Note] = Seq.empty[Note],
-                      wpType: Int = WorkPoint.BuildCase) extends IWorkPoint
+                      notes: Seq[Note] = Seq.empty[Note], var editor: Option[String] = None) extends IWorkPoint
 
 case class QueryBuildCaseParam2(
   county: Option[String],
@@ -85,18 +80,20 @@ object BuildCase2 {
 
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {
-      val cf1 = collection.createIndex(ascending("county")).toFuture()
+      val cf1 = collection.createIndex(ascending("_id.county")).toFuture()
       val cf2 = collection.createIndex(ascending("builder")).toFuture()
       val cf3 = collection.createIndex(ascending("architect")).toFuture()
-      val cf4 = collection.createIndex(ascending("county", "permitID"), new IndexOptions().unique(true)).toFuture()
+      val cf4 = collection.createIndex(ascending("_id.county", "wpType")).toFuture()
+      val cf5 = collection.createIndex(ascending("state")).toFuture()
 
       cf1.onFailure(errorHandler)
       cf2.onFailure(errorHandler)
       cf3.onFailure(errorHandler)
       cf4.onFailure(errorHandler)
+      cf5.onFailure(errorHandler)
 
       import scala.concurrent._
-      val endF = Future.sequence(Seq(cf1, cf2, cf3, cf4))
+      val endF = Future.sequence(Seq(cf1, cf2, cf3, cf4, cf5))
       endF.onComplete({
         case x =>
           val path = current.path.getAbsolutePath + "/import/buildCase.xlsx"
@@ -140,8 +137,6 @@ object BuildCase2 {
     "彰化", "台南", "高雄", "屏東", "金門")
 
   import java.io.File
-  def isVaildPhone(phone: String) =
-    phone.forall { x => x.isDigit || x == '-' || x == '(' || x == ')' || x.isSpaceChar } && !phone.isEmpty()
 
   def importCheckedBuildCase(county: String, file: File) = {
     try {
@@ -172,16 +167,14 @@ object BuildCase2 {
 
     try {
       val phone = row.getCell(4).getStringCellValue
-      if (isVaildPhone(phone)) {
+      if (!representative.isEmpty() && isVaildPhone(phone)) {
         for (builderOpt <- Builder.get(builderID)) {
           if (builderOpt.isEmpty) {
             Logger.error(s"builder $builderID is not existed!")
           } else {
             val builder = builderOpt.get
-            if (representative.isEmpty())
-              builder.updatePhone(phone)
-            else
-              builder.updateContact(representative, phone)
+            builder.updateContact(representative, phone)
+            Builder.upsert(builder)
           }
         }
       }
@@ -262,15 +255,13 @@ object BuildCase2 {
             }
 
             for (builder <- builderF) yield {
-              val state = if (builder.hasPhone())
-                BuildCaseState.checked.toString()
+              val state = if (!builder.phone.isEmpty())
+                BuildCaseState.HasPhoneState.toString()
               else
-                BuildCaseState.raw.toString()
+                BuildCaseState.RawState.toString()
 
               BuildCase2(
                 _id = BuildCaseID(county, permitID),
-                county = county,
-                permitID = permitID,
                 builder = builderID,
                 personal = false,
                 siteInfo = siteInfo,
@@ -296,8 +287,6 @@ object BuildCase2 {
 
             BuildCase2(
               _id = BuildCaseID(county, permitID),
-              county = county,
-              permitID = permitID,
               builder = builderID,
               personal = true,
               siteInfo = siteInfo,
@@ -369,6 +358,43 @@ object BuildCase2 {
     }
   }
 
+  import scala.concurrent._
+  def checkOut(editor: String) = {
+    val editingF = collection.find(Filters.eq("editor", editor)).toFuture()
+    editingF.onFailure(errorHandler)
+    val ff =
+      for (editing <- editingF) yield {
+        if (!editing.isEmpty)
+          Future {
+            editing.head
+          }
+        else {
+          import com.mongodb.client.model.ReturnDocument.AFTER
+          val f = collection.findOneAndUpdate(Filters.or(Filters.eq("location", null), Filters.eq("siteInfo.area", null)),
+            Updates.set("editor", editor),
+            FindOneAndUpdateOptions().returnDocument(AFTER)).toFuture()
+          f.onFailure(errorHandler)
+          f
+        }
+      }
+    ff flatMap { x => x }
+  }
+
+  def checkIn(editor:String, bc:BuildCase2) = {
+    bc.editor = None
+    
+    if(bc.location.isDefined && bc.siteInfo.area.isDefined)
+      UsageRecord.addBuildCaseUsage(editor, bc._id)
+
+    upsert(bc)
+  }
+  
+  def upsert(bc:BuildCase2) = {
+    val f = collection.replaceOne(Filters.eq("_id", bc._id), bc, UpdateOptions().upsert(true)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+  
   def updateArea(_id: BuildCaseID, area: Double) = {
     val f = collection.findOneAndUpdate(Filters.eq("_id", _id), Updates.set("siteInfo.area", area)).toFuture()
     f.onFailure(errorHandler)

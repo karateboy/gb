@@ -20,7 +20,8 @@ import org.mongodb.scala.bson._
 import MongoDB._
 
 case class UsageRecordID(name: String, month: Date)
-case class UsageRecord(_id: UsageRecordID, buildCase: Option[Seq[BuildCaseID]], builder: Option[Seq[String]])
+case class UsageRecord(_id: UsageRecordID, name: String, month: Date,
+                       buildCase: Option[Seq[BuildCaseID]], builder: Option[Seq[String]])
 object UsageRecord {
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
@@ -40,29 +41,38 @@ object UsageRecord {
   implicit val irdRead = Json.reads[UsageRecordID]
   implicit val irRead = Json.reads[UsageRecord]
 
-
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {
       val f = MongoDB.database.createCollection(ColName).toFuture()
       f.onFailure(errorHandler)
+      val cif = collection.createIndex(Indexes.ascending("name", "month"), IndexOptions().unique(true)).toFuture()
+      cif.onFailure(errorHandler)
     }
   }
-  
-  def getUsageRecordID(name:String)={
-    val month = DateTime.now().withDayOfMonth(0).withMillisOfDay(0)
-    UsageRecordID(name, month)    
+
+  def getUsageRecordID(name: String) = {
+    val month = DateTime.now().withDayOfMonth(5).withMillisOfDay(0)
+    UsageRecordID(name, month.toDate())
   }
-  
-  def addBuildCase(name:String, bcID:BuildCaseID) = {
-    val f = collection.updateOne(Filters.eq("_id", getUsageRecordID(name)), 
-        Updates.addToSet("buildCase", bcID), UpdateOptions().upsert(true)).toFuture()
+
+  def addBuildCaseUsage(name: String, bcID: BuildCaseID) = {
+    val _id = getUsageRecordID(name)
+    val f = collection.updateOne(Filters.eq("_id", _id),
+      Updates.combine(Updates.setOnInsert("_id", _id),
+          Updates.setOnInsert("name", _id.name),
+        Updates.setOnInsert("month", _id.month),
+        Updates.addToSet("buildCase", bcID)), UpdateOptions().upsert(true)).toFuture()
     f.onFailure(errorHandler)
     f
   }
-  
-  def addBuilder(name:String, builderID:String)={
-    val f = collection.updateOne(Filters.eq("_id", getUsageRecordID(name)), 
-        Updates.addToSet("builder", builderID), UpdateOptions().upsert(true)).toFuture()
+
+  def addBuilderUsage(name: String, builderID: String) = {
+    val _id = getUsageRecordID(name)
+    val f = collection.updateOne(Filters.eq("_id", _id),
+      Updates.combine(Updates.setOnInsert("_id", _id),
+          Updates.setOnInsert("name", _id.name),
+        Updates.setOnInsert("month", _id.month),
+        Updates.addToSet("builder", builderID)), UpdateOptions().upsert(true)).toFuture()
     f.onFailure(errorHandler)
     f
   }

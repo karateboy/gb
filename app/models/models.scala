@@ -11,14 +11,6 @@ import scala.collection.JavaConversions._
  */
 
 object ModelHelper {
-  implicit def getSqlTimestamp(t: DateTime) = {
-    new java.sql.Timestamp(t.getMillis)
-  }
-
-  implicit def getDateTime(st: java.sql.Timestamp) = {
-    new DateTime(st)
-  }
-
   import org.mongodb.scala.bson.BsonDateTime
   implicit def toDateTime(time: BsonDateTime) = new DateTime(time.getValue)
   implicit def toBsonDateTime(jdtime: DateTime) = new BsonDateTime(jdtime.getMillis)
@@ -41,7 +33,7 @@ object ModelHelper {
   def errorHandler(prompt: String = "Error=>"): PartialFunction[Throwable, Any] = {
     case ex: org.mongodb.scala.MongoException =>
       Logger.error(ex.getMessage)
-      
+
     case ex: Throwable =>
       Logger.error(prompt, ex)
       throw ex
@@ -116,6 +108,10 @@ object ModelHelper {
     else
       Some(getArray(key, mapper))
   }
+  
+  def isVaildPhone(phone: String) =
+    phone.forall { x => x.isDigit || x == '-' || x == '(' || x == ')' || x.isSpaceChar } && !phone.isEmpty()
+
 }
 
 object ExcelTool {
@@ -157,7 +153,7 @@ object ExcelTool {
         None
     }
   }
-  
+
   import java.io._
 
   def importXLSX(filePath: String)(parser: (XSSFSheet) => Unit): Boolean = {
