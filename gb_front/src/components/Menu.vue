@@ -29,7 +29,7 @@
                     <span class="nav-label">儀錶板</span>
                 </a>
             </router-link>
-            <li>
+            <li v-show="user.groupId == 'Sales'">
                 <a>
                     <i class="fa fa-h-square" aria-hidden="true"></i>
                     <span class="nav-label">安養機構</span>
@@ -43,7 +43,7 @@
                     </router-link>
                 </ul>
             </li>
-            <li>
+            <li v-show="user.groupId == 'Admin'">
                 <a>
                     <i class="fa fa-building" aria-hidden="true"></i>
                     <span class="nav-label">起造人</span>

@@ -27,6 +27,7 @@ object MongoDB {
       //Textile.init(colNames)
       //Burner.init(colNames)
       UsageRecord.init(colNames)
+      UsageRecord.convert()
     }
     //Program need to wait before init complete
     import scala.concurrent.Await

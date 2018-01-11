@@ -48,8 +48,8 @@ object UsageRecord {
       cif.onFailure(errorHandler)
     }
   }
-  
-  def emptyRecord(name:String, offset:Int) = 
+
+  def emptyRecord(name: String, offset: Int) =
     UsageRecord(getUsageRecordID(name, offset), Some(Seq.empty[BuildCaseID]), Some(Seq.empty[String]))
 
   def getUsageRecordID(name: String, offset: Int = 0) = {
@@ -81,8 +81,33 @@ object UsageRecord {
 
   def getRecord(name: String, offset: Int) = {
     val _id = getUsageRecordID(name, offset)
-    val f = collection.find(Filters.eq("_id", getUsageRecordID(name, offset))).toFuture()
+    val f = collection.find(Filters.eq("_id", _id)).toFuture()
     f.onFailure(errorHandler)
     f
+  }
+
+  def convert() = {
+    val f = collection.find().toFuture()
+    for (usageRecordList <- f) {
+      for (ur <- usageRecordList) {
+        val correctDate = new DateTime(ur._id.month).withDayOfMonth(5).withMillisOfDay(0)
+        if (correctDate.toDate != ur._id.month) {
+          Logger.debug(ur._id.month.toString() + "=>" + correctDate.toString())
+          val newBuildCase = if (ur.buildCase.isEmpty)
+            Some(Seq.empty[BuildCaseID])
+          else
+            ur.buildCase
+
+          val newBuilder = if (ur.builder.isEmpty)
+            Some(Seq.empty[String])
+          else
+            ur.builder
+          val newUR = UsageRecord(UsageRecordID(ur._id.name, correctDate.toDate), newBuildCase, newBuilder)
+          collection.insertOne(newUR).toFuture()
+          collection.deleteOne(Filters.eq("_id", ur._id)).toFuture()
+        }
+
+      }
+    }
   }
 }

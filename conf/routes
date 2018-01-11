@@ -42,13 +42,6 @@ POST     /QueryOilUser/count            controllers.Query.queryOilUserCount()
 PUT      /OilUser                       controllers.Query.updateOilUser
 GET      /OilUser/:json                 controllers.Query.getOilUser(json)
 
-POST     /NewOrder                      controllers.OrderManager.newOrder
-POST     /UpdateOrder                   controllers.OrderManager.upsertOrder
-GET      /UnhandledOrder                controllers.OrderManager.unhandledOrder
-
-DELETE   /Order/:orderId                controllers.OrderManager.deleteOrder(orderId:Long)
-POST     /CloseOrder/:orderId           controllers.OrderManager.closeOrder(orderId:Long)
-
 GET      /TestGoogle                    controllers.Application.testGeoCoding
 GET      /TestImportBuildCase           controllers.Application.testParseMonthlyBuildCase
 GET      /TestCheckBuildCase            controllers.Application.testImportCheckBuildCase()

@@ -202,7 +202,10 @@ object Application extends Controller {
         builder => {
           val userInfoOpt = Security.getUserinfo(request)
           val userID = userInfoOpt.get.id
-          val validCheckIn = isVaildPhone(builder.phone)
+          val validCheckIn = if(builder.state == Builder.InvalidPhoneState)
+            true
+          else
+            isVaildPhone(builder.phone)
 
           val f =
             if (Some(userID) == builder.editor)
@@ -267,10 +270,12 @@ object Application extends Controller {
 
       val f = UsageRecord.getRecord(userID, offset)
       for (records <- f) yield {
-        if (records.isEmpty)
+        if (records.isEmpty){
           Ok(Json.toJson(UsageRecord.emptyRecord(userID, offset)))
-        else
+        }
+        else{
           Ok(Json.toJson(records.head))
+        }
       }
   }
 }

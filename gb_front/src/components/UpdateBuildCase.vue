@@ -1,5 +1,8 @@
 <template>
     <div>
+        <div class="alert alert-info">
+          <strong>找不到地號, 面積和經緯度都填0</strong>
+        </div>
         <div class="form-horizontal">
             <div class="form-group">
                 <label class="col-sm-2 control-label">建案縣市:</label>
@@ -30,14 +33,14 @@
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-sm-2 control-label">經度:</label>
+                <label class="col-sm-2 control-label">經度 (120~124):</label>
                 <div class="col-sm-4">
                     <input type="number" placeholder="120" class="form-control"
                            required v-model.number="buildCase.location[0]">
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-sm-2 control-label">緯度:</label>
+                <label class="col-sm-2 control-label">緯度 (22~25):</label>
                 <div class="col-sm-4">
                     <input type="number" placeholder="25" class="form-control"
                            required v-model.number="buildCase.location[1]">
@@ -83,14 +86,6 @@ export default {
     this.checkOut();
   },
   methods: {
-    isOkay() {
-      let ret =
-        this.buildCase.siteInfo.area > 0 &&
-        this.buildCase.location[0] > 0 &&
-        this.buildCase.location[1] > 0;
-      console.log(ret);
-      return ret;
-    },
     checkOut() {
       axios
         .get("/CheckOutBuildCase")
@@ -110,10 +105,6 @@ export default {
         .catch(err => alert(err));
     },
     updateBuildCase() {
-      if(!this.isOkay()){
-        alert("資料不能是0");
-        return;
-      }
       axios
         .post("/BuildCase", this.buildCase)
         .then(resp => {

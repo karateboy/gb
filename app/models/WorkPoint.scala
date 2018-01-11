@@ -27,11 +27,13 @@ abstract class IWorkPoint() {
   def location: Option[Seq[Double]]
   val in: Seq[Input]
   val out: Seq[Output]
+  val notes: Seq[Note]
 }
 
 case class WorkPointID(wpType: Int) extends IWorkPointID
 case class WorkPoint(_id: IWorkPointID, wpType: Int, 
-    location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output]) extends IWorkPoint
+    location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output], 
+    notes: Seq[Note], tag: Seq[String]) extends IWorkPoint
     
 object WorkPoint {
   import org.mongodb.scala.bson.codecs.Macros._
