@@ -151,7 +151,7 @@ object Application extends Controller {
 
   def testParseMonthlyBuildCase() = Security.Authenticated {
     import java.io.File
-    val path = "C:\\Users\\user\\OneDrive\\gder工讀生\\2018-01-05新建案\\新-2017年12月台灣未開工建築工程建照月報(北基宜-桃竹苗-中彰投-南高屏金區).xlsx"
+    val path = current.path.getAbsolutePath + "/import/buildCase1.xlsx"
     BuildCase2.importMonthlyReport(path)(BuildCase2.monthlyReportParser)
     Ok("")
   }
