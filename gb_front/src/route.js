@@ -28,6 +28,9 @@ import UpdateBuilder from './components/UpdateBuilder.vue'
 import UpdateBuildCase from './components/UpdateBuildCase.vue'
 import UsageReport from './components/UsageReport.vue'
 
+import MyCase from './components/MyCase.vue'
+import ObtainCase from './components/ObtainCase.vue'
+
 export const routes = [{
         path: '/',
         component: Dashboard,
@@ -123,6 +126,32 @@ export const routes = [{
                 path: 'Report',
                 component: UsageReport,
                 name: 'Report'
+            },
+        ]
+    },
+    {
+        path: '/Sales',
+        component: Intern,
+        name: 'Sales',
+        children: [{
+                path: 'MyCase',
+                component: MyCase,
+                name: 'MyCase'
+            },
+            {
+                path: 'ObtainCase',
+                component: ObtainCase,
+                name: 'ObtainCase'
+            },
+            {
+                path: 'Map',
+                component: UsageReport,
+                name: 'Map'
+            },
+            {
+                path: 'UsageReport',
+                component: UsageReport,
+                name: 'UsageReport'
             },
         ]
     },

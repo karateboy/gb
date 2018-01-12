@@ -108,7 +108,7 @@ object ModelHelper {
     else
       Some(getArray(key, mapper))
   }
-  
+
   def isVaildPhone(phone: String) =
     phone.forall { x => x.isDigit || x == '-' || x == '(' || x == ')' || x.isSpaceChar } && !phone.isEmpty()
 

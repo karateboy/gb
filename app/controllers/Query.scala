@@ -17,12 +17,12 @@ import Highchart._
 import models._
 
 case class Stat(
-  avg:       Option[Double],
-  min:       Option[Double],
-  max:       Option[Double],
-  count:     Int,
-  total:     Int,
-  overCount: Int) {
+    avg: Option[Double],
+    min: Option[Double],
+    max: Option[Double],
+    count: Int,
+    total: Int,
+    overCount: Int) {
   val effectPercent = {
     if (total > 0)
       Some(count.toDouble * 100 / total)
@@ -225,6 +225,20 @@ object Query extends Controller {
           for (ret <- f) yield Ok(Json.obj("Ok" -> true))
         })
   }
+
+  def getBuilder(encodedID: String) = Security.Authenticated.async {
+    val _id = java.net.URLDecoder.decode(encodedID, "UTF-8")
+    val f = Builder.get(_id)
+    for (builderOpt <- f) yield {
+      if (builderOpt.isEmpty)
+        NoContent
+      else {
+        val builder = builderOpt.get
+        Ok(Json.toJson(builder))
+      }
+    }
+  }
+
   //=====================================================================================
   def queryOilUser(skip: Int, limit: Int, outputTypeStr: String) = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>

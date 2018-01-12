@@ -29,7 +29,7 @@
                     <span class="nav-label">儀錶板</span>
                 </a>
             </router-link>
-            <li v-show="user.groupId == 'Sales'">
+            <li v-show="user.groupId == 'Admin'">
                 <a>
                     <i class="fa fa-h-square" aria-hidden="true"></i>
                     <span class="nav-label">安養機構</span>
@@ -75,10 +75,20 @@
                     <span class="fa arrow"></span>
                 </a>
                 <ul class="nav nav-second-level collapse">
-                    <router-link tag="li" :to="{name:'QueryOilUser'}" active-class="active">
+                    <router-link tag="li" :to="{name:'MyCase'}" active-class="active">
                         <a>
                             <i class="fa fa-search" aria-hidden="true"></i>
-                            <span class="nav-label"></span>Call客戶</a>
+                            <span class="nav-label"></span>我的名單</a>
+                    </router-link>
+                    <router-link tag="li" :to="{name:'ObtainCase'}" active-class="active">
+                        <a>
+                            <i class="fa fa-search" aria-hidden="true"></i>
+                            <span class="nav-label"></span>取得名單</a>
+                    </router-link>
+                    <router-link tag="li" :to="{name:'UsageReport'}" active-class="active">
+                        <a>
+                            <i class="fa fa-search" aria-hidden="true"></i>
+                            <span class="nav-label"></span>使用報告</a>
                     </router-link>
                 </ul>
             </li>

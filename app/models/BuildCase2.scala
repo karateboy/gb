@@ -512,4 +512,59 @@ object BuildCase2 {
     f.onFailure(errorHandler)
     f
   }
+
+  import org.mongodb.scala.bson.conversions.Bson
+  def query(filter: Bson)(skip: Int, limit: Int) = {
+    val sort = Sorts.descending("siteInfo.area")
+    val f = collection.find(filter).sort(sort).skip(skip).limit(limit).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+  def count(filter: Bson) = {
+    val f = collection.count(filter).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+
+  def myCaseFilter(owner: String) = Filters.eq("owner", owner)
+  def getOwnerBuildCase(owner: String) = query(myCaseFilter(owner)) _
+  def getOwnerBuildCaseCount(owner: String) = count(myCaseFilter(owner))
+
+  def northOwnerless() = {
+    val northCounty = List(
+      "基隆", "宜蘭", "台北", "新北", "桃園",
+      "新竹縣", "新竹市")
+    Filters.and(Filters.in("_id.county", northCounty: _*), Filters.eq("owner", null))
+  }
+
+  def southOwnerless() = {
+    val southCounty = List(
+      "苗栗", "台中", "南投",
+      "彰化", "台南", "高雄", "屏東", "金門")
+    Filters.and(Filters.in("_id.county", southCounty), Filters.eq("owner", null))
+  }
+
+  def getNorthOwnerless() = query(northOwnerless()) _
+  def getNorthOwnerlessCount() = count(northOwnerless())
+
+  def obtain(_id:BuildCaseID, owner:String)={
+    val filter = Filters.and(Filters.eq("_id", _id), Filters.eq("owner", null))
+    val f = collection.updateOne(filter, Updates.set("owner", owner)).toFuture()
+    UsageRecord.addBuildCaseUsage(owner, _id)
+    f.onFailure(errorHandler)
+    f
+  }
+  
+  def release(_id:BuildCaseID, owner:String)={
+    val filter = Filters.and(Filters.eq("_id", _id), Filters.eq("owner", owner))
+    val f = collection.updateOne(filter, Updates.set("owner", null)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+  
+  def getBuildCase(_id: BuildCaseID) = {
+    val f = collection.find(Filters.eq("_id", _id)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
 }

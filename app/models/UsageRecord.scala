@@ -61,8 +61,7 @@ object UsageRecord {
     val _id = getUsageRecordID(name)
     val f = collection.updateOne(Filters.eq("_id", _id),
       Updates.combine(Updates.setOnInsert("_id", _id),
-        Updates.setOnInsert("name", _id.name),
-        Updates.setOnInsert("month", _id.month),
+        Updates.setOnInsert("builder", Seq.empty[String]),
         Updates.addToSet("buildCase", bcID)), UpdateOptions().upsert(true)).toFuture()
     f.onFailure(errorHandler)
     f
@@ -72,8 +71,7 @@ object UsageRecord {
     val _id = getUsageRecordID(name)
     val f = collection.updateOne(Filters.eq("_id", _id),
       Updates.combine(Updates.setOnInsert("_id", _id),
-        Updates.setOnInsert("name", _id.name),
-        Updates.setOnInsert("month", _id.month),
+        Updates.setOnInsert("buildCase", Seq.empty[BuildCaseID]),
         Updates.addToSet("builder", builderID)), UpdateOptions().upsert(true)).toFuture()
     f.onFailure(errorHandler)
     f

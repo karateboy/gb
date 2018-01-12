@@ -31,10 +31,6 @@ PUT      /CareHouse                     controllers.Query.updateCareHouse
 POST     /QueryBuildCase                controllers.Query.queryBuildCaseList()
 POST     /QueryBuildCase/:skip/:limit   controllers.Query.queryBuildCase(skip:Int, limit:Int, outputTypeStr="html")
 POST     /QueryBuildCase/count          controllers.Query.queryBuildCaseCount()
-PUT      /BuildCase                     controllers.Query.updateBuildCase
-GET      /BuildCase/:json               controllers.Query.getBuildCase(json)
-GET      /BuildCaseTemplate             controllers.Application.getBuildCaseTemplate
-POST     /UploadBuildCase               controllers.Application.uploadBuildCase
 
 POST     /QueryOilUser                  controllers.Query.queryOilUserList()
 POST     /QueryOilUser/:skip/:limit     controllers.Query.queryOilUser(skip:Int, limit:Int, outputTypeStr="html")
@@ -43,16 +39,32 @@ PUT      /OilUser                       controllers.Query.updateOilUser
 GET      /OilUser/:json                 controllers.Query.getOilUser(json)
 
 GET      /TestGoogle                    controllers.Application.testGeoCoding
-GET      /TestImportBuildCase           controllers.Application.testParseMonthlyBuildCase
+GET      /ImportBuildCase               controllers.Application.testParseMonthlyBuildCase
 GET      /TestCheckBuildCase            controllers.Application.testImportCheckBuildCase()
 
 GET      /CheckOutBuilder               controllers.Application.checkOutBuilder
-POST	 /Builder						controllers.Application.upsertBuilder
+POST     /Builder                       controllers.Application.upsertBuilder
+GET      /Builder/:encodedID            controllers.Query.getBuilder(encodedID)
 
-GET		 /CheckOutBuildCase				controllers.Application.checkOutBuildCase
-POST	 /BuildCase						controllers.Application.upsertBuildCase
+GET      /CheckOutBuildCase             controllers.Application.checkOutBuildCase
+POST     /BuildCase                     controllers.Application.upsertBuildCase
 
-GET		 /UsageRecord/:offset			controllers.Application.getUsageRecord(offset: Int)
+GET      /UsageRecord/:offset           controllers.Application.getUsageRecord(offset: Int)
+
+POST     /MyCase/:skip/:limit           controllers.SalesManager.getMyCase(skip:Int, limit:Int)
+POST     /MyCase/count                  controllers.SalesManager.getMyCaseCount()
+POST     /NorthOwnerless/:skip/:limit   controllers.SalesManager.getNorthOwnerless(skip: Int, limit: Int)
+POST     /NorthOwnerless/count          controllers.SalesManager.getNorthOwnerlessCount()
+
+POST     /ObtainCase                    controllers.SalesManager.obtainCase()
+POST	 /ReleaseCase					controllers.SalesManager.releaseCase()
+PUT      /BuildCase                     controllers.Query.updateBuildCase
+GET      /BuildCase/:json               controllers.Query.getBuildCase(json)
+GET      /BuildCaseTemplate             controllers.Application.getBuildCaseTemplate
+POST     /UploadBuildCase               controllers.Application.uploadBuildCase
+
+POST     /GetWorkPoint                  controllers.SalesManager.getBuildCase()
+
 #Report
 
 #JSON

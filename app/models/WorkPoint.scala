@@ -28,12 +28,13 @@ abstract class IWorkPoint() {
   val in: Seq[Input]
   val out: Seq[Output]
   val notes: Seq[Note]
+  val owner: Option[String]
 }
 
 case class WorkPointID(wpType: Int) extends IWorkPointID
-case class WorkPoint(_id: IWorkPointID, wpType: Int, 
+case class WorkPoint(_id: WorkPointID, wpType: Int, 
     location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output], 
-    notes: Seq[Note], tag: Seq[String]) extends IWorkPoint
+    notes: Seq[Note], tag: Seq[String], owner: Option[String]) extends IWorkPoint
     
 object WorkPoint {
   import org.mongodb.scala.bson.codecs.Macros._
@@ -44,6 +45,7 @@ object WorkPoint {
 
   val BuildCase = 1
   val CareHouse = 2
+  
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
   import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
@@ -52,6 +54,7 @@ object WorkPoint {
 
   val collection = MongoDB.database.getCollection[WorkPoint](WorkPoint.ColName).withCodecRegistry(codecRegistry)
 
+  
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {
       val f = MongoDB.database.createCollection(ColName).toFuture()
@@ -67,6 +70,12 @@ object WorkPoint {
       cf2.onFailure(errorHandler)
       cf3.onFailure(errorHandler)
     }
+  }
+  
+  def getOwnerWorkPoint(owner:String) = {
+    val f = collection.find(Filters.eq("owner", owner)).toFuture()
+    f.onFailure(errorHandler)
+    f
   }
 
 }
