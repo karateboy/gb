@@ -23,7 +23,6 @@ abstract class IWorkPointID() {
 }
 
 abstract class IWorkPoint() {
-  val _id: IWorkPointID
   def location: Option[Seq[Double]]
   val in: Seq[Input]
   val out: Seq[Output]
@@ -31,11 +30,10 @@ abstract class IWorkPoint() {
   val owner: Option[String]
 }
 
-case class WorkPointID(wpType: Int) extends IWorkPointID
-case class WorkPoint(_id: WorkPointID, wpType: Int, 
-    location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output], 
-    notes: Seq[Note], tag: Seq[String], owner: Option[String]) extends IWorkPoint
-    
+case class WorkPoint(_id: Document,
+                     location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output],
+                     notes: Seq[Note], tag: Seq[String], owner: Option[String]) extends IWorkPoint
+
 object WorkPoint {
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
@@ -45,16 +43,25 @@ object WorkPoint {
 
   val BuildCase = 1
   val CareHouse = 2
-  
+  val DumpSite = 3
+
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
   import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
 
-  val codecRegistry = fromRegistries(fromProviders(classOf[WorkPoint], classOf[WorkPointID]), DEFAULT_CODEC_REGISTRY)
+  val codecRegistry = fromRegistries(fromProviders(classOf[WorkPoint],
+    classOf[Note], classOf[Input], classOf[Output]), DEFAULT_CODEC_REGISTRY)
 
   val collection = MongoDB.database.getCollection[WorkPoint](WorkPoint.ColName).withCodecRegistry(codecRegistry)
 
-  
+  implicit val documentWrites: Writes[Document] = new Writes[Document] {
+    def writes(v: Document): JsValue = Json.parse(v.toJson())
+  }
+
+  implicit val outputWrite = Json.writes[Output]
+  implicit val inputWrite = Json.writes[Input]
+  implicit val noteWrite = Json.writes[Note]
+  implicit val wpWrite = Json.writes[WorkPoint]
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {
       val f = MongoDB.database.createCollection(ColName).toFuture()
@@ -64,16 +71,16 @@ object WorkPoint {
       val cf1 = collection.createIndex(Indexes.ascending("_id.wpType")).toFuture()
       val cf2 = collection.createIndex(Indexes.geo2dsphere("location")).toFuture()
       val cf3 = collection.createIndex(
-          Indexes.compoundIndex(Indexes.ascending("wpType"), Indexes.geo2dsphere("location"))).toFuture()
+        Indexes.compoundIndex(Indexes.ascending("_id.wpType"), Indexes.geo2dsphere("location"))).toFuture()
 
       cf1.onFailure(errorHandler)
       cf2.onFailure(errorHandler)
       cf3.onFailure(errorHandler)
     }
   }
-  
-  def getOwnerWorkPoint(owner:String) = {
-    val f = collection.find(Filters.eq("owner", owner)).toFuture()
+
+  def getList() = {
+    val f = collection.find().toFuture()
     f.onFailure(errorHandler)
     f
   }

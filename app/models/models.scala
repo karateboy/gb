@@ -184,6 +184,7 @@ object ExcelTool {
     }
     true
   }
+  
 }
 object EnumUtils {
   def enumReads[E <: Enumeration](enum: E): Reads[E#Value] = new Reads[E#Value] {

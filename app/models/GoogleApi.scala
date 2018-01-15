@@ -9,7 +9,7 @@ object GoogleApi {
   def queryAddr(addr:String)={
     val results =  GeocodingApi.geocode(context, addr).await()
     results.map { ret =>
-      Seq(ret.geometry.location.lat, ret.geometry.location.lng)
+      Seq(ret.geometry.location.lng, ret.geometry.location.lat)
     }
   }
 

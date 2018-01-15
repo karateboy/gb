@@ -25,7 +25,7 @@ object BuildCaseState extends Enumeration {
   val Closed = Value
 }
 
-case class BuildCaseID(county: String, permitID: String, wpType: Int = 1) extends IWorkPointID
+case class BuildCaseID(county: String, permitID: String, wpType: Int = WorkPoint.BuildCase) extends IWorkPointID
 case class SiteInfo(usage: String, floorDesc: String, addr: String, area: Option[Double])
 
 case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
@@ -223,13 +223,31 @@ object BuildCase2 {
       var rowN = 3
       var finishSheet = false
 
+      def getDateOfCell(cell: XSSFCell) = {
+        import org.apache.poi.ss.usermodel.CellType
+        val cellType = cell.getCellTypeEnum
+        cellType match {
+          case CellType.NUMERIC =>
+            cell.getDateCellValue
+          case CellType.STRING =>                        
+            val groupArray = cell.getStringCellValue.split("年|月|日")
+            val yearStr = groupArray(0)
+            val monthStr = groupArray(1)
+            val dayStr = groupArray(2)
+            new DateTime().withYear(yearStr.toInt + 1911).withMonthOfYear(monthStr.toInt).
+              withDayOfMonth(dayStr.toInt).toLocalDate().toDate()
+          case _ =>
+            throw new Exception("Unexpected Date format!")
+        }
+      }
+
       do {
         var row = sheet.getRow(rowN)
         if (row == null)
           finishSheet = true
         else {
           def companyBuildCase() = {
-            val permitDate = new DateTime(row.getCell(0).getDateCellValue).toDate()
+            val permitDate = getDateOfCell(row.getCell(0))
             val permitID = row.getCell(1).getStringCellValue
             assert(!permitID.isEmpty())
             val builderID = row.getCell(2).getStringCellValue.trim()
@@ -270,7 +288,7 @@ object BuildCase2 {
           }
 
           def personalBuildCase() = {
-            val permitDate = new DateTime(row.getCell(0).getDateCellValue).toDate()
+            val permitDate = getDateOfCell(row.getCell(0))
             val permitID = row.getCell(1).getStringCellValue
             assert(!permitID.isEmpty())
             val builderID = row.getCell(2).getStringCellValue.trim()
@@ -317,7 +335,7 @@ object BuildCase2 {
             }
           } catch {
             case ex: IllegalStateException =>
-              Logger.info(s"$sheetIdx:$rowN => Finished")
+              Logger.info(s"$sheetIdx:$rowN => Finished", ex)
               finishSheet = true
 
             case ex: Throwable =>
@@ -328,7 +346,7 @@ object BuildCase2 {
         rowN += 1
       } while (!finishSheet) //end of sheet
       val group = if (personal) "個人" else "公司"
-      Logger.info(s"$county:$group=>${rowN - 3} cases")
+      Logger.info(s"$county:$group=>${rowN - 4} cases")
     } // end of workbook
 
     import scala.concurrent._
@@ -534,34 +552,34 @@ object BuildCase2 {
     val northCounty = List(
       "基隆", "宜蘭", "台北", "新北", "桃園",
       "新竹縣", "新竹市")
-    Filters.and(Filters.in("_id.county", northCounty: _*), Filters.eq("owner", null))
+    Filters.and(Filters.eq("_id.wpType", WorkPoint.BuildCase), Filters.in("_id.county", northCounty: _*), Filters.eq("owner", null))
   }
 
   def southOwnerless() = {
     val southCounty = List(
       "苗栗", "台中", "南投",
       "彰化", "台南", "高雄", "屏東", "金門")
-    Filters.and(Filters.in("_id.county", southCounty), Filters.eq("owner", null))
+    Filters.and(Filters.eq("_id.wpType", WorkPoint.BuildCase), Filters.in("_id.county", southCounty), Filters.eq("owner", null))
   }
 
   def getNorthOwnerless() = query(northOwnerless()) _
   def getNorthOwnerlessCount() = count(northOwnerless())
 
-  def obtain(_id:BuildCaseID, owner:String)={
+  def obtain(_id: BuildCaseID, owner: String) = {
     val filter = Filters.and(Filters.eq("_id", _id), Filters.eq("owner", null))
     val f = collection.updateOne(filter, Updates.set("owner", owner)).toFuture()
     UsageRecord.addBuildCaseUsage(owner, _id)
     f.onFailure(errorHandler)
     f
   }
-  
-  def release(_id:BuildCaseID, owner:String)={
+
+  def release(_id: BuildCaseID, owner: String) = {
     val filter = Filters.and(Filters.eq("_id", _id), Filters.eq("owner", owner))
     val f = collection.updateOne(filter, Updates.set("owner", null)).toFuture()
     f.onFailure(errorHandler)
     f
   }
-  
+
   def getBuildCase(_id: BuildCaseID) = {
     val f = collection.find(Filters.eq("_id", _id)).toFuture()
     f.onFailure(errorHandler)

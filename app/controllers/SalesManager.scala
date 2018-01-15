@@ -104,4 +104,12 @@ object SalesManager extends Controller {
           }
         })
   }
+  
+  def getWorkPoint() = Security.Authenticated.async{
+    val f = WorkPoint.getList()
+    
+    for(workPointList <- f)yield{
+      Ok(Json.toJson(workPointList))
+    }
+  }
 }

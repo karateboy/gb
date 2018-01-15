@@ -65,6 +65,7 @@ POST     /UploadBuildCase               controllers.Application.uploadBuildCase
 
 POST     /GetWorkPoint                  controllers.SalesManager.getBuildCase()
 
+GET		 /WorkPoint						controllers.SalesManager.getWorkPoint()
 #Report
 
 #JSON

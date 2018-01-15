@@ -13,6 +13,7 @@ object MongoDB {
   def init() {
     val f = database.listCollectionNames().toFuture()
     val colFuture = f.map { colNames =>
+      SysConfig.init(colNames)
       User.init(colNames)
       Identity.init(colNames)
       Order.init(colNames)
@@ -21,6 +22,7 @@ object MongoDB {
       Builder.init(colNames)
       WorkPoint.init(colNames)
       BuildCase2.init(colNames)
+      DumpSite.init(colNames)
       //OilUser.init(colNames)
       //RecyclePlant.init(colNames)
       //Purifier.init(colNames)

@@ -25,16 +25,6 @@ import com.github.nscala_time.time.Imports._
 object PdfUtility {
   val CSS_ROOT = "/public/"
 
-  def creatPdfWithReportHeader(title: String, content: play.twirl.api.HtmlFormat.Appendable) = {
-    val html = views.html.reportTemplate(title, content)
-    createPdf(html.toString, false)
-  }
-
-  def creatPdfWithReportHeaderP(title: String, content: play.twirl.api.HtmlFormat.Appendable) = {
-    val html = views.html.reportTemplate(title, content)
-    createPdf(html.toString, false)
-  }
-
   def createPdf(htmlInput: String, landscape: Boolean = true) = {
 
     //debug
