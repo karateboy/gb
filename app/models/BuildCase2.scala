@@ -54,6 +54,7 @@ object BuildCase2 {
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
   import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
+  import WorkPoint._
 
   val codecRegistry = fromRegistries(fromProviders(classOf[BuildCase2], classOf[Input],
     classOf[Output], classOf[Note], classOf[SiteInfo], classOf[BuildCaseID]), DEFAULT_CODEC_REGISTRY)
@@ -62,16 +63,10 @@ object BuildCase2 {
   val collection = MongoDB.database.getCollection[BuildCase2](WorkPoint.ColName).withCodecRegistry(codecRegistry)
 
   implicit val siWrite = Json.writes[SiteInfo]
-  implicit val inWrite = Json.writes[Input]
-  implicit val outWrite = Json.writes[Output]
-  implicit val noteWrite = Json.writes[Note]
   implicit val idWrite = Json.writes[BuildCaseID]
   implicit val bcWrite = Json.writes[BuildCase2]
 
   implicit val siRead = Json.reads[SiteInfo]
-  implicit val inRead = Json.reads[Input]
-  implicit val outRead = Json.reads[Output]
-  implicit val noteRead = Json.reads[Note]
   implicit val idRead = Json.reads[BuildCaseID]
   implicit val bcRead = Json.reads[BuildCase2]
 
@@ -229,7 +224,7 @@ object BuildCase2 {
         cellType match {
           case CellType.NUMERIC =>
             cell.getDateCellValue
-          case CellType.STRING =>                        
+          case CellType.STRING =>
             val groupArray = cell.getStringCellValue.split("年|月|日")
             val yearStr = groupArray(0)
             val monthStr = groupArray(1)
@@ -375,7 +370,7 @@ object BuildCase2 {
 
   import scala.concurrent._
   def checkOut(editor: String) = {
-    val editingF = collection.find(Filters.eq("editor", editor)).toFuture()
+    val editingF = collection.find(wpFilter(WorkPoint.BuildCase)(Filters.eq("editor", editor))).toFuture()
     editingF.onFailure(errorHandler)
     val ff =
       for (editing <- editingF) yield {
@@ -385,7 +380,7 @@ object BuildCase2 {
           }
         else {
           import com.mongodb.client.model.ReturnDocument.AFTER
-          val f = collection.findOneAndUpdate(Filters.or(Filters.eq("location", null), Filters.eq("siteInfo.area", null)),
+          val f = collection.findOneAndUpdate(wpFilter(WorkPoint.BuildCase)(Filters.or(Filters.eq("location", null), Filters.eq("siteInfo.area", null))),
             Updates.set("editor", editor),
             FindOneAndUpdateOptions().returnDocument(AFTER)).toFuture()
           f.onFailure(errorHandler)
@@ -548,19 +543,16 @@ object BuildCase2 {
   def getOwnerBuildCase(owner: String) = query(myCaseFilter(owner)) _
   def getOwnerBuildCaseCount(owner: String) = count(myCaseFilter(owner))
 
-  def northOwnerless() = {
-    val northCounty = List(
-      "基隆", "宜蘭", "台北", "新北", "桃園",
-      "新竹縣", "新竹市")
-    Filters.and(Filters.eq("_id.wpType", WorkPoint.BuildCase), Filters.in("_id.county", northCounty: _*), Filters.eq("owner", null))
-  }
+  val northCounty = List(
+    "基隆", "宜蘭", "台北", "新北", "桃園",
+    "新竹縣", "新竹市")
 
-  def southOwnerless() = {
-    val southCounty = List(
-      "苗栗", "台中", "南投",
-      "彰化", "台南", "高雄", "屏東", "金門")
-    Filters.and(Filters.eq("_id.wpType", WorkPoint.BuildCase), Filters.in("_id.county", southCounty), Filters.eq("owner", null))
-  }
+  val southCounty = List(
+    "苗栗", "台中", "南投",
+    "彰化", "台南", "高雄", "屏東", "金門")
+
+  def northOwnerless() = wpFilter(WorkPoint.BuildCase)(Filters.in("_id.county", northCounty: _*), Filters.eq("owner", null))
+  def southOwnerless() = wpFilter(WorkPoint.BuildCase)(Filters.in("_id.county", southCounty: _*), Filters.eq("owner", null))
 
   def getNorthOwnerless() = query(northOwnerless()) _
   def getNorthOwnerlessCount() = count(northOwnerless())

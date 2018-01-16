@@ -38,6 +38,7 @@ object WorkPoint {
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
   import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
+  import org.mongodb.scala.bson.conversions._
 
   val ColName = "workPoint"
 
@@ -62,6 +63,16 @@ object WorkPoint {
   implicit val inputWrite = Json.writes[Input]
   implicit val noteWrite = Json.writes[Note]
   implicit val wpWrite = Json.writes[WorkPoint]
+  implicit val inRead = Json.reads[Input]
+  implicit val outRead = Json.reads[Output]
+  implicit val noteRead = Json.reads[Note]
+  //implicit val wpRead = Json.reads[WorkPoint]
+
+  def wpFilter(wpType: Int)(bsons: Bson*): Bson = {
+    val seq = bsons.+:(Filters.eq("_id.wpType", wpType))
+    Filters.and(seq:_*)
+  }
+
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {
       val f = MongoDB.database.createCollection(ColName).toFuture()
