@@ -15,7 +15,7 @@
             </div>
             </div>
         </div>
-        <build-case2-list :url="urlList[urlIndex].url" :param="{ sorby:'area+'}" :obtainBtn="true"></build-case2-list>
+        <build-case2-list :url="urlList[urlIndex].url" :param="{ sortBy:'area+'}" :obtainBtn="true"></build-case2-list>
     </div>
 </template>
 <style>

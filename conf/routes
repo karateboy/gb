@@ -47,8 +47,8 @@ POST     /BuildCase                     controllers.Application.upsertBuildCase
 
 GET      /UsageRecord/:offset           controllers.Application.getUsageRecord(offset: Int)
 
-POST     /MyCase/:skip/:limit           controllers.SalesManager.getMyCase(skip:Int, limit:Int)
-POST     /MyCase/count                  controllers.SalesManager.getMyCaseCount()
+GET      /MyCase/:queryParam/:skip/:limit           controllers.SalesManager.getMyCase(queryParam, skip:Int, limit:Int)
+GET      /MyCase/:queryParam/count                  controllers.SalesManager.getMyCaseCount(queryParam)
 GET      /MyCase/excel                  controllers.SalesManager.getMyCaseExcel
 
 POST     /NorthOwnerless/:skip/:limit   controllers.SalesManager.getOwnerless(dir="N", skip: Int, limit: Int)

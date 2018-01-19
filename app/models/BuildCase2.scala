@@ -70,13 +70,14 @@ object BuildCase2 {
   implicit val bcRead = Json.reads[BuildCase2]
 
   case class QueryParam(
-    areaGT: Option[Double], areaLT: Option[Double],
-    tag: Option[Seq[String]],
-    state: Option[String],
-    sales: Option[String],
-    keyword: Option[String],
-    sortBy: Option[String])
+    areaGT: Option[Double] = None, areaLT: Option[Double] = None,
+    tag: Option[Seq[String]] = None,
+    state: Option[String] = None,
+    sales: Option[String] = None,
+    keyword: Option[String] = None,
+    sortBy: Option[String] = Some("area+"))
 
+  val defaultQueryParam = QueryParam()
   implicit val qbcRead = Json.reads[QueryParam]
   implicit val qbcWrite = Json.writes[QueryParam]
 
@@ -487,7 +488,7 @@ object BuildCase2 {
 
     val sortBy = sortByOpt.getOrElse(Sorts.descending("siteInfo.area"))
 
-    query(filter, sortBy)(skip, limit)
+    query(filter)(sortBy)(skip, limit)
   }
 
   def count(param: QueryParam): Future[Long] = count(getFilter(param))
@@ -507,7 +508,7 @@ object BuildCase2 {
   }
 
   import org.mongodb.scala.bson.conversions.Bson
-  def query(filter: Bson, sortBy: Bson = Sorts.descending("siteInfo.area"))(skip: Int, limit: Int) = {
+  def query(filter: Bson)(sortBy: Bson = Sorts.descending("siteInfo.area"))(skip: Int, limit: Int) = {
     val f = collection.find(wpFilter(WorkPoint.BuildCaseType)(filter)).sort(sortBy).skip(skip).limit(limit).toFuture()
     f.onFailure(errorHandler)
     f
@@ -534,10 +535,10 @@ object BuildCase2 {
   def northOwnerless() = Filters.and(Filters.in("_id.county", northCounty: _*), Filters.eq("owner", null))
   def southOwnerless() = Filters.and(Filters.in("_id.county", southCounty: _*), Filters.eq("owner", null))
 
-  def getNorthOwnerless() = query(northOwnerless()) _
-  def getNorthOwnerlessCount() = count(northOwnerless())
-  def getSouthOwnerless() = query(southOwnerless()) _
-  def getSouthOwnerlessCount() = count(southOwnerless())
+  def getNorthOwnerless(param: QueryParam) = query(northOwnerless()) _
+  def getNorthOwnerlessCount(param: QueryParam) = count(northOwnerless())
+  def getSouthOwnerless(param: QueryParam) = query(southOwnerless()) _
+  def getSouthOwnerlessCount(param: QueryParam) = count(southOwnerless())
 
   def obtain(_id: BuildCaseID, owner: String) = {
     val filter = Filters.and(Filters.eq("_id", _id), Filters.eq("owner", null))

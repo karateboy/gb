@@ -1,6 +1,6 @@
 <template>
     <div>
-        <build-case2-list url="/MyCase" :param="{}"></build-case2-list>
+        <build-case2-list url="/MyCase" :param="{ sortBy:'area+'}"></build-case2-list>
     </div>
 </template>
 <style>

@@ -3,14 +3,14 @@
         <div v-if="buildCaseList.length != 0" class="table-responsive">
             <table class="table table-hover table-bordered table-condensed">
                 <thead>
-                    <tr class='info'>
+                    <tr class="info">
                         <th></th>
-                        <th @click="toggleSort('permitDate')">{{'發照日期' + sortDir}}</th>
-                        <th @click="toggleSort('county')">{{'縣市' + sortDir}} </th>
-                        <th @click="toggleSort('builder')">{{起造人 + sortDir}}</th>
-                        <th @click="toggleSort('architect')">{{建築師 + sortDir}}</th>
-                        <th @click="toggleSort('area')">{{'樓板面積' + sortDir}}</th>
-                        <th @click="toggleSort('addr')">{{'地號' + sortDir}}</th>
+                        <th @click="toggleSort('permitDate')"><a>發照日期</a></th>
+                        <th @click="toggleSort('county')"><a>縣市</a></th>
+                        <th @click="toggleSort('builder')"><a>起造人</a></th>
+                        <th @click="toggleSort('architect')"><a>建築師</a></th>
+                        <th @click="toggleSort('area')"><a>樓板面積</a></th>
+                        <th @click="toggleSort('addr')"><a>地號</a></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -200,10 +200,13 @@ export default {
       if (this.param.sortBy.indexOf(col) == -1) {
         this.param.sortBy = `${col}+`;
       } else {
-        this.param.sortBy = this.param.sortBy.replace("+", "-");
-        this.param.sortBy = this.param.sortBy.replace("-", "+");
+        if (this.param.sortBy.indexOf("+") == -1)
+          this.param.sortBy = this.param.sortBy.replace("-", "+");
+        else this.param.sortBy = this.param.sortBy.replace("+", "-");
       }
-    }
+      this.fetchBuildCase(0, this.limit);
+    },
+    headerPrompt(col) {}
   },
   components: {
     Pagination,

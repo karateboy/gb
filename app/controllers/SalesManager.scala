@@ -16,15 +16,15 @@ import collection.JavaConversions._
 import java.nio.file.Files
 
 object SalesManager extends Controller {
-  def getMyCase(skip: Int, limit: Int) = Security.Authenticated.async {
+  def getMyCase(queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
     implicit request =>
       val userInfoOpt = Security.getUserinfo(request)
-      val f = BuildCase2.getOwnerBuildCase(userInfoOpt.get.id)(skip, limit)
+      val f = BuildCase2.getOwnerBuildCase(userInfoOpt.get.id)()(skip, limit)
       for (builder <- f)
         yield Ok(Json.toJson(builder))
   }
 
-  def getMyCaseCount() = Security.Authenticated.async {
+  def getMyCaseCount(queryParamJson: String) = Security.Authenticated.async {
     implicit request =>
       val userInfoOpt = Security.getUserinfo(request)
       val f = BuildCase2.getOwnerBuildCaseCount(userInfoOpt.get.id)
@@ -32,7 +32,7 @@ object SalesManager extends Controller {
         yield Ok(Json.toJson(count))
   }
 
-  def getMyCaseExcel = Security.Authenticated.async {
+  def getMyCaseExcel(queryParamJson: String) = Security.Authenticated.async {
     implicit request =>
       val userInfoOpt = Security.getUserinfo(request)
       val f = BuildCase2.getOwnerBuildCase(userInfoOpt.get.id)(0, 10000)
@@ -48,36 +48,48 @@ object SalesManager extends Controller {
       }
   }
 
-  def getOwnerless(dir: String, skip: Int, limit: Int) = Security.Authenticated.async {
+  def getOwnerless(dir: String, queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
     implicit request =>
+      val json = java.net.URLDecoder.decode(queryParamJson, "UTF-8")
+      import BuildCase2._
+      val queryParam = Json.parse(json).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
+
       val f = if (dir.equalsIgnoreCase("N"))
-        BuildCase2.getNorthOwnerless()(skip, limit)
+        BuildCase2.getNorthOwnerless(queryParam)(skip, limit)
       else
-        BuildCase2.getSouthOwnerless()(skip, limit)
+        BuildCase2.getSouthOwnerless(queryParam)(skip, limit)
 
       for (builder <- f) yield {
         Ok(Json.toJson(builder))
       }
   }
 
-  def getOwnerlessCount(dir: String) = Security.Authenticated.async {
+  def getOwnerlessCount(dir: String, queryParamJson: String) = Security.Authenticated.async {
     implicit request =>
+      val json = java.net.URLDecoder.decode(queryParamJson, "UTF-8")
+      import BuildCase2._
+      val queryParam = Json.parse(json).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
+
       val f = if (dir.equalsIgnoreCase("N"))
-        BuildCase2.getNorthOwnerlessCount()
+        BuildCase2.getNorthOwnerlessCount(queryParam)
       else
-        BuildCase2.getSouthOwnerlessCount()
+        BuildCase2.getSouthOwnerlessCount(queryParam)
 
       for (count <- f)
         yield Ok(Json.toJson(count))
   }
 
-  def getOwnerlessExcel(dir: String) = Security.Authenticated.async {
+  def getOwnerlessExcel(dir: String, queryParamJson: String) = Security.Authenticated.async {
     implicit request =>
+      val json = java.net.URLDecoder.decode(queryParamJson, "UTF-8")
+      import BuildCase2._
+      val queryParam = Json.parse(json).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
+
       val f = if (dir.equalsIgnoreCase("N"))
-        BuildCase2.getNorthOwnerless()(0, 10000)
+        BuildCase2.getNorthOwnerless(queryParam)(0, 100000)
       else
-        BuildCase2.getSouthOwnerless()(0, 10000)
-        
+        BuildCase2.getSouthOwnerless(queryParam)(0, 100000)
+
       val builderMapF = Builder.getMap
       for {
         buildCaseList <- f
