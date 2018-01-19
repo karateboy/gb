@@ -87,65 +87,36 @@ object ExcelUtility {
     finishExcel(reportFilePath, pkg, wb)
   }
 
-  def exportBuildCase(buildCaseList: Seq[BuildCase2]) = {
+  def exportBuildCase(buildCaseList: Seq[BuildCase2], builderMap: Map[String, Builder]) = {
     val (reportFilePath, pkg, wb) = prepareTemplate("buildCase.xlsx")
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
     val format = wb.createDataFormat()
 
-    def getCareTypeNum(careType: String, careTypeList: Seq[CareType]) = {
-      careTypeList.find { ct => ct.name == careType }
-    }
     val sheet = wb.getSheetAt(0)
     val createHelper = wb.getCreationHelper()
-    val cellStyle = wb.createCellStyle()
-    cellStyle.setDataFormat(
-      createHelper.createDataFormat().getFormat("yyyy/m/d"));
-    
+
     for {
-      buildCase_idx <- buildCaseList.zipWithIndex
-      rowN = buildCase_idx._2 + 1
-      buildCase = buildCase_idx._1
+      (buildCase, idx) <- buildCaseList.zipWithIndex
+      rowN = idx + 1
     } {
-//      val row = sheet.createRow(rowN)
-//      row.createCell(0).setCellValue(buildCase.name)
-//      row.createCell(1).setCellValue(buildCase.architect)
-//      row.createCell(2).setCellValue(buildCase.area)
-//      row.createCell(3).setCellValue(buildCase.addr)
-//      buildCase.location map {
-//        location =>
-//          row.createCell(4).setCellValue(location(0))
-//          row.createCell(5).setCellValue(location(1))
-//      }
-//      buildCase.builder map {
-//        builder =>
-//          row.createCell(6).setCellValue(builder)
-//      }
-//
-//      buildCase.phone map {
-//        phone =>
-//          row.createCell(7).setCellValue(phone)
-//      }
-//
-//      row.createCell(8).setCellValue(
-//        if (buildCase.contracted)
-//          "是"
-//        else
-//          "否")
-//          
-//      buildCase.lastVisit map {
-//        lastVisit =>
-//          val cell = row.createCell(9)
-//          cell.setCellValue(lastVisit)
-//          //val format = BuiltinFormats.getBuiltinFormat(0xe)
-//          cell.setCellStyle(cellStyle)
-//      }
-
-//      buildCase.sales map {
-//        sales =>
-////          row.createCell(10).setCellValue(sales)
-//      }
+      val row = sheet.createRow(rowN)
+      row.createCell(0).setCellValue(buildCase.permitDate)
+      row.createCell(1).setCellValue(buildCase._id.county)
+      row.createCell(2).setCellValue(buildCase.builder)
+      if(!buildCase.personal){
+        val builder = builderMap(buildCase.builder)
+        row.createCell(3).setCellValue(builder.contact)
+        row.createCell(4).setCellValue(builder.addr)
+        row.createCell(5).setCellValue(builder.phone)
+      }else{
+        row.createCell(3).setCellValue("-")
+        row.createCell(4).setCellValue("-")
+        row.createCell(5).setCellValue("-")
+      }
+      row.createCell(6).setCellValue(buildCase.architect)
+      row.createCell(7).setCellValue(buildCase.siteInfo.area.getOrElse(0d))
+      row.createCell(8).setCellValue(buildCase.siteInfo.addr)
     }
-
     finishExcel(reportFilePath, pkg, wb)
   }
 

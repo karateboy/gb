@@ -5,13 +5,12 @@
                 <thead>
                     <tr class='info'>
                         <th></th>
-                        <th>發照日期</th>
-                        <th>縣市</th>
-                        <th>起造人</th>
-                        <th>類型</th>
-                        <th>建築師</th>
-                        <th>樓板面積</th>
-                        <th>地址</th>
+                        <th @click="toggleSort('permitDate')">{{'發照日期' + sortDir}}</th>
+                        <th @click="toggleSort('county')">{{'縣市' + sortDir}} </th>
+                        <th @click="toggleSort('builder')">{{起造人 + sortDir}}</th>
+                        <th @click="toggleSort('architect')">{{建築師 + sortDir}}</th>
+                        <th @click="toggleSort('area')">{{'樓板面積' + sortDir}}</th>
+                        <th @click="toggleSort('addr')">{{'地號' + sortDir}}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -22,12 +21,13 @@
                             <button class="btn btn-primary" @click="obtainCase(buildCase)" v-if="obtainBtn">
                                 <i class="fa fa-pen"></i>&nbsp;取得</button>  
                             <button class="btn btn-primary" @click="releaseCase(buildCase)" v-if="!obtainBtn">
-                                <i class="fa fa-pen"></i>&nbsp;歸還</button>                                  
+                                <i class="fa fa-pen"></i>&nbsp;歸還</button> 
+                            <button class="btn btn-primary" @click="caseMap(index)">
+                                <i class="fa fa-pen"></i>&nbsp;地圖</button>                                                                  
                         </td>
                         <td>{{ issueDate(buildCase)}}</td>
                         <td>{{ buildCase._id.county}}</td>
                         <td>{{ buildCase.builder}}</td>
-                        <td>{{ builderType(buildCase)}}</td>
                         <td>{{ buildCase.architect}}</td>
                         <td>{{ buildCase.siteInfo.area}}</td>
                         <td>{{ buildCase.siteInfo.addr}}</td>
@@ -38,6 +38,7 @@
         </div>
         <div v-else class="alert alert-info" role="alert">無</div>
         <build-case2-detail v-if="display === 'detail'" :buildCase="buildCaseList[selectedIndex]"></build-case2-detail>
+        <build-case2-map v-if="display === 'map'" :buildCase="buildCaseList[selectedIndex]"></build-case2-map>
     </div>
 </template>
 <style scoped>
@@ -48,6 +49,7 @@ import axios from "axios";
 import moment from "moment";
 import { Pagination, PaginationEvent } from "vue-pagination-2";
 import BuildCase2Detail from "./BuildCase2Detail.vue";
+import BuildCase2Map from "./BuildCase2Map.vue";
 
 export default {
   props: {
@@ -56,7 +58,8 @@ export default {
       required: true
     },
     param: {
-      type: Object
+      type: Object,
+      required: true
     },
     obtainBtn: {
       type: Boolean,
@@ -71,6 +74,12 @@ export default {
       display: "",
       selectedIndex: -1
     };
+  },
+  computed: {
+    sortDir() {
+      if (this.param.sortBy.indexOf("+") != -1) return "[+]";
+      else return "[-]";
+    }
   },
   mounted: function() {
     this.fetchBuildCase(0, this.limit);
@@ -144,6 +153,11 @@ export default {
       this.selectedIndex = idx;
       this.display = "detail";
     },
+    caseMap(idx) {
+      this.selectedIndex = idx;
+      this.display = "map";
+    },
+
     issueDate(buildCase) {
       let dateStr = moment(buildCase.permitDate).format("LL");
       return moment(buildCase.permitDate).fromNow() + `(${dateStr})`;
@@ -181,11 +195,20 @@ export default {
           }
         })
         .catch(err => alert(err));
+    },
+    toggleSort(col) {
+      if (this.param.sortBy.indexOf(col) == -1) {
+        this.param.sortBy = `${col}+`;
+      } else {
+        this.param.sortBy = this.param.sortBy.replace("+", "-");
+        this.param.sortBy = this.param.sortBy.replace("-", "+");
+      }
     }
   },
   components: {
     Pagination,
-    BuildCase2Detail
+    BuildCase2Detail,
+    BuildCase2Map
   }
 };
 </script>

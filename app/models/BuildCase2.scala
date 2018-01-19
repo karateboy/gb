@@ -22,10 +22,22 @@ import MongoDB._
 object BuildCaseState extends Enumeration {
   val Initial = Value
   val GetPhone = Value
+  val Visited = Value
+  val Monitoring = Value
+  val Contracted = Value
   val Closed = Value
+
+  val map = Map(
+    Initial -> "原始",
+    GetPhone -> "取得電話",
+    Visited -> "已拜訪",
+    Monitoring -> "觀察中",
+    Contracted -> "已簽約",
+    Closed -> "結案")
+
 }
 
-case class BuildCaseID(county: String, permitID: String, wpType: Int = WorkPoint.BuildCase) extends IWorkPointID
+case class BuildCaseID(county: String, permitID: String, wpType: Int = WorkPoint.BuildCaseType) extends IWorkPointID
 case class SiteInfo(usage: String, floorDesc: String, addr: String, area: Option[Double])
 
 case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
@@ -36,19 +48,6 @@ case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
                       state: String = BuildCaseState.Initial.toString(), owner: Option[String] = None,
                       tag: Seq[String] = Seq.empty[String],
                       notes: Seq[Note] = Seq.empty[Note], var editor: Option[String] = None) extends IWorkPoint
-
-case class QueryBuildCaseParam2(
-  county: Option[String],
-  builder: Option[String],
-  contact: Option[String],
-  phone: Option[String],
-  architect: Option[String],
-  areaGT: Option[Double], areaLT: Option[Double],
-  addr: Option[String],
-  yellowAlert: Option[Boolean], redAlert: Option[Boolean],
-  tag: Option[Seq[String]],
-  state: Option[String],
-  sales: Option[String], assistant: Option[String])
 
 object BuildCase2 {
   import org.mongodb.scala.bson.codecs.Macros._
@@ -70,8 +69,16 @@ object BuildCase2 {
   implicit val idRead = Json.reads[BuildCaseID]
   implicit val bcRead = Json.reads[BuildCase2]
 
-  implicit val qbcRead = Json.reads[QueryBuildCaseParam2]
-  implicit val qbcWrite = Json.writes[QueryBuildCaseParam2]
+  case class QueryParam(
+    areaGT: Option[Double], areaLT: Option[Double],
+    tag: Option[Seq[String]],
+    state: Option[String],
+    sales: Option[String],
+    keyword: Option[String],
+    sortBy: Option[String])
+
+  implicit val qbcRead = Json.reads[QueryParam]
+  implicit val qbcWrite = Json.writes[QueryParam]
 
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {
@@ -370,7 +377,7 @@ object BuildCase2 {
 
   import scala.concurrent._
   def checkOut(editor: String) = {
-    val editingF = collection.find(wpFilter(WorkPoint.BuildCase)(Filters.eq("editor", editor))).toFuture()
+    val editingF = collection.find(wpFilter(WorkPoint.BuildCaseType)(Filters.eq("editor", editor))).toFuture()
     editingF.onFailure(errorHandler)
     val ff =
       for (editing <- editingF) yield {
@@ -380,7 +387,7 @@ object BuildCase2 {
           }
         else {
           import com.mongodb.client.model.ReturnDocument.AFTER
-          val f = collection.findOneAndUpdate(wpFilter(WorkPoint.BuildCase)(Filters.or(Filters.eq("location", null), Filters.eq("siteInfo.area", null))),
+          val f = collection.findOneAndUpdate(wpFilter(WorkPoint.BuildCaseType)(Filters.or(Filters.eq("location", null), Filters.eq("siteInfo.area", null))),
             Updates.set("editor", editor),
             FindOneAndUpdateOptions().returnDocument(AFTER)).toFuture()
           f.onFailure(errorHandler)
@@ -417,66 +424,40 @@ object BuildCase2 {
     f
   }
 
-  def getFilter(param: QueryBuildCaseParam2) = {
+  def getFilter(param: QueryParam) = {
     import org.mongodb.scala.model.Filters._
 
     /*
-     case class QueryBuildCaseParam2(
-  		county: Option[String],
-  		builder: Option[String],
-  		contact: Option[String],
-  		phone: Option[String],
-  		architect: Option[String],
-  		areaGT: Option[Double], areaLT: Option[Double],
-  		addr: Option[String],
-  		yellowAlert: Option[Boolean], redAlert: Option[Boolean],
-  		tag: Option[Seq[String]],
-  		state: Option[BuildCaseState.Value],
-  		sales: Option[String], assistant: Option[String])
-     * 
-     *
-     * */
+     * case class QueryBuildCase2Param(
+  			county: Option[String],
+  			builder: Option[String],
+  			architect: Option[String],
+  			areaGT: Option[Double], areaLT: Option[Double],
+  			addr: Option[String],
+  			tag: Option[Seq[String]],
+  			state: Option[String],
+  			sales: Option[String],
+  			sortBy: Option[String])
+    */
 
-    val countyFilter = param.county map { county => regex("county", "(?i)" + county) }
-    val builderFilter = param.county map { county => regex("county", "(?i)" + county) }
-    val architectFilter = param.architect map { architect => regex("architect", "(?i)" + architect) }
-    val addrFilter = param.addr map { addr => regex("addr", "(?i)" + addr) }
-
-    val areaGtFilter = param.areaGT map { v => Filters.gt("area", v) }
-    val areaLtFilter = param.areaLT map { v => Filters.lt("area", v) }
-    val stateFilter = param.state map { v => equal("state", v) }
-
-    val salesFilter = param.sales map {
-      sales =>
-        regex("sales", "(?i)" + sales)
+    import org.mongodb.scala.bson.conversions._
+    val keywordFilter: Option[Bson] = param.keyword map {
+      keyword =>
+        val countyFilter = regex("_id.county", "(?i)" + keyword)
+        val permitIdFilter = regex("_id.permitID", "(?i)" + keyword)
+        val builderFilter = regex("builder", "(?i)" + keyword)
+        val architectFilter = regex("architect", "(?i)" + keyword)
+        val addrFilter = regex("siteInfo.addr", "(?i)" + keyword)
+        or(countyFilter, permitIdFilter, builderFilter, architectFilter, addrFilter)
     }
 
-    val yellowAlertFilter = param.yellowAlert map { v =>
-      if (v == true) {
-        val today = DateTime.now
-        // today < date + 4*month
-        // today - 4*month < date
-        val yellowDue = today - 4.month
-        and(lt("date", today.toLocalDate().toDate()), gt("date", yellowDue.toLocalDate().toDate()))
-      } else
-        exists("_id")
-    }
+    val areaGtFilter = param.areaGT map { v => Filters.gt("siteInfo.area", v) }
+    val areaLtFilter = param.areaLT map { v => Filters.lt("siteInfo.area", v) }
+    val stateFilter = param.state map { v => Filters.eq("state", v) }
 
-    val redAlertFilter = param.redAlert map { v =>
-      if (v == true) {
-        val today = DateTime.now
-        // today > date + 4*month
-        // today - 6*month < date
-        val yellowDue = today - 4.month
-        val redDue = today - 6.month
-        and(gt("date", yellowDue.toLocalDate().toDate()), lt("date", redDue.toLocalDate().toDate()))
-      } else
-        exists("_id")
-    }
+    val salesFilter = param.sales map { sales => regex("sales", "(?i)" + sales) }
 
-    val filterList = List(architectFilter, addrFilter,
-      countyFilter, areaGtFilter, areaLtFilter, redAlertFilter, yellowAlertFilter,
-      stateFilter, salesFilter).flatMap { f => f }
+    val filterList = List(areaGtFilter, areaLtFilter, stateFilter, salesFilter, keywordFilter).flatMap { f => f }
 
     val filter = if (!filterList.isEmpty)
       and(filterList: _*)
@@ -488,29 +469,28 @@ object BuildCase2 {
 
   import org.mongodb.scala.model._
 
-  def queryBuildCase(param: QueryBuildCaseParam2)(skip: Int, limit: Int) = {
+  def query(param: QueryParam)(skip: Int, limit: Int): Future[Seq[BuildCase2]] = {
     import org.mongodb.scala.model.Filters._
 
     val filter = getFilter(param)
 
-    val f = collection.find(filter).sort(Sorts.ascending("permitDate")).skip(skip).limit(limit).toFuture()
-    f.onFailure {
-      errorHandler
+    val sortByOpt = param.sortBy map {
+      sortBy =>
+        import org.mongodb.scala.model.Sorts.ascending
+        val sortByField = sortBy.takeWhile { x => x != '+' || x != '-' }
+
+        if (sortBy.contains("+"))
+          Sorts.ascending(sortByField, "siteInfo.area")
+        else
+          Sorts.descending(sortByField, "siteInfo.area")
     }
-    for (records <- f) yield {
-      records
-    }
+
+    val sortBy = sortByOpt.getOrElse(Sorts.descending("siteInfo.area"))
+
+    query(filter, sortBy)(skip, limit)
   }
 
-  def queryBuildCaseCount(param: QueryBuildCaseParam2) = {
-    val filter = getFilter(param)
-
-    val f = collection.count(filter).toFuture()
-    f.onFailure {
-      errorHandler
-    }
-    for (count <- f) yield count
-  }
+  def count(param: QueryParam): Future[Long] = count(getFilter(param))
 
   def upsertBuildCase(buildCase: BuildCase2) = {
     val f = collection.replaceOne(Filters.eq("_id", buildCase._id), buildCase, UpdateOptions().upsert(true)).toFuture()
@@ -527,14 +507,14 @@ object BuildCase2 {
   }
 
   import org.mongodb.scala.bson.conversions.Bson
-  def query(filter: Bson)(skip: Int, limit: Int) = {
-    val sort = Sorts.descending("siteInfo.area")
-    val f = collection.find(filter).sort(sort).skip(skip).limit(limit).toFuture()
+  def query(filter: Bson, sortBy: Bson = Sorts.descending("siteInfo.area"))(skip: Int, limit: Int) = {
+    val f = collection.find(wpFilter(WorkPoint.BuildCaseType)(filter)).sort(sortBy).skip(skip).limit(limit).toFuture()
     f.onFailure(errorHandler)
     f
   }
+
   def count(filter: Bson) = {
-    val f = collection.count(filter).toFuture()
+    val f = collection.count(wpFilter(WorkPoint.BuildCaseType)(filter)).toFuture()
     f.onFailure(errorHandler)
     f
   }
@@ -551,11 +531,13 @@ object BuildCase2 {
     "苗栗", "台中", "南投",
     "彰化", "台南", "高雄", "屏東", "金門")
 
-  def northOwnerless() = wpFilter(WorkPoint.BuildCase)(Filters.in("_id.county", northCounty: _*), Filters.eq("owner", null))
-  def southOwnerless() = wpFilter(WorkPoint.BuildCase)(Filters.in("_id.county", southCounty: _*), Filters.eq("owner", null))
+  def northOwnerless() = Filters.and(Filters.in("_id.county", northCounty: _*), Filters.eq("owner", null))
+  def southOwnerless() = Filters.and(Filters.in("_id.county", southCounty: _*), Filters.eq("owner", null))
 
   def getNorthOwnerless() = query(northOwnerless()) _
   def getNorthOwnerlessCount() = count(northOwnerless())
+  def getSouthOwnerless() = query(southOwnerless()) _
+  def getSouthOwnerlessCount() = count(southOwnerless())
 
   def obtain(_id: BuildCaseID, owner: String) = {
     val filter = Filters.and(Filters.eq("_id", _id), Filters.eq("owner", null))

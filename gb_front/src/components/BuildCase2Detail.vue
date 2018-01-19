@@ -200,7 +200,7 @@ export default {
       let newNote = {
         date: new Date(),
         comment: this.comment,
-        person: this.user._id
+        person: this.user.name
       };
 
       this.buildCase.notes.push(newNote);

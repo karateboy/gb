@@ -19,7 +19,7 @@ import org.mongodb.scala.model.Indexes._
 import org.mongodb.scala.bson._
 import MongoDB._
 
-case class DumpSiteID(county: String, dirNo: String, wpType: Int = WorkPoint.DumpSite) extends IWorkPointID
+case class DumpSiteID(county: String, dirNo: String, wpType: Int = WorkPoint.DumpSiteType) extends IWorkPointID
 case class DumpSite(_id: DumpSiteID, name: String, contact: String, phone: String, addr: String,
                     feature: String, siteType: String, area: Double,
                     in: Seq[Input] = Seq.empty[Input], out: Seq[Output] = Seq.empty[Output], notes: Seq[Note] = Seq.empty[Note],
@@ -35,6 +35,10 @@ object DumpSite {
   val ColName = WorkPoint.ColName
   val collection = MongoDB.database.getCollection[DumpSite](WorkPoint.ColName).withCodecRegistry(codecRegistry)
 
+  import WorkPoint._
+  implicit val dpIdWrite = Json.writes[DumpSiteID]
+  implicit val dpWrite = Json.writes[DumpSite]
+  
   def init(colNames: Seq[String]) {
     val docF = SysConfig.get(SysConfig.ImportDumpSite)
     for (v <- docF) {
@@ -110,7 +114,7 @@ object DumpSite {
     import org.mongodb.scala.model.Filters._
     import org.mongodb.scala.model._
 
-    val noLocationListF = collection.find(Filters.and(Filters.eq("_id.wpType", WorkPoint.DumpSite),
+    val noLocationListF = collection.find(Filters.and(Filters.eq("_id.wpType", WorkPoint.DumpSiteType),
       Filters.eq("location", null))).toFuture()
     for (noLocationList <- noLocationListF) {
       var failed = 0
@@ -131,5 +135,13 @@ object DumpSite {
       }
       Logger.info(s"共 ${failed} 筆無法轉換")
     }
+  }
+  
+  def top3Near(location: Seq[Double]) = {
+    val geometry = geojson.Point(geojson.Position(location :_*))
+    val filter = Filters.nearSphere("location", geometry)
+    val f = collection.find(WorkPoint.wpFilter(WorkPoint.DumpSiteType)(filter)).limit(3).toFuture()
+    f.onFailure(errorHandler)
+    f
   }
 }

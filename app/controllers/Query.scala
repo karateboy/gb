@@ -140,76 +140,30 @@ object Query extends Controller {
         })
   }
 
-  import BuildCase2._
-  def queryBuildCase(skip: Int, limit: Int, outputTypeStr: String) = Security.Authenticated.async(BodyParsers.parse.json) {
-    implicit request =>
-      val outputType = OutputType.withName(outputTypeStr)
 
-      val result = request.body.validate[QueryBuildCaseParam2]
-      result.fold(
-        err =>
-          Future {
-            Logger.error(JsError.toJson(err).toString())
-            BadRequest(JsError.toJson(err).toString())
-          },
-        param => {
-          val f = BuildCase2.queryBuildCase(param)(skip, limit)
-          for (buildCaseList <- f) yield {
-            outputType match {
-              case OutputType.html =>
-                Ok(Json.toJson(buildCaseList))
-              case OutputType.excel =>
-                val excel = ExcelUtility.exportBuildCase(buildCaseList)
-                Ok.sendFile(excel, fileName = _ =>
-                  play.utils.UriEncoding.encodePathSegment("起造人.xlsx", "UTF-8"),
-                  onClose = () => { Files.deleteIfExists(excel.toPath()) })
-            }
-          }
-        })
-  }
 
-  import org.mongodb.scala.bson.ObjectId
-  def getBuildCase(encodedJson: String) = Security.Authenticated.async({
-    val json = java.net.URLDecoder.decode(encodedJson, "UTF-8")
-    val ret = Json.parse(json).validate[QueryBuildCaseParam2]
-    ret.fold(
-      err =>
-        Future {
-          Logger.error(JsError.toJson(err).toString())
-          BadRequest(JsError.toJson(err).toString())
-        },
-      param => {
-        val f = BuildCase2.queryBuildCase(param)(0, 2048)
-        for (buildCaseList <- f) yield {
-          val excel = ExcelUtility.exportBuildCase(buildCaseList)
-          Ok.sendFile(excel, fileName = _ =>
-            play.utils.UriEncoding.encodePathSegment("起造人.xlsx", "UTF-8"),
-            onClose = () => { Files.deleteIfExists(excel.toPath()) })
-        }
-      })
+//  def getBuildCase(encodedJson: String) = Security.Authenticated.async({
+//    val json = java.net.URLDecoder.decode(encodedJson, "UTF-8")
+//    val ret = Json.parse(json).validate[QueryParam]
+//    ret.fold(
+//      err =>
+//        Future {
+//          Logger.error(JsError.toJson(err).toString())
+//          BadRequest(JsError.toJson(err).toString())
+//        },
+//      param => {
+//        val f = BuildCase2.queryBuildCase(param)(0, 2048)
+//        for (buildCaseList <- f) yield {
+//          val excel = ExcelUtility.exportBuildCase(buildCaseList)
+//          Ok.sendFile(excel, fileName = _ =>
+//            play.utils.UriEncoding.encodePathSegment("起造人.xlsx", "UTF-8"),
+//            onClose = () => { Files.deleteIfExists(excel.toPath()) })
+//        }
+//      })
+//
+//  })
 
-  })
 
-  def queryBuildCaseList = queryBuildCase(0, 10000, "html")
-  def queryBuildCaseExcel = queryBuildCase(0, 10000, "excel")
-
-  def queryBuildCaseCount() = Security.Authenticated.async(BodyParsers.parse.json) {
-    implicit request =>
-      val result = request.body.validate[QueryBuildCaseParam2]
-      result.fold(
-        err =>
-          Future {
-            Logger.error(JsError.toJson(err).toString())
-            BadRequest(JsError.toJson(err).toString())
-          },
-        param => {
-          val f = BuildCase2.queryBuildCaseCount(param)
-          f map {
-            count =>
-              Ok(Json.toJson(count))
-          }
-        })
-  }
   def updateBuildCase = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
       val result = request.body.validate[BuildCase2]

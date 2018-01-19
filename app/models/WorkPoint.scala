@@ -42,9 +42,9 @@ object WorkPoint {
 
   val ColName = "workPoint"
 
-  val BuildCase = 1
-  val CareHouse = 2
-  val DumpSite = 3
+  val BuildCaseType = 1
+  val CareHouseType = 2
+  val DumpSiteType = 3
 
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
@@ -70,7 +70,7 @@ object WorkPoint {
 
   def wpFilter(wpType: Int)(bsons: Bson*): Bson = {
     val seq = bsons.+:(Filters.eq("_id.wpType", wpType))
-    Filters.and(seq:_*)
+    Filters.and(seq: _*)
   }
 
   def init(colNames: Seq[String]) {

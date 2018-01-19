@@ -28,10 +28,6 @@ POST     /QueryCareHouse/count          controllers.Query.queryCareHouseCount()
 POST     /QueryCareHouse/excel          controllers.Query.queryCareHouseExcel()
 PUT      /CareHouse                     controllers.Query.updateCareHouse
 
-POST     /QueryBuildCase                controllers.Query.queryBuildCaseList()
-POST     /QueryBuildCase/:skip/:limit   controllers.Query.queryBuildCase(skip:Int, limit:Int, outputTypeStr="html")
-POST     /QueryBuildCase/count          controllers.Query.queryBuildCaseCount()
-
 POST     /QueryOilUser                  controllers.Query.queryOilUserList()
 POST     /QueryOilUser/:skip/:limit     controllers.Query.queryOilUser(skip:Int, limit:Int, outputTypeStr="html")
 POST     /QueryOilUser/count            controllers.Query.queryOilUserCount()
@@ -53,19 +49,28 @@ GET      /UsageRecord/:offset           controllers.Application.getUsageRecord(o
 
 POST     /MyCase/:skip/:limit           controllers.SalesManager.getMyCase(skip:Int, limit:Int)
 POST     /MyCase/count                  controllers.SalesManager.getMyCaseCount()
-POST     /NorthOwnerless/:skip/:limit   controllers.SalesManager.getNorthOwnerless(skip: Int, limit: Int)
-POST     /NorthOwnerless/count          controllers.SalesManager.getNorthOwnerlessCount()
+GET      /MyCase/excel                  controllers.SalesManager.getMyCaseExcel
+
+POST     /NorthOwnerless/:skip/:limit   controllers.SalesManager.getOwnerless(dir="N", skip: Int, limit: Int)
+POST     /NorthOwnerless/count          controllers.SalesManager.getOwnerlessCount(dir="N")
+GET      /NorthOwnerless/excel          controllers.SalesManager.getOwnerlessExcel(dir="N")
+
+POST     /SouthOwnerless/:skip/:limit   controllers.SalesManager.getOwnerless(dir="S", skip: Int, limit: Int)
+POST     /SouthOwnerless/count          controllers.SalesManager.getOwnerlessCount(dir="S")
+
 
 POST     /ObtainCase                    controllers.SalesManager.obtainCase()
-POST	 /ReleaseCase					controllers.SalesManager.releaseCase()
+POST     /ReleaseCase                   controllers.SalesManager.releaseCase()
 PUT      /BuildCase                     controllers.Query.updateBuildCase
-GET      /BuildCase/:json               controllers.Query.getBuildCase(json)
+
 GET      /BuildCaseTemplate             controllers.Application.getBuildCaseTemplate
 POST     /UploadBuildCase               controllers.Application.uploadBuildCase
 
 POST     /GetWorkPoint                  controllers.SalesManager.getBuildCase()
 
-GET		 /WorkPoint						controllers.SalesManager.getWorkPoint()
+GET      /WorkPoint                     controllers.SalesManager.getWorkPoint()
+
+GET      /Top3DumpSite/:lon/:lat        controllers.SalesManager.getTop3DumpSite(lon: Double, lat: Double)
 #Report
 
 #JSON

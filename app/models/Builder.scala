@@ -105,4 +105,19 @@ object Builder {
 
     Builder.upsert(builder)
   }
+
+  def getMap() = {
+    val f = collection.find().toFuture()
+    f.onFailure(errorHandler)
+
+    for (builderList <- f) yield {
+      val pairs =
+        builderList map {
+          bd =>
+            bd._id -> bd
+        }
+      Map(pairs: _*)
+    }
+
+  }
 }

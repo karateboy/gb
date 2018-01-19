@@ -13,6 +13,7 @@ import Highchart._
 import models._
 import models.ModelHelper._
 import collection.JavaConversions._
+import java.nio.file.Files
 
 object SalesManager extends Controller {
   def getMyCase(skip: Int, limit: Int) = Security.Authenticated.async {
@@ -31,19 +32,62 @@ object SalesManager extends Controller {
         yield Ok(Json.toJson(count))
   }
 
-  def getNorthOwnerless(skip: Int, limit: Int) = Security.Authenticated.async {
+  def getMyCaseExcel = Security.Authenticated.async {
     implicit request =>
-      val f = BuildCase2.getNorthOwnerless()(skip, limit)
+      val userInfoOpt = Security.getUserinfo(request)
+      val f = BuildCase2.getOwnerBuildCase(userInfoOpt.get.id)(0, 10000)
+      val builderMapF = Builder.getMap
+      for {
+        buildCaseList <- f
+        builderMap <- builderMapF
+      } yield {
+        val excel = ExcelUtility.exportBuildCase(buildCaseList, builderMap)
+        Ok.sendFile(excel, fileName = _ =>
+          play.utils.UriEncoding.encodePathSegment("起造人.xlsx", "UTF-8"),
+          onClose = () => { Files.deleteIfExists(excel.toPath()) })
+      }
+  }
+
+  def getOwnerless(dir: String, skip: Int, limit: Int) = Security.Authenticated.async {
+    implicit request =>
+      val f = if (dir.equalsIgnoreCase("N"))
+        BuildCase2.getNorthOwnerless()(skip, limit)
+      else
+        BuildCase2.getSouthOwnerless()(skip, limit)
+
       for (builder <- f) yield {
         Ok(Json.toJson(builder))
       }
   }
 
-  def getNorthOwnerlessCount() = Security.Authenticated.async {
+  def getOwnerlessCount(dir: String) = Security.Authenticated.async {
     implicit request =>
-      val f = BuildCase2.getNorthOwnerlessCount()
+      val f = if (dir.equalsIgnoreCase("N"))
+        BuildCase2.getNorthOwnerlessCount()
+      else
+        BuildCase2.getSouthOwnerlessCount()
+
       for (count <- f)
         yield Ok(Json.toJson(count))
+  }
+
+  def getOwnerlessExcel(dir: String) = Security.Authenticated.async {
+    implicit request =>
+      val f = if (dir.equalsIgnoreCase("N"))
+        BuildCase2.getNorthOwnerless()(0, 10000)
+      else
+        BuildCase2.getSouthOwnerless()(0, 10000)
+        
+      val builderMapF = Builder.getMap
+      for {
+        buildCaseList <- f
+        builderMap <- builderMapF
+      } yield {
+        val excel = ExcelUtility.exportBuildCase(buildCaseList, builderMap)
+        Ok.sendFile(excel, fileName = _ =>
+          play.utils.UriEncoding.encodePathSegment("起造人.xlsx", "UTF-8"),
+          onClose = () => { Files.deleteIfExists(excel.toPath()) })
+      }
   }
 
   def obtainCase() = Security.Authenticated.async(BodyParsers.parse.json) {
@@ -104,12 +148,21 @@ object SalesManager extends Controller {
           }
         })
   }
-  
-  def getWorkPoint() = Security.Authenticated.async{
+
+  def getWorkPoint() = Security.Authenticated.async {
     val f = WorkPoint.getList()
-    
-    for(workPointList <- f)yield{
+
+    for (workPointList <- f) yield {
       Ok(Json.toJson(workPointList))
     }
+  }
+
+  def getTop3DumpSite(lon: Double, lat: Double) = Security.Authenticated.async {
+    import DumpSite._
+    val f = DumpSite.top3Near(Seq(lon, lat))
+    for (dumpSites <- f) yield {
+      Ok(Json.toJson(dumpSites))
+    }
+
   }
 }
