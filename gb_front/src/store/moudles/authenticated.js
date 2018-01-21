@@ -14,11 +14,20 @@ const state = {
 }
 
 const getters = {
-    isAuthenticated: state =>{
+    isAuthenticated: state => {
         return state.authenticated;
     },
-    user: state =>{
+    user: state => {
         return state.user;
+    },
+    isAdmin: state => {
+        return state.user.groupId == "Admin";
+    },
+    isSales: state => {
+        return state.user.groupId == "Sales";
+    },
+    isIntern: state => {
+        return state.user.groupId == "Intern";
     }
 }
 
@@ -31,8 +40,13 @@ const mutations = {
 }
 
 const actions = {
-    logout : ({commit}) => {
-        commit('updateAuthenticated', {authenticated:false, config:{}});
+    logout: ({
+        commit
+    }) => {
+        commit('updateAuthenticated', {
+            authenticated: false,
+            config: {}
+        });
     }
 }
 

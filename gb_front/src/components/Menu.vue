@@ -23,13 +23,13 @@
                     IN+
                 </div>
             </li>
-            <router-link tag="li" to="/" active-class="active" exact>
+            <router-link v-show="false" tag="li" to="/" active-class="active" exact>
                 <a>
                     <i class="fa fa-tachometer" aria-hidden="true"></i>
                     <span class="nav-label">儀錶板</span>
                 </a>
             </router-link>
-            <li v-show="user.groupId == 'Admin'">
+            <li v-show="isAdmin">
                 <a>
                     <i class="fa fa-h-square" aria-hidden="true"></i>
                     <span class="nav-label">安養機構</span>
@@ -43,32 +43,7 @@
                     </router-link>
                 </ul>
             </li>
-            <li v-show="user.groupId == 'Admin'">
-                <a>
-                    <i class="fa fa-building" aria-hidden="true"></i>
-                    <span class="nav-label">起造人</span>
-                    <span class="fa arrow"></span>
-                </a>
-                <ul class="nav nav-second-level collapse">
-                    <router-link v-show="user.groupId == 'Admin'" tag="li" :to="{name:'NewBuildCase'}" active-class="active">
-                        <a>
-                            <i class="fa fa-plus" aria-hidden="true"></i>
-                            <span class="nav-label"></span>新增起造人案件</a>
-                    </router-link>
-
-                    <router-link tag="li" :to="{name:'QueryBuildCase'}" active-class="active">
-                        <a>
-                            <i class="fa fa-search" aria-hidden="true"></i>
-                            <span class="nav-label"></span>查詢起造人案件</a>
-                    </router-link>
-                    <router-link tag="li" :to="{name:'ImportBuildCase'}" active-class="active">
-                        <a>
-                            <i class="fa fa-cloud-upload" aria-hidden="true"></i>
-                            <span class="nav-label"></span>匯入起造人案件</a>
-                    </router-link>
-                </ul>
-            </li>
-            <li v-show="user.groupId == 'Sales'">
+            <li v-show="isSales||isAdmin">
                 <a>
                     <i class="fa fa-users" aria-hidden="true"></i>
                     <span class="nav-label">業務</span>
@@ -92,7 +67,7 @@
                     </router-link>
                 </ul>
             </li>
-            <li v-show="user.groupId == 'Intern'">
+            <li v-show="isIntern">
                 <a>
                     <i class="fa fa-users" aria-hidden="true"></i>
                     <span class="nav-label">工讀生</span>
@@ -107,7 +82,7 @@
                     </router-link>
                 </ul>
             </li>
-            <li v-show="user.groupId == 'Admin'">
+            <li v-show="isAdmin">
                 <a>
                     <i class="fa fa-cog" aria-hidden="true"></i>
                     <span class="nav-label">系統管理</span>
@@ -155,7 +130,7 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(["user"])
+    ...mapGetters(["user", "isAdmin", "isSales", "isIntern"])
   }
 };
 </script>

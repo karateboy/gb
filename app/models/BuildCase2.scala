@@ -427,9 +427,9 @@ object BuildCase2 {
 
   def getSortBy(param: QueryParam) = {
     import org.mongodb.scala.model.Sorts.ascending
-    val sortByField = param.sortBy.takeWhile { x => !(x == '<' || x == '>') }
-    val dir = param.sortBy.contains("<")
-
+    val sortByField = param.sortBy.takeWhile { x => !(x == '+' || x == '-') }
+    val dir = param.sortBy.contains("+")
+    
     val firstSort =
       if (dir)
         Sorts.ascending(sortByField)

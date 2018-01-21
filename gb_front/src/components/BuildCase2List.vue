@@ -15,12 +15,12 @@
                 <thead>
                     <tr class="info">
                         <th></th>
-                        <th @click="toggleSort('permitDate')"><a>發照日期{{sortDir('permitDate')}}</a></th>
-                        <th @click="toggleSort('_id.county')"><a>縣市{{sortDir('_id.county')}}</a></th>
-                        <th @click="toggleSort('builder')"><a>起造人{{sortDir('builder')}}</a></th>
-                        <th @click="toggleSort('architect')"><a>建築師{{sortDir('architect')}}</a></th>
-                        <th @click="toggleSort('siteInfo.area')"><a>樓板面積{{sortDir('siteInfo.area')}}</a></th>
-                        <th @click="toggleSort('siteInfo.addr')"><a>地號{{sortDir('siteInfo.addr')}}</a></th>
+                        <th @click="toggleSort('permitDate')"><a>發照日期&nbsp;<span v-html = "sortDir('permitDate')"></span></a></th>
+                        <th @click="toggleSort('_id.county')"><a>縣市&nbsp;<span v-html = "sortDir('_id.county')"></span></a></th>
+                        <th @click="toggleSort('builder')"><a>起造人&nbsp;<span v-html = "sortDir('builder')"></span></a></th>
+                        <th @click="toggleSort('architect')"><a>建築師&nbsp;<span v-html = "sortDir('architect')"></span></a></th>
+                        <th @click="toggleSort('siteInfo.area')"><a>樓板面積&nbsp;<span v-html = "sortDir('siteInfo.area')"></span></a></th>
+                        <th @click="toggleSort('siteInfo.addr')"><a>地號&nbsp;<span v-html = "sortDir('siteInfo.addr')"></span></a></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -91,11 +91,13 @@ export default {
       total: 0,
       display: "",
       selectedIndex: -1,
-      sortBy: "siteInfo.area>",
+      sortBy: "siteInfo.area+",
       keyword: ""
     };
   },
-  computed: {},
+  computed: {
+    
+  },
   mounted: function() {
     this.fetchBuildCase(0, this.limit);
     PaginationEvent.$on("vue-pagination::cardList", this.handlePageChange);
@@ -107,7 +109,7 @@ export default {
     param: function(newParam) {
       this.fetchBuildCase(0, this.limit);
     },
-    keyword(newKeyword){
+    keyword(newKeyword) {
       this.fetchBuildCase(0, this.limit);
     }
   },
@@ -175,10 +177,6 @@ export default {
       let dateStr = moment(buildCase.permitDate).format("LL");
       return moment(buildCase.permitDate).fromNow() + `(${dateStr})`;
     },
-    builderType(buildCase) {
-      if (buildCase.personal) return "個人";
-      else return "公司";
-    },
     obtainCase(buildCase) {
       let _id = buildCase._id;
       axios
@@ -211,12 +209,12 @@ export default {
     },
     toggleSort(col) {
       if (this.sortBy.indexOf(col) == -1) {
-        this.sortBy = `${col}<`;
+        this.sortBy = `${col}+`;
       } else {
-        if (this.sortBy.indexOf("<") != -1)
-          this.sortBy = this.sortBy.replace("<", ">");
+        if (this.sortBy.indexOf("+") != -1)
+          this.sortBy = this.sortBy.replace("+", "-");
         else {
-          this.sortBy = this.sortBy.replace(">", "<");
+          this.sortBy = this.sortBy.replace("-", "+");
         }
       }
 
@@ -225,8 +223,9 @@ export default {
     sortDir(col) {
       if (this.sortBy.indexOf(col) == -1) {
         return "";
-      } else if (this.sortBy.indexOf("<") != -1) return "<";
-      else return ">";
+      } else if (this.sortBy.indexOf("-") != -1)
+        return '<i class="fa fa-sort-desc" aria-hidden="true"></i>';
+      else return '<i class="fa fa-sort-asc" aria-hidden="true"></i>';
     },
     downloadExcel() {
       let paramJson = JSON.stringify(

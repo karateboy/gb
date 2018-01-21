@@ -14,7 +14,7 @@ import models._
 import models.ModelHelper._
 import collection.JavaConversions._
 import java.nio.file.Files
-
+import play.utils.UriEncoding
 object SalesManager extends Controller {
   import BuildCase2._
   import org.mongodb.scala.model._
@@ -65,10 +65,9 @@ object SalesManager extends Controller {
 
   def getOwnerless(dir: String, queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
     implicit request =>
-      val json = java.net.URLDecoder.decode(queryParamJson, "UTF-8")
       
       import BuildCase2._
-      val queryParam = Json.parse(json).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
+      val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
       
       val f = if (dir.equalsIgnoreCase("N"))
         BuildCase2.getNorthOwnerless(queryParam)(skip, limit)
@@ -82,9 +81,8 @@ object SalesManager extends Controller {
 
   def getOwnerlessCount(dir: String, queryParamJson: String) = Security.Authenticated.async {
     implicit request =>
-      val json = java.net.URLDecoder.decode(queryParamJson, "UTF-8")
       import BuildCase2._
-      val queryParam = Json.parse(json).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
+      val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
 
       val f = if (dir.equalsIgnoreCase("N"))
         BuildCase2.getNorthOwnerlessCount(queryParam)
@@ -97,9 +95,8 @@ object SalesManager extends Controller {
 
   def getOwnerlessExcel(dir: String, queryParamJson: String) = Security.Authenticated.async {
     implicit request =>
-      val json = java.net.URLDecoder.decode(queryParamJson, "UTF-8")
       import BuildCase2._
-      val queryParam = Json.parse(json).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
+      val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
 
       val f = if (dir.equalsIgnoreCase("N"))
         BuildCase2.getNorthOwnerless(queryParam)(0, 100000)

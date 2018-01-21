@@ -15,7 +15,7 @@
             </div>
             </div>
         </div>
-        <build-case2-list :url="urlList[urlIndex].url" :param="{}" :obtainBtn="true"></build-case2-list>
+        <build-case2-list :url="urlList[urlIndex].url" :param="{}" :obtainBtn="true" :download="isAdmin"></build-case2-list>
     </div>
 </template>
 <style>
@@ -41,6 +41,9 @@ export default {
         }
       ]
     };
+  },
+  computed: {
+    ...mapGetters(["isAdmin"])
   },
   components: {
     BuildCase2List
