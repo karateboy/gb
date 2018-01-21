@@ -1,16 +1,26 @@
 <template>
     <div>
+        <div  class="row">
+          <div class="form-horizontal">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">關鍵字:</label>
+                    <div class="col-sm-10">
+                      <input type="text" v-model="keyword">
+                    </div>
+                </div>
+            </div>
+        </div>
         <div v-if="buildCaseList.length != 0" class="table-responsive">
             <table class="table table-hover table-bordered table-condensed">
                 <thead>
                     <tr class="info">
                         <th></th>
-                        <th @click="toggleSort('permitDate')"><a>發照日期</a></th>
-                        <th @click="toggleSort('county')"><a>縣市</a></th>
-                        <th @click="toggleSort('builder')"><a>起造人</a></th>
-                        <th @click="toggleSort('architect')"><a>建築師</a></th>
-                        <th @click="toggleSort('area')"><a>樓板面積</a></th>
-                        <th @click="toggleSort('addr')"><a>地號</a></th>
+                        <th @click="toggleSort('permitDate')"><a>發照日期{{sortDir('permitDate')}}</a></th>
+                        <th @click="toggleSort('_id.county')"><a>縣市{{sortDir('_id.county')}}</a></th>
+                        <th @click="toggleSort('builder')"><a>起造人{{sortDir('builder')}}</a></th>
+                        <th @click="toggleSort('architect')"><a>建築師{{sortDir('architect')}}</a></th>
+                        <th @click="toggleSort('siteInfo.area')"><a>樓板面積{{sortDir('siteInfo.area')}}</a></th>
+                        <th @click="toggleSort('siteInfo.addr')"><a>地號{{sortDir('siteInfo.addr')}}</a></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -35,6 +45,9 @@
                 </tbody>
             </table>
             <pagination for="cardList" :records="total" :per-page="5" count-text="第{from}到第{to}筆/共{count}筆|{count} 筆|1筆"></pagination>
+            <div v-if="download">
+              <button class="btn btn-primary" @click="downloadExcel()">下載Excel</button>
+            </div>            
         </div>
         <div v-else class="alert alert-info" role="alert">無</div>
         <build-case2-detail v-if="display === 'detail'" :buildCase="buildCaseList[selectedIndex]"></build-case2-detail>
@@ -50,6 +63,7 @@ import moment from "moment";
 import { Pagination, PaginationEvent } from "vue-pagination-2";
 import BuildCase2Detail from "./BuildCase2Detail.vue";
 import BuildCase2Map from "./BuildCase2Map.vue";
+import baseUrl from "../baseUrl";
 
 export default {
   props: {
@@ -64,6 +78,10 @@ export default {
     obtainBtn: {
       type: Boolean,
       default: false
+    },
+    download: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -72,15 +90,12 @@ export default {
       limit: 5,
       total: 0,
       display: "",
-      selectedIndex: -1
+      selectedIndex: -1,
+      sortBy: "siteInfo.area>",
+      keyword: ""
     };
   },
-  computed: {
-    sortDir() {
-      if (this.param.sortBy.indexOf("+") != -1) return "[+]";
-      else return "[-]";
-    }
-  },
+  computed: {},
   mounted: function() {
     this.fetchBuildCase(0, this.limit);
     PaginationEvent.$on("vue-pagination::cardList", this.handlePageChange);
@@ -90,6 +105,9 @@ export default {
       this.fetchBuildCase(0, this.limit);
     },
     param: function(newParam) {
+      this.fetchBuildCase(0, this.limit);
+    },
+    keyword(newKeyword){
       this.fetchBuildCase(0, this.limit);
     }
   },
@@ -104,46 +122,41 @@ export default {
       }
     },
     fetchBuildCase(skip, limit) {
-      let request_url = `${this.url}/${skip}/${limit}`;
+      let paramJson = JSON.stringify(
+        Object.assign(this.param, {
+          keyword: this.keyword,
+          sortBy: this.sortBy
+        })
+      );
+      let request_url = `${this.url}/${encodeURIComponent(
+        paramJson
+      )}/${skip}/${limit}`;
 
-      if (this.param) {
-        axios
-          .post(request_url, this.param)
-          .then(this.processResp)
-          .catch(err => {
-            alert(err);
-          });
-      } else {
-        axios
-          .get(request_url)
-          .then(this.processResp)
-          .catch(err => {
-            alert(err);
-          });
-      }
+      axios
+        .get(request_url)
+        .then(this.processResp)
+        .catch(err => {
+          alert(err);
+        });
+
       this.fetchBuildCaseCount();
     },
     fetchBuildCaseCount() {
-      let request_url = `${this.url}/count`;
-      if (this.param) {
-        axios
-          .post(request_url, this.param)
-          .then(resp => {
-            this.total = resp.data;
-          })
-          .catch(err => {
-            alert(err);
-          });
-      } else {
-        axios
-          .get(request_url)
-          .then(resp => {
-            this.total = resp.data;
-          })
-          .catch(err => {
-            alert(err);
-          });
-      }
+      let paramJson = JSON.stringify(
+        Object.assign(this.param, {
+          keyword: this.keyword,
+          sortBy: this.sortBy
+        })
+      );
+      let request_url = `${this.url}/${encodeURIComponent(paramJson)}/count`;
+      axios
+        .get(request_url)
+        .then(resp => {
+          this.total = resp.data;
+        })
+        .catch(err => {
+          alert(err);
+        });
     },
     handlePageChange(page) {
       let skip = (page - 1) * this.limit;
@@ -197,16 +210,32 @@ export default {
         .catch(err => alert(err));
     },
     toggleSort(col) {
-      if (this.param.sortBy.indexOf(col) == -1) {
-        this.param.sortBy = `${col}+`;
+      if (this.sortBy.indexOf(col) == -1) {
+        this.sortBy = `${col}<`;
       } else {
-        if (this.param.sortBy.indexOf("+") == -1)
-          this.param.sortBy = this.param.sortBy.replace("-", "+");
-        else this.param.sortBy = this.param.sortBy.replace("+", "-");
+        if (this.sortBy.indexOf("<") != -1)
+          this.sortBy = this.sortBy.replace("<", ">");
+        else {
+          this.sortBy = this.sortBy.replace(">", "<");
+        }
       }
+
       this.fetchBuildCase(0, this.limit);
     },
-    headerPrompt(col) {}
+    sortDir(col) {
+      if (this.sortBy.indexOf(col) == -1) {
+        return "";
+      } else if (this.sortBy.indexOf("<") != -1) return "<";
+      else return ">";
+    },
+    downloadExcel() {
+      let paramJson = JSON.stringify(
+        Object.assign(this.param, { sortBy: this.sortBy })
+      );
+      let url =
+        baseUrl() + `${this.url}/${encodeURIComponent(paramJson)}/excel`;
+      window.open(url);
+    }
   },
   components: {
     Pagination,

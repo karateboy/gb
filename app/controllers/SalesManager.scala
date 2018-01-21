@@ -16,10 +16,17 @@ import collection.JavaConversions._
 import java.nio.file.Files
 
 object SalesManager extends Controller {
+  import BuildCase2._
+  import org.mongodb.scala.model._
+
   def getMyCase(queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
     implicit request =>
       val userInfoOpt = Security.getUserinfo(request)
-      val f = BuildCase2.getOwnerBuildCase(userInfoOpt.get.id)()(skip, limit)
+      val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
+      val queryParam = paramOpt.getOrElse(defaultQueryParam)
+      queryParam.owner = Some(userInfoOpt.get.id)
+
+      val f = BuildCase2.query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
       for (builder <- f)
         yield Ok(Json.toJson(builder))
   }
@@ -27,7 +34,11 @@ object SalesManager extends Controller {
   def getMyCaseCount(queryParamJson: String) = Security.Authenticated.async {
     implicit request =>
       val userInfoOpt = Security.getUserinfo(request)
-      val f = BuildCase2.getOwnerBuildCaseCount(userInfoOpt.get.id)
+      val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
+      val queryParam = paramOpt.getOrElse(defaultQueryParam)
+      queryParam.owner = Some(userInfoOpt.get.id)
+
+      val f = BuildCase2.count(getFilter(queryParam))
       for (count <- f)
         yield Ok(Json.toJson(count))
   }
@@ -35,7 +46,11 @@ object SalesManager extends Controller {
   def getMyCaseExcel(queryParamJson: String) = Security.Authenticated.async {
     implicit request =>
       val userInfoOpt = Security.getUserinfo(request)
-      val f = BuildCase2.getOwnerBuildCase(userInfoOpt.get.id)(0, 10000)
+      val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
+      val queryParam = paramOpt.getOrElse(defaultQueryParam)
+      queryParam.owner = Some(userInfoOpt.get.id)
+
+      val f = BuildCase2.query(getFilter(queryParam))(getSortBy(queryParam))(0, 10000)
       val builderMapF = Builder.getMap
       for {
         buildCaseList <- f
@@ -51,9 +66,10 @@ object SalesManager extends Controller {
   def getOwnerless(dir: String, queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
     implicit request =>
       val json = java.net.URLDecoder.decode(queryParamJson, "UTF-8")
+      
       import BuildCase2._
       val queryParam = Json.parse(json).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
-
+      
       val f = if (dir.equalsIgnoreCase("N"))
         BuildCase2.getNorthOwnerless(queryParam)(skip, limit)
       else

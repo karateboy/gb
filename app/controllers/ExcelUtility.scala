@@ -91,16 +91,19 @@ object ExcelUtility {
     val (reportFilePath, pkg, wb) = prepareTemplate("buildCase.xlsx")
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
     val format = wb.createDataFormat()
-
     val sheet = wb.getSheetAt(0)
-    val createHelper = wb.getCreationHelper()
 
+    val dateStyle = wb.createCellStyle();
+    dateStyle.setDataFormat(format.getFormat("yyyy/mm/dd"))
+    
     for {
       (buildCase, idx) <- buildCaseList.zipWithIndex
       rowN = idx + 1
     } {
       val row = sheet.createRow(rowN)
-      row.createCell(0).setCellValue(buildCase.permitDate)
+      val c0 = row.createCell(0)
+      c0.setCellStyle(dateStyle)
+      c0.setCellValue(buildCase.permitDate)
       row.createCell(1).setCellValue(buildCase._id.county)
       row.createCell(2).setCellValue(buildCase.builder)
       if(!buildCase.personal){

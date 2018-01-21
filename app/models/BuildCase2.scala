@@ -50,6 +50,14 @@ case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
                       notes: Seq[Note] = Seq.empty[Note], var editor: Option[String] = None) extends IWorkPoint
 
 object BuildCase2 {
+  case class QueryParam(
+    areaGT: Option[Double] = None, areaLT: Option[Double] = None,
+    tag: Option[Seq[String]] = None,
+    state: Option[String] = None,
+    var owner: Option[String] = None,
+    keyword: Option[String] = None,
+    sortBy: String = "siteInfo.area+")
+
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
   import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
@@ -68,14 +76,6 @@ object BuildCase2 {
   implicit val siRead = Json.reads[SiteInfo]
   implicit val idRead = Json.reads[BuildCaseID]
   implicit val bcRead = Json.reads[BuildCase2]
-
-  case class QueryParam(
-    areaGT: Option[Double] = None, areaLT: Option[Double] = None,
-    tag: Option[Seq[String]] = None,
-    state: Option[String] = None,
-    sales: Option[String] = None,
-    keyword: Option[String] = None,
-    sortBy: Option[String] = Some("area+"))
 
   val defaultQueryParam = QueryParam()
   implicit val qbcRead = Json.reads[QueryParam]
@@ -425,6 +425,24 @@ object BuildCase2 {
     f
   }
 
+  def getSortBy(param: QueryParam) = {
+    import org.mongodb.scala.model.Sorts.ascending
+    val sortByField = param.sortBy.takeWhile { x => !(x == '<' || x == '>') }
+    val dir = param.sortBy.contains("<")
+
+    val firstSort =
+      if (dir)
+        Sorts.ascending(sortByField)
+      else
+        Sorts.descending(sortByField)
+
+    val secondSort = Sorts.descending("siteInfo.area")
+    if (sortByField != "siteInfo.area")
+      Sorts.orderBy(firstSort, secondSort)
+    else
+      firstSort
+  }
+
   def getFilter(param: QueryParam) = {
     import org.mongodb.scala.model.Filters._
 
@@ -455,10 +473,9 @@ object BuildCase2 {
     val areaGtFilter = param.areaGT map { v => Filters.gt("siteInfo.area", v) }
     val areaLtFilter = param.areaLT map { v => Filters.lt("siteInfo.area", v) }
     val stateFilter = param.state map { v => Filters.eq("state", v) }
+    val ownerFilter = param.owner map { sales => regex("owner", "(?i)" + sales) }
 
-    val salesFilter = param.sales map { sales => regex("sales", "(?i)" + sales) }
-
-    val filterList = List(areaGtFilter, areaLtFilter, stateFilter, salesFilter, keywordFilter).flatMap { f => f }
+    val filterList = List(areaGtFilter, areaLtFilter, stateFilter, ownerFilter, keywordFilter).flatMap { f => f }
 
     val filter = if (!filterList.isEmpty)
       and(filterList: _*)
@@ -471,23 +488,8 @@ object BuildCase2 {
   import org.mongodb.scala.model._
 
   def query(param: QueryParam)(skip: Int, limit: Int): Future[Seq[BuildCase2]] = {
-    import org.mongodb.scala.model.Filters._
-
     val filter = getFilter(param)
-
-    val sortByOpt = param.sortBy map {
-      sortBy =>
-        import org.mongodb.scala.model.Sorts.ascending
-        val sortByField = sortBy.takeWhile { x => x != '+' || x != '-' }
-
-        if (sortBy.contains("+"))
-          Sorts.ascending(sortByField, "siteInfo.area")
-        else
-          Sorts.descending(sortByField, "siteInfo.area")
-    }
-
-    val sortBy = sortByOpt.getOrElse(Sorts.descending("siteInfo.area"))
-
+    val sortBy = getSortBy(param)
     query(filter)(sortBy)(skip, limit)
   }
 
@@ -521,8 +523,8 @@ object BuildCase2 {
   }
 
   def myCaseFilter(owner: String) = Filters.eq("owner", owner)
-  def getOwnerBuildCase(owner: String) = query(myCaseFilter(owner)) _
-  def getOwnerBuildCaseCount(owner: String) = count(myCaseFilter(owner))
+  //  def getOwnerBuildCase(owner: String) = query(myCaseFilter(owner)) _
+  //  def getOwnerBuildCaseCount(owner: String) = count(myCaseFilter(owner))
 
   val northCounty = List(
     "基隆", "宜蘭", "台北", "新北", "桃園",
@@ -532,13 +534,18 @@ object BuildCase2 {
     "苗栗", "台中", "南投",
     "彰化", "台南", "高雄", "屏東", "金門")
 
-  def northOwnerless() = Filters.and(Filters.in("_id.county", northCounty: _*), Filters.eq("owner", null))
-  def southOwnerless() = Filters.and(Filters.in("_id.county", southCounty: _*), Filters.eq("owner", null))
+  def northOwnerless(param: QueryParam) =
+    Filters.and(Filters.in("_id.county", northCounty: _*), Filters.eq("owner", null), getFilter(param))
+  def southOwnerless(param: QueryParam) =
+    Filters.and(Filters.in("_id.county", southCounty: _*), Filters.eq("owner", null), getFilter(param))
 
-  def getNorthOwnerless(param: QueryParam) = query(northOwnerless()) _
-  def getNorthOwnerlessCount(param: QueryParam) = count(northOwnerless())
-  def getSouthOwnerless(param: QueryParam) = query(southOwnerless()) _
-  def getSouthOwnerlessCount(param: QueryParam) = count(southOwnerless())
+  val northCaseFilter = Filters.in("_id.county", northCounty: _*)
+  val southCaseFilter = Filters.in("_id.county", southCounty: _*)
+
+  def getNorthOwnerless(param: QueryParam) = query(northOwnerless(param))(getSortBy(param)) _
+  def getNorthOwnerlessCount(param: QueryParam) = count(northOwnerless(param))
+  def getSouthOwnerless(param: QueryParam) = query(southOwnerless(param))(getSortBy(param)) _
+  def getSouthOwnerlessCount(param: QueryParam) = count(southOwnerless(param))
 
   def obtain(_id: BuildCaseID, owner: String) = {
     val filter = Filters.and(Filters.eq("_id", _id), Filters.eq("owner", null))

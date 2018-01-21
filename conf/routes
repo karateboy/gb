@@ -3,74 +3,75 @@
 # ~~~~
 
 # Home page
-GET      /                              controllers.Assets.at(path="/public", file="index.html")
-GET      /Customer                      controllers.Assets.at(path="/public", file="customer.html")
+GET      /                                          controllers.Assets.at(path="/public", file="index.html")
+GET      /Customer                                  controllers.Assets.at(path="/public", file="customer.html")
 
 # Map static resources from the /public folder to the /assets URL path
-GET      /assets/*file                  controllers.Assets.versioned(path="/public", file: Asset)
-GET      /html/*file                    controllers.Assets.at(path="/public/html", file)
-GET      /dist/*file                    controllers.Assets.at(path="/public/dist", file)
+GET      /assets/*file                              controllers.Assets.versioned(path="/public", file: Asset)
+GET      /html/*file                                controllers.Assets.at(path="/public/html", file)
+GET      /dist/*file                                controllers.Assets.at(path="/public/dist", file)
 
-GET      /logout                        controllers.Login.logout
-POST     /authenticate                  controllers.Login.authenticate
-GET      /testAuthenticated             controllers.Login.testAuthenticated
+GET      /logout                                    controllers.Login.logout
+POST     /authenticate                              controllers.Login.authenticate
+GET      /testAuthenticated                         controllers.Login.testAuthenticated
 
-POST     /User                          controllers.Application.newUser
-GET      /User                          controllers.Application.getAllUsers
-PUT      /User/:id                      controllers.Application.updateUser(id)
-DELETE   /User/:id                      controllers.Application.deleteUser(id)
+POST     /User                                      controllers.Application.newUser
+GET      /User                                      controllers.Application.getAllUsers
+PUT      /User/:id                                  controllers.Application.updateUser(id)
+DELETE   /User/:id                                  controllers.Application.deleteUser(id)
 
-GET      /Group                         controllers.Application.getGroupInfoList
+GET      /Group                                     controllers.Application.getGroupInfoList
 
-POST     /QueryCareHouse                controllers.Query.queryCareHouseList()
-POST     /QueryCareHouse/:skip/:limit   controllers.Query.queryCareHouse(skip:Int, limit:Int, outputTypeStr="html")
-POST     /QueryCareHouse/count          controllers.Query.queryCareHouseCount()
-POST     /QueryCareHouse/excel          controllers.Query.queryCareHouseExcel()
-PUT      /CareHouse                     controllers.Query.updateCareHouse
+POST     /QueryCareHouse                            controllers.Query.queryCareHouseList()
+POST     /QueryCareHouse/:skip/:limit               controllers.Query.queryCareHouse(skip:Int, limit:Int, outputTypeStr="html")
+POST     /QueryCareHouse/count                      controllers.Query.queryCareHouseCount()
+POST     /QueryCareHouse/excel                      controllers.Query.queryCareHouseExcel()
+PUT      /CareHouse                                 controllers.Query.updateCareHouse
 
-POST     /QueryOilUser                  controllers.Query.queryOilUserList()
-POST     /QueryOilUser/:skip/:limit     controllers.Query.queryOilUser(skip:Int, limit:Int, outputTypeStr="html")
-POST     /QueryOilUser/count            controllers.Query.queryOilUserCount()
-PUT      /OilUser                       controllers.Query.updateOilUser
-GET      /OilUser/:json                 controllers.Query.getOilUser(json)
+POST     /QueryOilUser                              controllers.Query.queryOilUserList()
+POST     /QueryOilUser/:skip/:limit                 controllers.Query.queryOilUser(skip:Int, limit:Int, outputTypeStr="html")
+POST     /QueryOilUser/count                        controllers.Query.queryOilUserCount()
+PUT      /OilUser                                   controllers.Query.updateOilUser
+GET      /OilUser/:json                             controllers.Query.getOilUser(json)
 
-GET      /TestGoogle                    controllers.Application.testGeoCoding
-GET      /ImportBuildCase               controllers.Application.testParseMonthlyBuildCase
-GET      /TestCheckBuildCase            controllers.Application.testImportCheckBuildCase()
+GET      /TestGoogle                                controllers.Application.testGeoCoding
+GET      /ImportBuildCase                           controllers.Application.testParseMonthlyBuildCase
+GET      /TestCheckBuildCase                        controllers.Application.testImportCheckBuildCase()
 
-GET      /CheckOutBuilder               controllers.Application.checkOutBuilder
-POST     /Builder                       controllers.Application.upsertBuilder
-GET      /Builder/:encodedID            controllers.Query.getBuilder(encodedID)
+GET      /CheckOutBuilder                           controllers.Application.checkOutBuilder
+POST     /Builder                                   controllers.Application.upsertBuilder
+GET      /Builder/:encodedID                        controllers.Query.getBuilder(encodedID)
 
-GET      /CheckOutBuildCase             controllers.Application.checkOutBuildCase
-POST     /BuildCase                     controllers.Application.upsertBuildCase
+GET      /CheckOutBuildCase                         controllers.Application.checkOutBuildCase
+POST     /BuildCase                                 controllers.Application.upsertBuildCase
 
-GET      /UsageRecord/:offset           controllers.Application.getUsageRecord(offset: Int)
+GET      /UsageRecord/:offset                       controllers.Application.getUsageRecord(offset: Int)
 
 GET      /MyCase/:queryParam/:skip/:limit           controllers.SalesManager.getMyCase(queryParam, skip:Int, limit:Int)
 GET      /MyCase/:queryParam/count                  controllers.SalesManager.getMyCaseCount(queryParam)
-GET      /MyCase/excel                  controllers.SalesManager.getMyCaseExcel
+GET      /MyCase/:queryParam/excel                  controllers.SalesManager.getMyCaseExcel(queryParam)
 
-POST     /NorthOwnerless/:skip/:limit   controllers.SalesManager.getOwnerless(dir="N", skip: Int, limit: Int)
-POST     /NorthOwnerless/count          controllers.SalesManager.getOwnerlessCount(dir="N")
-GET      /NorthOwnerless/excel          controllers.SalesManager.getOwnerlessExcel(dir="N")
+GET      /NorthOwnerless/:queryParam/:skip/:limit   controllers.SalesManager.getOwnerless(dir="N", queryParam, skip: Int, limit: Int)
+GET      /NorthOwnerless/:queryParam/count          controllers.SalesManager.getOwnerlessCount(dir="N", queryParam)
+GET      /NorthOwnerless/:queryParam/excel          controllers.SalesManager.getOwnerlessExcel(dir="N", queryParam)
 
-POST     /SouthOwnerless/:skip/:limit   controllers.SalesManager.getOwnerless(dir="S", skip: Int, limit: Int)
-POST     /SouthOwnerless/count          controllers.SalesManager.getOwnerlessCount(dir="S")
+GET      /SouthOwnerless/:queryParam/:skip/:limit   controllers.SalesManager.getOwnerless(dir="S", queryParam, skip: Int, limit: Int)
+GET      /SouthOwnerless/:queryParam/count          controllers.SalesManager.getOwnerlessCount(dir="S", queryParam)
+GET      /SouthOwnerless/:queryParam/excel          controllers.SalesManager.getOwnerlessExcel(dir="S", queryParam)
 
 
-POST     /ObtainCase                    controllers.SalesManager.obtainCase()
-POST     /ReleaseCase                   controllers.SalesManager.releaseCase()
-PUT      /BuildCase                     controllers.Query.updateBuildCase
+POST     /ObtainCase                                controllers.SalesManager.obtainCase()
+POST     /ReleaseCase                               controllers.SalesManager.releaseCase()
+PUT      /BuildCase                                 controllers.Query.updateBuildCase
 
-GET      /BuildCaseTemplate             controllers.Application.getBuildCaseTemplate
-POST     /UploadBuildCase               controllers.Application.uploadBuildCase
+GET      /BuildCaseTemplate                         controllers.Application.getBuildCaseTemplate
+POST     /UploadBuildCase                           controllers.Application.uploadBuildCase
 
-POST     /GetWorkPoint                  controllers.SalesManager.getBuildCase()
+POST     /GetWorkPoint                              controllers.SalesManager.getBuildCase()
 
-GET      /WorkPoint                     controllers.SalesManager.getWorkPoint()
+GET      /WorkPoint                                 controllers.SalesManager.getWorkPoint()
 
-GET      /Top3DumpSite/:lon/:lat        controllers.SalesManager.getTop3DumpSite(lon: Double, lat: Double)
+GET      /Top3DumpSite/:lon/:lat                    controllers.SalesManager.getTop3DumpSite(lon: Double, lat: Double)
 #Report
 
 #JSON
