@@ -16,50 +16,75 @@ import collection.JavaConversions._
 import java.nio.file.Files
 import play.utils.UriEncoding
 object SalesManager extends Controller {
-  import BuildCase2._
   import org.mongodb.scala.model._
 
   def getMyCase(typeID: String, queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
     implicit request =>
       val wpType = WorkPointType.withName(typeID)
-      val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
-      val queryParam = paramOpt.getOrElse(defaultQueryParam)
-      queryParam.owner = Some(Security.getUserID(request))
 
-      val f = wpType match {
+      wpType match {
         case WorkPointType.BuildCase =>
-          BuildCase2.query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
+          val paramOpt = Json.parse(queryParamJson).validate[BuildCase2.QueryParam].asOpt
+          val queryParam = paramOpt.getOrElse(BuildCase2.defaultQueryParam)
+          queryParam.owner = Some(Security.getUserID(request))
+          val f = BuildCase2.query(BuildCase2.getFilter(queryParam))(BuildCase2.getSortBy(queryParam))(skip, limit)
+          for (wpList <- f)
+            yield Ok(Json.toJson(wpList))
+
+        case WorkPointType.CareHouse =>
+          {
+            import CareHouse._
+            val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
+            val queryParam = paramOpt.getOrElse(QueryParam())
+            queryParam.owner = Some(Security.getUserID(request))
+
+            val f = CareHouse.query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
+            for (wpList <- f)
+              yield Ok(Json.toJson(wpList))
+          }
       }
 
-      for (wpList <- f)
-        yield Ok(Json.toJson(wpList))
   }
 
   def getMyCaseCount(typeID: String, queryParamJson: String) = Security.Authenticated.async {
     implicit request =>
       val wpType = WorkPointType.withName(typeID)
-      val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
-      val queryParam = paramOpt.getOrElse(defaultQueryParam)
-      queryParam.owner = Some(Security.getUserID(request))
 
-      val f = wpType match {
-        case WorkPointType.BuildCase =>
-          BuildCase2.count(getFilter(queryParam))
+      wpType match {
+        case WorkPointType.BuildCase => {
+          import BuildCase2._
+          val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
+          val queryParam = paramOpt.getOrElse(QueryParam())
+          queryParam.owner = Some(Security.getUserID(request))
+          val f = count(getFilter(queryParam))
+          for (count <- f)
+            yield Ok(Json.toJson(count))
+        }
+
+        case WorkPointType.CareHouse => {
+          import CareHouse._
+          val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
+          val queryParam = paramOpt.getOrElse(QueryParam())
+          queryParam.owner = Some(Security.getUserID(request))
+          val f = count(getFilter(queryParam))
+          for (count <- f)
+            yield Ok(Json.toJson(count))
+        }
       }
 
-      for (count <- f)
-        yield Ok(Json.toJson(count))
   }
 
   def getMyCaseExcel(typeID: String, queryParamJson: String) = Security.Authenticated.async {
     implicit request =>
       val wpType = WorkPointType.withName(typeID)
-      val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
-      val queryParam = paramOpt.getOrElse(defaultQueryParam)
-      queryParam.owner = Some(Security.getUserID(request))
 
       def buildCase = {
-        val f = BuildCase2.query(getFilter(queryParam))(getSortBy(queryParam))(0, 10000)
+        import BuildCase2._
+        val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
+        val queryParam = paramOpt.getOrElse(defaultQueryParam)
+        queryParam.owner = Some(Security.getUserID(request))
+
+        val f = query(getFilter(queryParam))(getSortBy(queryParam))(0, 10000)
         val builderMapF = Builder.getMap
         for {
           buildCaseList <- f
@@ -82,37 +107,67 @@ object SalesManager extends Controller {
   def getOwnerless(dir: String, typeID: String, queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
     implicit request =>
       val wpType = WorkPointType.withName(typeID)
-      import BuildCase2._
-      val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
 
       def buildCase = {
+        import BuildCase2._
+        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
         val f = if (dir.equalsIgnoreCase("N"))
-          BuildCase2.getNorthOwnerless(queryParam)(skip, limit)
+          getNorthOwnerless(queryParam)(skip, limit)
         else
-          BuildCase2.getSouthOwnerless(queryParam)(skip, limit)
+          getSouthOwnerless(queryParam)(skip, limit)
 
-        for (builder <- f) yield {
-          Ok(Json.toJson(builder))
+        for (objList <- f) yield {
+          Ok(Json.toJson(objList))
+        }
+      }
+
+      def careHouse = {
+        import CareHouse._
+        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
+        val f = if (dir.equalsIgnoreCase("N"))
+          getNorthOwnerless(queryParam)(skip, limit)
+        else
+          getSouthOwnerless(queryParam)(skip, limit)
+
+        for (objList <- f) yield {
+          Ok(Json.toJson(objList))
         }
       }
 
       wpType match {
         case WorkPointType.BuildCase =>
           buildCase
+        case WorkPointType.CareHouse =>
+          careHouse
       }
   }
 
   def getOwnerlessCount(dir: String, typeID: String, queryParamJson: String) = Security.Authenticated.async {
     implicit request =>
-      import BuildCase2._
+
       val wpType = WorkPointType.withName(typeID)
-      val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
 
       def buildCase = {
+        import BuildCase2._
+        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
+
         val f = if (dir.equalsIgnoreCase("N"))
-          BuildCase2.getNorthOwnerlessCount(queryParam)
+          getNorthOwnerlessCount(queryParam)
         else
-          BuildCase2.getSouthOwnerlessCount(queryParam)
+          getSouthOwnerlessCount(queryParam)
+
+        for (count <- f)
+          yield Ok(Json.toJson(count))
+      }
+
+      def careHouse = {
+        import CareHouse._
+        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
+
+        val f = if (dir.equalsIgnoreCase("N"))
+          getNorthOwnerlessCount(queryParam)
+        else
+          getSouthOwnerlessCount(queryParam)
 
         for (count <- f)
           yield Ok(Json.toJson(count))
@@ -121,16 +176,19 @@ object SalesManager extends Controller {
       wpType match {
         case WorkPointType.BuildCase =>
           buildCase
+        case WorkPointType.CareHouse =>
+          careHouse
       }
   }
 
   def getOwnerlessExcel(dir: String, typeID: String, queryParamJson: String) = Security.Authenticated.async {
     implicit request =>
-      import BuildCase2._
+
       val wpType = WorkPointType.withName(typeID)
-      val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
 
       def buildCase = {
+        import BuildCase2._
+        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
         val f = if (dir.equalsIgnoreCase("N"))
           BuildCase2.getNorthOwnerless(queryParam)(0, 100000)
         else
@@ -156,61 +214,63 @@ object SalesManager extends Controller {
 
   def obtainCase() = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
-      import BuildCase2._
-      val ret = request.body.validate[BuildCaseID]
-      ret.fold(
-        error => {
-          Logger.error(JsError.toJson(error).toString())
-          Future { BadRequest(Json.obj("ok" -> false, "msg" -> JsError.toJson(error).toString())) }
-        },
-        _id => {
-          val me = Security.getUserinfo(request).get.id
-          val retF = BuildCase2.obtain(_id, me)
+      import BuildCase2.idRead
+      import CareHouse.chIdRead
+      val bcIdOpt = request.body.validate[BuildCaseID].asOpt
+      val chIdOpt = request.body.validate[CareHouseID].asOpt
+
+      (bcIdOpt, chIdOpt) match {
+        case (Some(_id), _) =>
+          val retF = BuildCase2.obtain(_id, Security.getUserID(request))
           for (ret <- retF) yield {
             if (ret.getModifiedCount == 0)
               Ok(Json.obj("ok" -> false, "msg" -> "獲取失敗, 該案已有負責人"))
             else
               Ok(Json.obj("ok" -> true))
           }
-        })
+
+        case (None, Some(_id)) =>
+          val retF = CareHouse.obtain(_id, Security.getUserID(request))
+          for (ret <- retF) yield {
+            if (ret.getModifiedCount == 0)
+              Ok(Json.obj("ok" -> false, "msg" -> "獲取失敗, 該案已有負責人"))
+            else
+              Ok(Json.obj("ok" -> true))
+          }
+        case _ =>
+          Future { BadRequest(Json.obj("ok" -> false, "msg" -> "無法辨識ID類別")) }
+      }
   }
 
   def releaseCase() = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
-      import BuildCase2._
-      val ret = request.body.validate[BuildCaseID]
-      ret.fold(
-        error => {
-          Logger.error(JsError.toJson(error).toString())
-          Future { BadRequest(Json.obj("ok" -> false, "msg" -> JsError.toJson(error).toString())) }
-        },
-        _id => {
-          val me = Security.getUserinfo(request).get.id
-          val retF = BuildCase2.release(_id, me)
+      import BuildCase2.idRead
+      import CareHouse.chIdRead
+      val bcIdOpt = request.body.validate[BuildCaseID].asOpt
+      val chIdOpt = request.body.validate[CareHouseID].asOpt
+
+      (bcIdOpt, chIdOpt) match {
+        case (Some(_id), _) =>
+          val retF = BuildCase2.release(_id, Security.getUserID(request))
           for (ret <- retF) yield {
             if (ret.getModifiedCount == 0)
               Ok(Json.obj("ok" -> false, "msg" -> "釋放失敗, 不是自己的案"))
             else
               Ok(Json.obj("ok" -> true))
           }
-        })
-  }
 
-  def getBuildCase() = Security.Authenticated.async(BodyParsers.parse.json) {
-    implicit request =>
-      import BuildCase2._
-      val ret = request.body.validate[BuildCaseID]
-      ret.fold(
-        error => {
-          Logger.error(JsError.toJson(error).toString())
-          Future { BadRequest(Json.obj("ok" -> false, "msg" -> JsError.toJson(error).toString())) }
-        },
-        _id => {
-          val bcF = BuildCase2.getBuildCase(_id)
-          for (bc <- bcF) yield {
-            Ok(Json.toJson(bc))
+        case (None, Some(_id)) =>
+          val retF = CareHouse.release(_id, Security.getUserID(request))
+          for (ret <- retF) yield {
+            if (ret.getModifiedCount == 0)
+              Ok(Json.obj("ok" -> false, "msg" -> "釋放失敗, 不是自己的案"))
+            else
+              Ok(Json.obj("ok" -> true))
           }
-        })
+
+        case _ =>
+          Future { BadRequest(Json.obj("ok" -> false, "msg" -> "無法辨識ID類別")) }
+      }
   }
 
   def getWorkPoint() = Security.Authenticated.async {

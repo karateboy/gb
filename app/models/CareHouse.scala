@@ -13,7 +13,7 @@ case class CareHouse(_id: CareHouseID, addr: String, serviceType: Seq[String],
                      phone: String, fax: String, email: String, bed: Int,
                      var location: Option[Seq[Double]] = None, in: Seq[Input] = Seq.empty[Input],
                      out: Seq[Output] = Seq.empty[Output], notes: Seq[Note] = Seq.empty[Note],
-                     tag: Seq[String] = Seq.empty[String], owner: Option[String] = None) extends IWorkPoint
+                     tag: Seq[String] = Seq.empty[String], owner: Option[String] = None, state: Option[String] = None) extends IWorkPoint
 
 object CareHouse {
   import org.mongodb.scala.bson.codecs.Macros._
@@ -22,7 +22,23 @@ object CareHouse {
   import java.io.File
   import org.mongodb.scala.model._
   import org.mongodb.scala.bson._
+  case class QueryParam(
+    bedGT: Option[Int] = None, bedLT: Option[Int] = None,
+    tag: Option[Seq[String]] = None,
+    state: Option[String] = None,
+    var owner: Option[String] = None,
+    keyword: Option[String] = None,
+    sortBy: String = "bed+")
+  
+  import WorkPoint._
+  implicit val chIdRead = Json.reads[CareHouseID]
+  implicit val chRead = Json.reads[CareHouse]
+  implicit val qRead = Json.reads[QueryParam]
+  implicit val chIdWrite = Json.writes[CareHouseID]
+  implicit val chWrite = Json.writes[CareHouse]
+  implicit val qWrite = Json.writes[QueryParam]
 
+  
   val codecRegistry = fromRegistries(
     fromProviders(classOf[CareHouse], classOf[CareHouseID], classOf[Note], classOf[Input], classOf[Output]), DEFAULT_CODEC_REGISTRY)
 
@@ -36,7 +52,7 @@ object CareHouse {
     val f = SysConfig.get(SysConfig.ImportCareHouse)
     for (imported <- f) {
       if (!imported.asBoolean().getValue) {
-        if (importRecord){
+        if (importRecord) {
           convertAddrToLocation()
           SysConfig.set(SysConfig.ImportCareHouse, new BsonBoolean(true))
         }
@@ -106,31 +122,143 @@ object CareHouse {
     waitReadyResult(f)
   }
 
-    def convertAddrToLocation() = {
-      import org.mongodb.scala.model.Filters._
-      import org.mongodb.scala.model._
-      import WorkPoint.wpFilter
-      
-      val noLocationListF = collection.find(wpFilter(WorkPointType.CareHouse.id)(Filters.exists("location", false))).toFuture()
-      for (noLocationList <- noLocationListF) {
-        var failed = 0
-        Logger.info(s"no location list #=${noLocationList.length}")
-        noLocationList.map {
-          careHouse =>
-            assert(careHouse.location.isEmpty)
-            val locationList = GoogleApi.queryAddr(careHouse.addr)
-            if (!locationList.isEmpty) {
-              val location = locationList(0)
-              careHouse.location = Some(location)
-              val f = collection.updateOne(Filters.eq("_id", careHouse._id), Updates.set("location", location)).toFuture()
-              f.onFailure(errorHandler)
-              Logger.info(s"${careHouse.addr} 轉換成功!")
-            } else {
-              failed += 1
-              Logger.warn(s"${careHouse.addr} 無法轉換!")
-            }
-        }
-        Logger.info(s"共 ${failed} 筆無法轉換")
+  def convertAddrToLocation() = {
+    import org.mongodb.scala.model.Filters._
+    import org.mongodb.scala.model._
+    import WorkPoint.wpFilter
+
+    val noLocationListF = collection.find(wpFilter(WorkPointType.CareHouse.id)(Filters.exists("location", false))).toFuture()
+    for (noLocationList <- noLocationListF) {
+      var failed = 0
+      Logger.info(s"no location list #=${noLocationList.length}")
+      noLocationList.map {
+        careHouse =>
+          assert(careHouse.location.isEmpty)
+          val locationList = GoogleApi.queryAddr(careHouse.addr)
+          if (!locationList.isEmpty) {
+            val location = locationList(0)
+            careHouse.location = Some(location)
+            val f = collection.updateOne(Filters.eq("_id", careHouse._id), Updates.set("location", location)).toFuture()
+            f.onFailure(errorHandler)
+            Logger.info(s"${careHouse.addr} 轉換成功!")
+          } else {
+            failed += 1
+            Logger.warn(s"${careHouse.addr} 無法轉換!")
+          }
       }
+      Logger.info(s"共 ${failed} 筆無法轉換")
     }
+  }
+
+  def upsert(ch: CareHouse) = {
+    val f = collection.replaceOne(Filters.eq("_id", ch._id), ch, UpdateOptions().upsert(true)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+
+  def getSortBy(param: QueryParam) = {
+    import org.mongodb.scala.model.Sorts.ascending
+    val sortByField = param.sortBy.takeWhile { x => !(x == '+' || x == '-') }
+    val dir = param.sortBy.contains("+")
+
+    val firstSort =
+      if (dir)
+        Sorts.ascending(sortByField)
+      else
+        Sorts.descending(sortByField)
+
+    val secondSort = Sorts.descending("bed")
+    if (sortByField != "bed")
+      Sorts.orderBy(firstSort, secondSort)
+    else
+      firstSort
+  }
+
+  def getFilter(param: QueryParam) = {
+    import org.mongodb.scala.model.Filters._
+    import org.mongodb.scala.bson.conversions._
+    val keywordFilter: Option[Bson] = param.keyword map {
+      keyword =>
+        val countyFilter = regex("_id.county", "(?i)" + keyword)
+        val nameFilter = regex("_id.name", "(?i)" + keyword)
+        val addrFilter = regex("addr", "(?i)" + keyword)
+        or(countyFilter, nameFilter, addrFilter)
+    }
+
+    val bedGtFilter = param.bedGT map { v => Filters.gt("bed", v) }
+    val bedLtFilter = param.bedLT map { v => Filters.lt("bed", v) }
+    val stateFilter = param.state map { v => Filters.eq("state", v) }
+    val ownerFilter = param.owner map { sales => regex("owner", "(?i)" + sales) }
+
+    val filterList = List(bedGtFilter, bedLtFilter, stateFilter, ownerFilter, keywordFilter).flatMap { f => f }
+
+    val filter = if (!filterList.isEmpty)
+      and(filterList: _*)
+    else
+      Filters.exists("_id")
+
+    filter
+  }
+
+  import scala.concurrent._
+  import org.mongodb.scala.bson.conversions._
+  def query(param: QueryParam)(skip: Int, limit: Int): Future[Seq[CareHouse]] = {
+    val filter = getFilter(param)
+    val sortBy = getSortBy(param)
+    query(filter)(sortBy)(skip, limit)
+  }
+  def count(param: QueryParam): Future[Long] = count(getFilter(param))
+
+  import org.mongodb.scala.bson.conversions.Bson
+  import WorkPoint.wpFilter
+  def careHouseFilter(bsons: Bson*) = wpFilter(WorkPointType.CareHouse.id)(bsons: _*)
+
+  def query(filter: Bson)(sortBy: Bson = Sorts.descending("siteInfo.area"))(skip: Int, limit: Int) = {
+    val f = collection.find(careHouseFilter(filter)).sort(sortBy).skip(skip).limit(limit).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+
+  def count(filter: Bson) = {
+    val f = collection.count(careHouseFilter(filter)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+
+  val northCounty = List(
+    "基隆市", "宜蘭縣", "台北市", "新北市", "桃園市",
+    "新竹縣", "新竹市")
+
+  def northOwnerless(param: QueryParam) =
+    Filters.and(Filters.in("_id.county", northCounty: _*), Filters.eq("owner", null), getFilter(param))
+  def southOwnerless(param: QueryParam) =
+    Filters.and(Filters.nin("_id.county", northCounty: _*), Filters.eq("owner", null), getFilter(param))
+
+  val northCaseFilter = Filters.in("_id.county", northCounty: _*)
+  val southCaseFilter = Filters.nin("_id.county", northCounty: _*)
+
+  def getNorthOwnerless(param: QueryParam) = query(northOwnerless(param))(getSortBy(param)) _
+  def getNorthOwnerlessCount(param: QueryParam) = count(northOwnerless(param))
+  def getSouthOwnerless(param: QueryParam) = query(southOwnerless(param))(getSortBy(param)) _
+  def getSouthOwnerlessCount(param: QueryParam) = count(southOwnerless(param))
+
+  def obtain(_id: CareHouseID, owner: String) = {
+    val filter = Filters.and(Filters.eq("_id", _id), Filters.eq("owner", null))
+    val f = collection.updateOne(filter, Updates.set("owner", owner)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+
+  def release(_id: CareHouseID, owner: String) = {
+    val filter = Filters.and(Filters.eq("_id", _id), Filters.eq("owner", owner))
+    val f = collection.updateOne(filter, Updates.set("owner", null)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+
+  def getCareHouse(_id: CareHouseID) = {
+    val f = collection.find(Filters.eq("_id", _id)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
 }

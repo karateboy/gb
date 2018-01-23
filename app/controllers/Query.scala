@@ -68,29 +68,7 @@ object Query extends Controller {
 
   import java.nio.file.Files
 
-//  def getBuildCase(encodedJson: String) = Security.Authenticated.async({
-//    val json = java.net.URLDecoder.decode(encodedJson, "UTF-8")
-//    val ret = Json.parse(json).validate[QueryParam]
-//    ret.fold(
-//      err =>
-//        Future {
-//          Logger.error(JsError.toJson(err).toString())
-//          BadRequest(JsError.toJson(err).toString())
-//        },
-//      param => {
-//        val f = BuildCase2.queryBuildCase(param)(0, 2048)
-//        for (buildCaseList <- f) yield {
-//          val excel = ExcelUtility.exportBuildCase(buildCaseList)
-//          Ok.sendFile(excel, fileName = _ =>
-//            play.utils.UriEncoding.encodePathSegment("起造人.xlsx", "UTF-8"),
-//            onClose = () => { Files.deleteIfExists(excel.toPath()) })
-//        }
-//      })
-//
-//  })
-
-
-  def updateBuildCase = Security.Authenticated.async(BodyParsers.parse.json) {
+  def upsertBuildCase = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
       val result = request.body.validate[BuildCase2]
       result.fold(
@@ -100,15 +78,28 @@ object Query extends Controller {
             BadRequest(JsError.toJson(err).toString())
           },
         buildCase => {
-          val f = BuildCase2.upsertBuildCase(buildCase)
-          //f.onSuccess(Ok(Json.obj("ok"->true)))
+          val f = BuildCase2.upsert(buildCase)
+          for (ret <- f) yield Ok(Json.obj("Ok" -> true))
+        })
+  }
+
+  def upsertCareHouse = Security.Authenticated.async(BodyParsers.parse.json) {
+    implicit request =>
+      val result = request.body.validate[CareHouse]
+      result.fold(
+        err =>
+          Future {
+            Logger.error(JsError.toJson(err).toString())
+            BadRequest(JsError.toJson(err).toString())
+          },
+        careHouse => {
+          val f = CareHouse.upsert(careHouse)
           for (ret <- f) yield Ok(Json.obj("Ok" -> true))
         })
   }
 
   def getBuilder(encodedID: String) = Security.Authenticated.async {
-    val _id = java.net.URLDecoder.decode(encodedID, "UTF-8")
-    val f = Builder.get(_id)
+    val f = Builder.get(encodedID)
     for (builderOpt <- f) yield {
       if (builderOpt.isEmpty)
         NoContent

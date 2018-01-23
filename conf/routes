@@ -44,12 +44,11 @@ GET      /Ownerless/:dir/:typeID/:queryParam/excel          controllers.SalesMan
 
 POST     /ObtainCase                                        controllers.SalesManager.obtainCase()
 POST     /ReleaseCase                                       controllers.SalesManager.releaseCase()
-PUT      /BuildCase                                         controllers.Query.updateBuildCase
+PUT      /BuildCase                                         controllers.Query.upsertBuildCase
+PUT		 /CareHouse											controllers.Query.upsertCareHouse
 
 GET      /BuildCaseTemplate                                 controllers.Application.getBuildCaseTemplate
 POST     /UploadBuildCase                                   controllers.Application.uploadBuildCase
-
-POST     /GetWorkPoint                                      controllers.SalesManager.getBuildCase()
 
 GET      /WorkPoint                                         controllers.SalesManager.getWorkPoint()
 

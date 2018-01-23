@@ -27,6 +27,7 @@
             </div>
         </div>
         <build-case2-list v-if="typeIdx===0" :url="targetUrl" :param="{}" :obtainBtn="true" :download="isAdmin"></build-case2-list>
+        <care-house-list v-if="typeIdx===1" :url="targetUrl" :param="{}" :obtainBtn="true" :download="isAdmin"></care-house-list>
     </div>
 </template>
 <style>
@@ -34,6 +35,7 @@
 </style>
 <script>
 import BuildCase2List from "./BuildCase2List.vue";
+import CareHouseList from "./CareHouseList.vue"
 import { mapGetters } from "vuex";
 import axios from "axios";
 
@@ -74,7 +76,8 @@ export default {
   },
   methods: {},
   components: {
-    BuildCase2List
+    BuildCase2List,
+    CareHouseList
   }
 };
 </script>

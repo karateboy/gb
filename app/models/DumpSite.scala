@@ -23,7 +23,7 @@ case class DumpSiteID(county: String, dirNo: String, wpType: Int = WorkPointType
 case class DumpSite(_id: DumpSiteID, name: String, contact: String, phone: String, addr: String,
                     feature: String, siteType: String, area: Double,
                     in: Seq[Input] = Seq.empty[Input], out: Seq[Output] = Seq.empty[Output], notes: Seq[Note] = Seq.empty[Note],
-                    var location: Option[Seq[Double]] = None, owner: Option[String] = None) extends IWorkPoint
+                    var location: Option[Seq[Double]] = None, owner: Option[String] = None, state: Option[String]=None) extends IWorkPoint
 object DumpSite {
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY

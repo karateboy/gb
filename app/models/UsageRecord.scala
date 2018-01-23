@@ -32,10 +32,12 @@ object UsageRecord {
   val ColName = "usageRecord"
   val collection = MongoDB.database.getCollection[UsageRecord](ColName).withCodecRegistry(codecRegistry)
 
+  implicit val chWrite = Json.writes[CareHouseID]
   implicit val bcdWrite = Json.writes[BuildCaseID]
   implicit val irdWrite = Json.writes[UsageRecordID]
   implicit val irWrite = Json.writes[UsageRecord]
 
+  implicit val chRead = Json.reads[CareHouseID]
   implicit val bcdRead = Json.reads[BuildCaseID]
   implicit val irdRead = Json.reads[UsageRecordID]
   implicit val irRead = Json.reads[UsageRecord]

@@ -28,11 +28,12 @@ abstract class IWorkPoint() {
   val out: Seq[Output]
   val notes: Seq[Note]
   val owner: Option[String]
+  val state: Option[String]
 }
 
 case class WorkPoint(_id: Document,
                      location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output],
-                     notes: Seq[Note], tag: Seq[String], owner: Option[String]) extends IWorkPoint
+                     notes: Seq[Note], tag: Seq[String], owner: Option[String], state: Option[String]) extends IWorkPoint
 
 object WorkPointType extends Enumeration {
   val BuildCase = Value(1)

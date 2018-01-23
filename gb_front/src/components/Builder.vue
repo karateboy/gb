@@ -11,7 +11,7 @@
                         <tr><th>地址</th><td><input type="text" class="form-control" v-model="builder.addr"></td></tr>
                         <tr><th>聯絡人</th><td><input type="text" class="form-control" v-model="builder.contact"></td></tr>
                         <tr><th>電話</th><td>
-                            <a :href="builder.phone">{{builder.phone}}</a>
+                            <a :href="'tel:' + builder.phone">{{builder.phone}}</a>
                             <input type="text" class="form-control" v-model="builder.phone"></td></tr>
                     </tbody>
                 </table>
@@ -45,7 +45,7 @@ export default {
   },
   methods: {
     save() {
-        console.log(this.builder)
+      console.log(this.builder);
       axios
         .post("/Builder", this.builder)
         .then(resp => {

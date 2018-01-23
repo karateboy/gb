@@ -45,7 +45,7 @@ case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
                       permitDate: Date, architect: String,
                       var location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output],
                       contractor: Option[String] = None,
-                      state: String = BuildCaseState.Initial.toString(), owner: Option[String] = None,
+                      state: Option[String] = Some(BuildCaseState.Initial.toString()), owner: Option[String] = None,
                       tag: Seq[String] = Seq.empty[String],
                       notes: Seq[Note] = Seq.empty[Note], var editor: Option[String] = None) extends IWorkPoint
 
@@ -286,7 +286,7 @@ object BuildCase2 {
                 permitDate = permitDate, architect = architect,
                 location = None,
                 in = Seq.empty[Input], out = Seq.empty[Output],
-                state = state)
+                state = Some(state))
             }
           }
 
@@ -495,14 +495,6 @@ object BuildCase2 {
 
   def count(param: QueryParam): Future[Long] = count(getFilter(param))
 
-  def upsertBuildCase(buildCase: BuildCase2) = {
-    val f = collection.replaceOne(Filters.eq("_id", buildCase._id), buildCase, UpdateOptions().upsert(true)).toFuture()
-    f.onFailure {
-      errorHandler
-    }
-    f
-  }
-
   def updateStateByBuilder(builderID: String, state: String) = {
     val f = collection.updateMany(Filters.eq("builder", builderID), Updates.set("state", state)).toFuture()
     f.onFailure(errorHandler)
@@ -522,9 +514,7 @@ object BuildCase2 {
     f
   }
 
-  def myCaseFilter(owner: String) = Filters.eq("owner", owner)
-  //  def getOwnerBuildCase(owner: String) = query(myCaseFilter(owner)) _
-  //  def getOwnerBuildCaseCount(owner: String) = count(myCaseFilter(owner))
+  //def myCaseFilter(owner: String) = Filters.eq("owner", owner)
 
   val northCounty = List(
     "基隆", "宜蘭", "台北", "新北", "桃園",

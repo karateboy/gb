@@ -12,14 +12,6 @@ import UnhandledOrder from './components/UnhandledOrder.vue'
 import MyOrder from "./components/MyOrder.vue"
 import QueryOrder from "./components/QueryOrder.vue"
 
-import CareHouse from './components/CareHouse.vue'
-import QueryCareHouse from './components/QueryCareHouse.vue'
-
-import BuildCase from './components/BuildCase.vue'
-import QueryBuildCase from './components/QueryBuildCase.vue'
-import ImportBuildCase from './components/ImportBuildCase.vue'
-import NewBuildCase from './components/NewBuildCase.vue'
-
 import OilUser from './components/OilUser.vue'
 import QueryOilUser from './components/QueryOilUser.vue'
 
@@ -89,16 +81,6 @@ export const routes = [{
         ]
     },
     {
-        path: '/CareHouse',
-        component: CareHouse,
-        name: 'CareHouse',
-        children: [{
-            path: 'Query',
-            component: QueryCareHouse,
-            name: 'QueryCareHouse'
-        }]
-    },
-    {
         path: '/OilUser',
         component: OilUser,
         name: 'OilUser',
@@ -153,27 +135,6 @@ export const routes = [{
                 component: UsageReport,
                 name: 'UsageReport'
             },
-        ]
-    },
-    {
-        path: '/BuildCase',
-        component: BuildCase,
-        name: 'BuildCase',
-        children: [{
-                path: 'New',
-                component: NewBuildCase,
-                name: 'NewBuildCase'
-            },
-            {
-                path: 'Query',
-                component: QueryBuildCase,
-                name: 'QueryBuildCase'
-            },
-            {
-                path: 'Import',
-                component: ImportBuildCase,
-                name: 'ImportBuildCase'
-            }
         ]
     },
     {
