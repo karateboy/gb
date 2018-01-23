@@ -19,99 +19,138 @@ object SalesManager extends Controller {
   import BuildCase2._
   import org.mongodb.scala.model._
 
-  def getMyCase(queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
+  def getMyCase(typeID: String, queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
     implicit request =>
-      val userInfoOpt = Security.getUserinfo(request)
+      val wpType = WorkPointType.withName(typeID)
       val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
       val queryParam = paramOpt.getOrElse(defaultQueryParam)
-      queryParam.owner = Some(userInfoOpt.get.id)
+      queryParam.owner = Some(Security.getUserID(request))
 
-      val f = BuildCase2.query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
-      for (builder <- f)
-        yield Ok(Json.toJson(builder))
-  }
-
-  def getMyCaseCount(queryParamJson: String) = Security.Authenticated.async {
-    implicit request =>
-      val userInfoOpt = Security.getUserinfo(request)
-      val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
-      val queryParam = paramOpt.getOrElse(defaultQueryParam)
-      queryParam.owner = Some(userInfoOpt.get.id)
-
-      val f = BuildCase2.count(getFilter(queryParam))
-      for (count <- f)
-        yield Ok(Json.toJson(count))
-  }
-
-  def getMyCaseExcel(queryParamJson: String) = Security.Authenticated.async {
-    implicit request =>
-      val userInfoOpt = Security.getUserinfo(request)
-      val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
-      val queryParam = paramOpt.getOrElse(defaultQueryParam)
-      queryParam.owner = Some(userInfoOpt.get.id)
-
-      val f = BuildCase2.query(getFilter(queryParam))(getSortBy(queryParam))(0, 10000)
-      val builderMapF = Builder.getMap
-      for {
-        buildCaseList <- f
-        builderMap <- builderMapF
-      } yield {
-        val excel = ExcelUtility.exportBuildCase(buildCaseList, builderMap)
-        Ok.sendFile(excel, fileName = _ =>
-          play.utils.UriEncoding.encodePathSegment("起造人.xlsx", "UTF-8"),
-          onClose = () => { Files.deleteIfExists(excel.toPath()) })
+      val f = wpType match {
+        case WorkPointType.BuildCase =>
+          BuildCase2.query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
       }
+
+      for (wpList <- f)
+        yield Ok(Json.toJson(wpList))
   }
 
-  def getOwnerless(dir: String, queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
+  def getMyCaseCount(typeID: String, queryParamJson: String) = Security.Authenticated.async {
     implicit request =>
-      
-      import BuildCase2._
-      val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
-      
-      val f = if (dir.equalsIgnoreCase("N"))
-        BuildCase2.getNorthOwnerless(queryParam)(skip, limit)
-      else
-        BuildCase2.getSouthOwnerless(queryParam)(skip, limit)
+      val wpType = WorkPointType.withName(typeID)
+      val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
+      val queryParam = paramOpt.getOrElse(defaultQueryParam)
+      queryParam.owner = Some(Security.getUserID(request))
 
-      for (builder <- f) yield {
-        Ok(Json.toJson(builder))
+      val f = wpType match {
+        case WorkPointType.BuildCase =>
+          BuildCase2.count(getFilter(queryParam))
       }
-  }
-
-  def getOwnerlessCount(dir: String, queryParamJson: String) = Security.Authenticated.async {
-    implicit request =>
-      import BuildCase2._
-      val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
-
-      val f = if (dir.equalsIgnoreCase("N"))
-        BuildCase2.getNorthOwnerlessCount(queryParam)
-      else
-        BuildCase2.getSouthOwnerlessCount(queryParam)
 
       for (count <- f)
         yield Ok(Json.toJson(count))
   }
 
-  def getOwnerlessExcel(dir: String, queryParamJson: String) = Security.Authenticated.async {
+  def getMyCaseExcel(typeID: String, queryParamJson: String) = Security.Authenticated.async {
     implicit request =>
+      val wpType = WorkPointType.withName(typeID)
+      val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
+      val queryParam = paramOpt.getOrElse(defaultQueryParam)
+      queryParam.owner = Some(Security.getUserID(request))
+
+      def buildCase = {
+        val f = BuildCase2.query(getFilter(queryParam))(getSortBy(queryParam))(0, 10000)
+        val builderMapF = Builder.getMap
+        for {
+          buildCaseList <- f
+          builderMap <- builderMapF
+        } yield {
+          val excel = ExcelUtility.exportBuildCase(buildCaseList, builderMap)
+          Ok.sendFile(excel, fileName = _ =>
+            play.utils.UriEncoding.encodePathSegment("起造人.xlsx", "UTF-8"),
+            onClose = () => { Files.deleteIfExists(excel.toPath()) })
+        }
+      }
+
+      wpType match {
+        case WorkPointType.BuildCase =>
+          buildCase
+      }
+
+  }
+
+  def getOwnerless(dir: String, typeID: String, queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
+    implicit request =>
+      val wpType = WorkPointType.withName(typeID)
       import BuildCase2._
       val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
 
-      val f = if (dir.equalsIgnoreCase("N"))
-        BuildCase2.getNorthOwnerless(queryParam)(0, 100000)
-      else
-        BuildCase2.getSouthOwnerless(queryParam)(0, 100000)
+      def buildCase = {
+        val f = if (dir.equalsIgnoreCase("N"))
+          BuildCase2.getNorthOwnerless(queryParam)(skip, limit)
+        else
+          BuildCase2.getSouthOwnerless(queryParam)(skip, limit)
 
-      val builderMapF = Builder.getMap
-      for {
-        buildCaseList <- f
-        builderMap <- builderMapF
-      } yield {
-        val excel = ExcelUtility.exportBuildCase(buildCaseList, builderMap)
-        Ok.sendFile(excel, fileName = _ =>
-          play.utils.UriEncoding.encodePathSegment("起造人.xlsx", "UTF-8"),
-          onClose = () => { Files.deleteIfExists(excel.toPath()) })
+        for (builder <- f) yield {
+          Ok(Json.toJson(builder))
+        }
+      }
+
+      wpType match {
+        case WorkPointType.BuildCase =>
+          buildCase
+      }
+  }
+
+  def getOwnerlessCount(dir: String, typeID: String, queryParamJson: String) = Security.Authenticated.async {
+    implicit request =>
+      import BuildCase2._
+      val wpType = WorkPointType.withName(typeID)
+      val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
+
+      def buildCase = {
+        val f = if (dir.equalsIgnoreCase("N"))
+          BuildCase2.getNorthOwnerlessCount(queryParam)
+        else
+          BuildCase2.getSouthOwnerlessCount(queryParam)
+
+        for (count <- f)
+          yield Ok(Json.toJson(count))
+      }
+
+      wpType match {
+        case WorkPointType.BuildCase =>
+          buildCase
+      }
+  }
+
+  def getOwnerlessExcel(dir: String, typeID: String, queryParamJson: String) = Security.Authenticated.async {
+    implicit request =>
+      import BuildCase2._
+      val wpType = WorkPointType.withName(typeID)
+      val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
+
+      def buildCase = {
+        val f = if (dir.equalsIgnoreCase("N"))
+          BuildCase2.getNorthOwnerless(queryParam)(0, 100000)
+        else
+          BuildCase2.getSouthOwnerless(queryParam)(0, 100000)
+
+        val builderMapF = Builder.getMap
+        for {
+          buildCaseList <- f
+          builderMap <- builderMapF
+        } yield {
+          val excel = ExcelUtility.exportBuildCase(buildCaseList, builderMap)
+          Ok.sendFile(excel, fileName = _ =>
+            play.utils.UriEncoding.encodePathSegment("起造人.xlsx", "UTF-8"),
+            onClose = () => { Files.deleteIfExists(excel.toPath()) })
+        }
+      }
+
+      wpType match {
+        case WorkPointType.BuildCase =>
+          buildCase
       }
   }
 

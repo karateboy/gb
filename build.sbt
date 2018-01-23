@@ -1,6 +1,6 @@
 name := """gb"""
 
-version := "1.0.24"
+version := "1.0.25"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
@@ -24,7 +24,6 @@ libraryDependencies ++= Seq(
   "org.apache.poi" % "poi-ooxml-schemas" % "3.17",
   "com.itextpdf" % "itextpdf" % "5.5.12",
   "com.itextpdf.tool" % "xmlworker" % "5.5.12"
-  
 )
 
 mappings in Universal ++=

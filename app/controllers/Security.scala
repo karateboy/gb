@@ -29,6 +29,11 @@ object Security {
     Some(UserInfo(optId.get, optName.get, optGroup.get))
   }
   
+  def getUserID(request: RequestHeader) = {
+    val userInfo = getUserinfo(request)
+    userInfo.get.id
+  }
+  
   def onUnauthorized(request: RequestHeader) = {
     Results.Unauthorized("Login first...")
   }

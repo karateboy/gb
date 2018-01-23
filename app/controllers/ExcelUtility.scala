@@ -36,7 +36,7 @@ object ExcelUtility {
     new File(reportFilePath.toAbsolutePath().toString())
   }
 
-  def exportCareHouse(careHouseList: Seq[CareHouse]) = {
+/*  def exportCareHouse(careHouseList: Seq[CareHouse]) = {
     val (reportFilePath, pkg, wb) = prepareTemplate("careHouse.xlsx")
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
     val format = wb.createDataFormat()
@@ -85,7 +85,7 @@ object ExcelUtility {
     }
 
     finishExcel(reportFilePath, pkg, wb)
-  }
+  }*/
 
   def exportBuildCase(buildCaseList: Seq[BuildCase2], builderMap: Map[String, Builder]) = {
     val (reportFilePath, pkg, wb) = prepareTemplate("buildCase.xlsx")

@@ -37,7 +37,7 @@ object BuildCaseState extends Enumeration {
 
 }
 
-case class BuildCaseID(county: String, permitID: String, wpType: Int = WorkPoint.BuildCaseType) extends IWorkPointID
+case class BuildCaseID(county: String, permitID: String, wpType: Int = WorkPointType.BuildCase.id) extends IWorkPointID
 case class SiteInfo(usage: String, floorDesc: String, addr: String, area: Option[Double])
 
 case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
@@ -378,7 +378,7 @@ object BuildCase2 {
 
   import scala.concurrent._
   def checkOut(editor: String) = {
-    val editingF = collection.find(wpFilter(WorkPoint.BuildCaseType)(Filters.eq("editor", editor))).toFuture()
+    val editingF = collection.find(wpFilter(WorkPointType.BuildCase.id)(Filters.eq("editor", editor))).toFuture()
     editingF.onFailure(errorHandler)
     val ff =
       for (editing <- editingF) yield {
@@ -388,7 +388,7 @@ object BuildCase2 {
           }
         else {
           import com.mongodb.client.model.ReturnDocument.AFTER
-          val f = collection.findOneAndUpdate(wpFilter(WorkPoint.BuildCaseType)(Filters.or(Filters.eq("location", null), Filters.eq("siteInfo.area", null))),
+          val f = collection.findOneAndUpdate(wpFilter(WorkPointType.BuildCase.id)(Filters.or(Filters.eq("location", null), Filters.eq("siteInfo.area", null))),
             Updates.set("editor", editor),
             FindOneAndUpdateOptions().returnDocument(AFTER)).toFuture()
           f.onFailure(errorHandler)
@@ -429,7 +429,7 @@ object BuildCase2 {
     import org.mongodb.scala.model.Sorts.ascending
     val sortByField = param.sortBy.takeWhile { x => !(x == '+' || x == '-') }
     val dir = param.sortBy.contains("+")
-    
+
     val firstSort =
       if (dir)
         Sorts.ascending(sortByField)
@@ -511,13 +511,13 @@ object BuildCase2 {
 
   import org.mongodb.scala.bson.conversions.Bson
   def query(filter: Bson)(sortBy: Bson = Sorts.descending("siteInfo.area"))(skip: Int, limit: Int) = {
-    val f = collection.find(wpFilter(WorkPoint.BuildCaseType)(filter)).sort(sortBy).skip(skip).limit(limit).toFuture()
+    val f = collection.find(wpFilter(WorkPointType.BuildCase.id)(filter)).sort(sortBy).skip(skip).limit(limit).toFuture()
     f.onFailure(errorHandler)
     f
   }
 
   def count(filter: Bson) = {
-    val f = collection.count(wpFilter(WorkPoint.BuildCaseType)(filter)).toFuture()
+    val f = collection.count(wpFilter(WorkPointType.BuildCase.id)(filter)).toFuture()
     f.onFailure(errorHandler)
     f
   }

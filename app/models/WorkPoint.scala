@@ -34,6 +34,18 @@ case class WorkPoint(_id: Document,
                      location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output],
                      notes: Seq[Note], tag: Seq[String], owner: Option[String]) extends IWorkPoint
 
+object WorkPointType extends Enumeration {
+  val BuildCase = Value(1)
+  val CareHouse = Value(2)
+  val DumpSite = Value(3)
+
+  val map = Map(
+    BuildCase -> "起造人",
+    CareHouse -> "機構",
+    DumpSite -> "棄置場")
+
+}
+
 object WorkPoint {
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
@@ -41,10 +53,6 @@ object WorkPoint {
   import org.mongodb.scala.bson.conversions._
 
   val ColName = "workPoint"
-
-  val BuildCaseType = 1
-  val CareHouseType = 2
-  val DumpSiteType = 3
 
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY

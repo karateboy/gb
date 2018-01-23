@@ -118,14 +118,6 @@ object Application extends Controller {
     Ok(Json.toJson(infoList))
   }
 
-  def testGeoCoding = Security.Authenticated {
-    //val retList = GoogleApi.queryAddr("台北市萬華區西園路二段372巷23弄13號3樓")
-    //for(ret <- retList){
-    //  Logger.info(ret.toString())  
-    //}
-    CareHouse.convertAddrToLocation()
-    Ok("ok")
-  }
 
   def getBuildCaseTemplate = Security.Authenticated {
     import java.io.File

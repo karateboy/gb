@@ -32,7 +32,7 @@
                                 <i class="fa fa-pen"></i>&nbsp;取得</button>  
                             <button class="btn btn-primary" @click="releaseCase(buildCase)" v-if="!obtainBtn">
                                 <i class="fa fa-pen"></i>&nbsp;歸還</button> 
-                            <button class="btn btn-primary" @click="caseMap(index)">
+                            <button class="btn btn-primary" @click="caseMap(index)" :disabled="!buildCase.location">
                                 <i class="fa fa-pen"></i>&nbsp;地圖</button>                                                                  
                         </td>
                         <td>{{ issueDate(buildCase)}}</td>

@@ -7,15 +7,26 @@
                     <div class="col-lg-10">
                     <div class="btn-group" data-toggle="buttons">
                         <label class="btn btn-outline btn-primary dim" 
-                               v-for="(obj, idx) in urlList" :class="{active: urlIndex==idx}"
-                               @click="urlIndex=idx">
+                               v-for="(obj, idx) in dirList" :class="{active: dirIdx==idx}"
+                               @click="dirIdx=idx">
                             <input type="radio">{{ obj.name }} </label>
-                    </div>
+                    </div>                    
                 </div>
-            </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">種類:</label>
+                    <div class="col-lg-10">
+                    <div class="btn-group" data-toggle="buttons">
+                        <label class="btn btn-outline btn-primary dim" 
+                               v-for="(obj, idx) in typeList" :class="{active: typeIdx==idx}"
+                               @click="typeIdx=idx">
+                            <input type="radio">{{ obj.name }} </label>
+                    </div>                    
+                </div>
+              </div>
             </div>
         </div>
-        <build-case2-list :url="urlList[urlIndex].url" :param="{}" :obtainBtn="true" :download="isAdmin"></build-case2-list>
+        <build-case2-list v-if="typeIdx===0" :url="targetUrl" :param="{}" :obtainBtn="true" :download="isAdmin"></build-case2-list>
     </div>
 </template>
 <style>
@@ -29,22 +40,39 @@ import axios from "axios";
 export default {
   data() {
     return {
-      urlIndex: 0,
-      urlList: [
+      dirIdx: 0,
+      dirList: [
         {
           name: "北向",
-          url: "/NorthOwnerless"
+          url: "N"
         },
         {
           name: "南向",
-          url: "/SouthOwnerless"
+          url: "S"
+        }
+      ],
+      typeIdx: 0,
+      typeList: [
+        {
+          name: "起造人",
+          url: "BuildCase"
+        },
+        {
+          name: "長照機構",
+          url: "CareHouse"
         }
       ]
     };
   },
   computed: {
-    ...mapGetters(["isAdmin"])
+    ...mapGetters(["isAdmin"]),
+    targetUrl() {
+      return `/Ownerless/${this.dirList[this.dirIdx].url}/${
+        this.typeList[this.typeIdx].url
+      }`;
+    }
   },
+  methods: {},
   components: {
     BuildCase2List
   }

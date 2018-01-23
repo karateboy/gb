@@ -24,7 +24,7 @@ class ConvertWorker() extends Actor with ActorLogging {
   def handler: Receive = {
     case StartConvert =>
       Logger.info(s"Start convert careHouse location...")
-      CareHouse.convertAddrToLocation
+      //CareHouse.convertAddrToLocation
       self ! PoisonPill
   }
 }

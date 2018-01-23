@@ -10,10 +10,13 @@ object SysConfig extends Enumeration {
   val ColName = "sysConfig"
   val collection = MongoDB.database.getCollection(ColName)
 
+  val valueKey = "value"
   val ImportDumpSite = Value
+  val ImportCareHouse = Value
 
   val defaultConfig = Map(
-    ImportDumpSite -> Document("value" -> false))
+    ImportDumpSite -> Document(valueKey -> false),
+    ImportCareHouse -> Document(valueKey -> false))
 
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {
@@ -31,7 +34,6 @@ object SysConfig extends Enumeration {
           }
 
           val f = collection.insertMany(docs.toList, new InsertManyOptions().ordered(false)).toFuture()
-          f.onFailure(errorHandler)
           waitReadyResult(f)
         }
     })
@@ -55,5 +57,5 @@ object SysConfig extends Enumeration {
     }
   }
 
-  def set(_id: SysConfig.Value, v: BsonValue) = upsert(_id, Document("value" -> v))  
+  def set(_id: SysConfig.Value, v: BsonValue) = upsert(_id, Document(valueKey -> v))  
 }

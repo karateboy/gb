@@ -63,6 +63,10 @@ export default {
           width: 0,
           height: -35
         }
+      },
+      infoWindowPos: {
+        lng: 120.982024,
+        lat: 23.973875
       }
     };
   },
@@ -120,11 +124,11 @@ export default {
           `${marker.siteInfo.area}平方公尺</p>`;
       } else {
         this.infoOptions.content =
-          `<p><strong>${marker.name}(第${idx}近)</strong><br>` + 
+          `<p><strong>${marker.name}(第${idx}近)</strong><br>` +
           `${marker.feature}<br>` +
           `${marker.siteType}<br>` +
           `${marker.contact}<br>` +
-          `${marker.phone}<br>`+
+          `${marker.phone}<br>` +
           `${marker.addr}</p>`;
       }
 

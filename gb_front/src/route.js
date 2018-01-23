@@ -177,6 +177,17 @@ export const routes = [{
         ]
     },
     {
+        path: '/PersonalReport',
+        component: Intern,
+        name: 'Report',
+        children: [{
+                path: 'UsageReport',
+                component: UsageReport,
+                name: 'UsageReport'
+            }
+        ]
+    },
+    {
         path: '/System',
         component: SystemManagement,
         name: 'SystemManagement',
