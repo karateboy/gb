@@ -22,6 +22,7 @@ import UsageReport from './components/UsageReport.vue'
 
 import MyCase from './components/MyCase.vue'
 import ObtainCase from './components/ObtainCase.vue'
+import WorkPointMap from './components/WorkPointMap.vue'
 
 export const routes = [{
         path: '/',
@@ -32,53 +33,6 @@ export const routes = [{
         path: '/Login',
         component: Login,
         name: 'Login'
-    },
-    {
-        path: '/Vehicle',
-        component: VehicleOps,
-        name: 'VehicleOps',
-        children: [{
-                path: 'AddVehicle',
-                component: AddUser,
-                name: 'AddVehicle'
-            },
-            {
-                path: 'DelVehicle',
-                component: DelUser,
-                name: 'DelVehicle'
-            },
-            {
-                path: 'UpdateVehicle',
-                component: UpdateUser,
-                name: 'UpdateVehicle'
-            },
-        ]
-    },
-    {
-        path: '/Order',
-        component: Order,
-        name: 'Order',
-        children: [{
-                path: 'Unhandled',
-                component: UnhandledOrder,
-                name: 'UnhandledOrder'
-            },
-            {
-                path: 'New',
-                component: NewOrder,
-                name: 'NewOrder'
-            },
-            {
-                path: 'Mine',
-                component: MyOrder,
-                name: 'MyOrder'
-            },
-            {
-                path: 'Query',
-                component: QueryOrder,
-                name: 'QueryOrder'
-            }
-        ]
     },
     {
         path: '/OilUser',
@@ -127,7 +81,7 @@ export const routes = [{
             },
             {
                 path: 'Map',
-                component: UsageReport,
+                component: WorkPointMap,
                 name: 'Map'
             },
             {
@@ -135,17 +89,6 @@ export const routes = [{
                 component: UsageReport,
                 name: 'UsageReport'
             },
-        ]
-    },
-    {
-        path: '/PersonalReport',
-        component: Intern,
-        name: 'Report',
-        children: [{
-                path: 'UsageReport',
-                component: UsageReport,
-                name: 'UsageReport'
-            }
         ]
     },
     {

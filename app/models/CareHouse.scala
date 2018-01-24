@@ -127,7 +127,7 @@ object CareHouse {
     import org.mongodb.scala.model._
     import WorkPoint.wpFilter
 
-    val noLocationListF = collection.find(wpFilter(WorkPointType.CareHouse.id)(Filters.exists("location", false))).toFuture()
+    val noLocationListF = collection.find(wpFilter(WorkPointType.CareHouse.id)(Filters.eq("location", null))).toFuture()
     for (noLocationList <- noLocationListF) {
       var failed = 0
       Logger.info(s"no location list #=${noLocationList.length}")

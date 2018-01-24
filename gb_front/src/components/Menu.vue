@@ -29,30 +29,16 @@
                     <span class="nav-label">儀錶板</span>
                 </a>
             </router-link>
-            <li v-show="isAdmin">
-                <a>
-                    <i class="fa fa-h-square" aria-hidden="true"></i>
-                    <span class="nav-label">安養機構</span>
-                    <span class="fa arrow"></span>
-                </a>
-                <ul class="nav nav-second-level collapse">
-                    <router-link tag="li" :to="{name:'QueryCareHouse'}" active-class="active">
-                        <a>
-                            <i class="fa fa-search" aria-hidden="true"></i>
-                            <span class="nav-label"></span>查詢安養機構</a>
-                    </router-link>
-                </ul>
-            </li>
             <li v-show="isSales||isAdmin">
                 <a>
-                    <i class="fa fa-users" aria-hidden="true"></i>
+                    <i class="fa fa-user-circle-o" aria-hidden="true"></i>
                     <span class="nav-label">業務</span>
                     <span class="fa arrow"></span>
                 </a>
                 <ul class="nav nav-second-level collapse">
                     <router-link tag="li" :to="{name:'MyCase'}" active-class="active">
                         <a>
-                            <i class="fa fa-search" aria-hidden="true"></i>
+                            <i class="fa fa-diamond" aria-hidden="true"></i>
                             <span class="nav-label"></span>我的名單</a>
                     </router-link>
                     <router-link tag="li" :to="{name:'ObtainCase'}" active-class="active">
@@ -62,8 +48,13 @@
                     </router-link>
                     <router-link tag="li" :to="{name:'UsageReport'}" active-class="active">
                         <a>
-                            <i class="fa fa-search" aria-hidden="true"></i>
+                            <i class="fa fa-book" aria-hidden="true"></i>
                             <span class="nav-label"></span>使用報告</a>
+                    </router-link>
+                    <router-link tag="li" :to="{name:'Map'}" active-class="active">
+                        <a>
+                            <i class="fa fa-globe" aria-hidden="true"></i>
+                            <span class="nav-label"></span>業務地圖</a>
                     </router-link>
                 </ul>
             </li>
