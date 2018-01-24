@@ -43,11 +43,19 @@ case class SiteInfo(usage: String, floorDesc: String, addr: String, area: Option
 case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
                       siteInfo: SiteInfo,
                       permitDate: Date, architect: String,
-                      var location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output],
+                      var location: Option[Seq[Double]] = None, in: Seq[Input] = Seq.empty[Input], out: Seq[Output] = Seq.empty[Output],
                       contractor: Option[String] = None,
                       state: Option[String] = Some(BuildCaseState.Initial.toString()), owner: Option[String] = None,
                       tag: Seq[String] = Seq.empty[String],
-                      notes: Seq[Note] = Seq.empty[Note], var editor: Option[String] = None) extends IWorkPoint
+                      notes: Seq[Note] = Seq.empty[Note], var editor: Option[String] = None) extends IWorkPoint {
+  def getSummary = {
+    val content = s"${siteInfo.addr}<br>" +
+      s"${siteInfo.usage}<br>" +
+      s"${siteInfo.floorDesc}<br>" +
+      s"${siteInfo.area.getOrElse(0)}平方公尺"
+    Summary(builder, content)
+  }
+}
 
 object BuildCase2 {
   case class QueryParam(
@@ -284,8 +292,6 @@ object BuildCase2 {
                 personal = false,
                 siteInfo = siteInfo,
                 permitDate = permitDate, architect = architect,
-                location = None,
-                in = Seq.empty[Input], out = Seq.empty[Output],
                 state = Some(state))
             }
           }
@@ -308,9 +314,7 @@ object BuildCase2 {
               builder = builderID,
               personal = true,
               siteInfo = siteInfo,
-              permitDate = permitDate, architect = architect,
-              location = None,
-              in = Seq.empty[Input], out = Seq.empty[Output])
+              permitDate = permitDate, architect = architect)
           }
 
           try {
@@ -556,5 +560,41 @@ object BuildCase2 {
     val f = collection.find(Filters.eq("_id", _id)).toFuture()
     f.onFailure(errorHandler)
     f
+  }
+
+  def getBuildCaseList(ids: Seq[BuildCaseID]) = {
+    val f = collection.find(Filters.in("_id", ids: _*)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+
+  def getSummaryMap(ids: Seq[BuildCaseID]) = {
+    val f = getBuildCaseList(ids)
+    for (bcList <- f) yield {
+      val pair =
+        for (bc <- bcList) yield bc._id -> bc.getSummary
+
+      pair.toMap
+    }
+  }
+
+  def populateSummary(workPointList: Seq[WorkPoint]) = {
+    import scala.language.postfixOps
+    val buildCaseIDMap =
+      workPointList.filter { wp =>
+        wp._id("wpType").asInt32().getValue == WorkPointType.BuildCase.id
+      } map {
+        wp =>
+          Json.parse(wp._id.toJson()).validate[BuildCaseID].asOpt.get -> wp
+      } toMap
+
+    val bcSummaryMapF = getSummaryMap(buildCaseIDMap.keys.toSeq)
+    for (bcSummaryMap <- bcSummaryMapF) yield {
+      for ((bcID, summary) <- bcSummaryMap) yield {
+        val wp = buildCaseIDMap(bcID)
+        wp.summary = Some(summary)
+        wp
+      }
+    }
   }
 }

@@ -13,7 +13,15 @@ case class CareHouse(_id: CareHouseID, addr: String, serviceType: Seq[String],
                      phone: String, fax: String, email: String, bed: Int,
                      var location: Option[Seq[Double]] = None, in: Seq[Input] = Seq.empty[Input],
                      out: Seq[Output] = Seq.empty[Output], notes: Seq[Note] = Seq.empty[Note],
-                     tag: Seq[String] = Seq.empty[String], owner: Option[String] = None, state: Option[String] = None) extends IWorkPoint
+                     tag: Seq[String] = Seq.empty[String], owner: Option[String] = None, state: Option[String] = None) extends IWorkPoint {
+  def getSummary = {
+    val content = s"電話：${phone}<br>" +
+      s"地址：${addr}<br>" +
+      s"${bed}床<br>"
+
+    Summary(_id.name, content)
+  }
+}
 
 object CareHouse {
   import org.mongodb.scala.bson.codecs.Macros._
@@ -29,7 +37,7 @@ object CareHouse {
     var owner: Option[String] = None,
     keyword: Option[String] = None,
     sortBy: String = "bed+")
-  
+
   import WorkPoint._
   implicit val chIdRead = Json.reads[CareHouseID]
   implicit val chRead = Json.reads[CareHouse]
@@ -38,7 +46,6 @@ object CareHouse {
   implicit val chWrite = Json.writes[CareHouse]
   implicit val qWrite = Json.writes[QueryParam]
 
-  
   val codecRegistry = fromRegistries(
     fromProviders(classOf[CareHouse], classOf[CareHouseID], classOf[Note], classOf[Input], classOf[Output]), DEFAULT_CODEC_REGISTRY)
 
@@ -94,7 +101,8 @@ object CareHouse {
           val fax = row.getCell(5).getStringCellValue
           val email = row.getCell(6).getStringCellValue
           val bed = row.getCell(7).getNumericCellValue.toInt
-          val ch = CareHouse(_id = _id, addr = addr, serviceType = serviceType, phone = phone, fax = fax, email = email, bed = bed)
+          val ch = CareHouse(_id = _id, addr = addr, serviceType = serviceType, phone = phone,
+            fax = fax, email = email, bed = bed)
 
           seq = seq :+ ch
         } catch {
@@ -260,5 +268,41 @@ object CareHouse {
     val f = collection.find(Filters.eq("_id", _id)).toFuture()
     f.onFailure(errorHandler)
     f
+  }
+
+  def getCareHouseList(ids: Seq[CareHouseID]) = {
+    val f = collection.find(Filters.in("_id", ids: _*)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+
+  def getSummaryMap(ids: Seq[CareHouseID]) = {
+    val f = getCareHouseList(ids)
+    for (bcList <- f) yield {
+      val pair =
+        for (bc <- bcList) yield bc._id -> bc.getSummary
+
+      pair.toMap
+    }
+  }
+
+  def populateSummary(workPointList: Seq[WorkPoint]) = {
+    import scala.language.postfixOps
+    val careHouseIDMap =
+      workPointList.filter { wp =>
+        wp._id("wpType").asInt32().getValue == WorkPointType.CareHouse.id
+      } map {
+        wp =>
+          Json.parse(wp._id.toJson()).validate[CareHouseID].asOpt.get -> wp
+      } toMap
+
+    val bcSummaryMapF = getSummaryMap(careHouseIDMap.keys.toSeq)
+    for (bcSummaryMap <- bcSummaryMapF) yield {
+      for ((bcID, summary) <- bcSummaryMap) yield {
+        val wp = careHouseIDMap(bcID)
+        wp.summary = Some(summary)
+        wp
+      }
+    }
   }
 }

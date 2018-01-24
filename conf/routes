@@ -53,8 +53,10 @@ POST     /UploadBuildCase                                   controllers.Applicat
 GET      /WorkPoint                                         controllers.SalesManager.getWorkPoint()
 GET      /WorkPointType                                     controllers.SalesManager.getWorkPointTypeList
 GET      /TargetWorkPointType                               controllers.SalesManager.getTargetWorkPointTypes
+GET      /WorkPoint/:typeIDS/:bottomLeft/:upperRight        controllers.SalesManager.getAreaWorkPoint(typeIDS, bottomLeft, upperRight)
 
 GET      /Top3DumpSite/:lon/:lat                            controllers.SalesManager.getTop3DumpSite(lon: Double, lat: Double)
+
 #Report
 
 #JSON

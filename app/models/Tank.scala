@@ -1,5 +1,6 @@
 package models
 import play.api._
+import play.api.libs.json._
 import com.github.nscala_time.time.Imports._
 import models.ModelHelper._
 import models.ExcelTool._
@@ -9,14 +10,19 @@ import play.api.Play.current
 import org.apache.poi.openxml4j.opc._
 import org.apache.poi.xssf.usermodel._
 import org.apache.poi.ss.usermodel._
-import java.util.Date
 import org.mongodb.scala.model._
 
 case class TankID(addr: String, wpType: Int = WorkPointType.Tank.id) extends IWorkPointID
 case class Tank(_id: TankID, county: String, count: Int,
                 var location: Option[Seq[Double]] = None, in: Seq[Input] = Seq.empty[Input], out: Seq[Output] = Seq.empty[Output],
                 notes: Seq[Note] = Seq.empty[Note], tag: Seq[String] = Seq.empty[String],
-                owner: Option[String] = None, state: Option[String] = None) extends IWorkPoint
+                owner: Option[String] = None, state: Option[String] = None) extends IWorkPoint {
+  def getSummary = {
+    val content = s"${county}<br>" +
+      s"${count}油槽"
+    Summary(_id.addr, content)
+  }
+}
 object Tank {
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
@@ -114,6 +120,43 @@ object Tank {
           }
       }
       Logger.info(s"共 ${failed} 筆無法轉換")
+    }
+  }
+
+  def getList(ids: Seq[TankID]) = {
+    val f = collection.find(Filters.in("_id", ids: _*)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+
+  def getSummaryMap(ids: Seq[TankID]) = {
+    val f = getList(ids)
+    for (list <- f) yield {
+      val pair =
+        for (d <- list) yield d._id -> d.getSummary
+
+      pair.toMap
+    }
+  }
+
+  implicit val idRead = Json.reads[TankID]
+  def populateSummary(workPointList: Seq[WorkPoint]) = {
+    import scala.language.postfixOps
+    val idMap =
+      workPointList.filter { wp =>
+        wp._id("wpType").asInt32().getValue == WorkPointType.Tank.id
+      } map {
+        wp =>
+          Json.parse(wp._id.toJson()).validate[TankID].asOpt.get -> wp
+      } toMap
+
+    val summaryMapF = getSummaryMap(idMap.keys.toSeq)
+    for (summaryMap <- summaryMapF) yield {
+      for ((id, summary) <- summaryMap) yield {
+        val wp = idMap(id)
+        wp.summary = Some(summary)
+        wp
+      }
     }
   }
 }

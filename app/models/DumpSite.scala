@@ -23,7 +23,15 @@ case class DumpSiteID(county: String, dirNo: String, wpType: Int = WorkPointType
 case class DumpSite(_id: DumpSiteID, name: String, contact: String, phone: String, addr: String,
                     feature: String, siteType: String, area: Double,
                     in: Seq[Input] = Seq.empty[Input], out: Seq[Output] = Seq.empty[Output], notes: Seq[Note] = Seq.empty[Note],
-                    var location: Option[Seq[Double]] = None, owner: Option[String] = None, state: Option[String]=None) extends IWorkPoint
+                    var location: Option[Seq[Double]] = None, owner: Option[String] = None, state: Option[String] = None) extends IWorkPoint {
+  def getSummary = {
+    val content = s"${feature}<br>" +
+      s"${siteType}<br>" +
+      s"${addr}<br>" +
+      s"${area}平方公尺"
+    Summary(name, content)
+  }
+}
 object DumpSite {
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
@@ -36,6 +44,8 @@ object DumpSite {
   val collection = MongoDB.database.getCollection[DumpSite](WorkPoint.ColName).withCodecRegistry(codecRegistry)
 
   import WorkPoint._
+
+  implicit val dpIdRead = Json.reads[DumpSiteID]
   implicit val dpIdWrite = Json.writes[DumpSiteID]
   implicit val dpWrite = Json.writes[DumpSite]
 
@@ -143,5 +153,47 @@ object DumpSite {
     val f = collection.find(WorkPoint.wpFilter(WorkPointType.DumpSite.id)(filter)).limit(3).toFuture()
     f.onFailure(errorHandler)
     f
+  }
+
+  def getDumpSite(_id: DumpSiteID) = {
+    val f = collection.find(Filters.eq("_id", _id)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+
+  def getDumpSiteList(ids: Seq[DumpSiteID]) = {
+    val f = collection.find(Filters.in("_id", ids: _*)).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+
+  def getSummaryMap(ids: Seq[DumpSiteID]) = {
+    val f = getDumpSiteList(ids)
+    for (list <- f) yield {
+      val pair =
+        for (d <- list) yield d._id -> d.getSummary
+
+      pair.toMap
+    }
+  }
+
+  def populateSummary(workPointList: Seq[WorkPoint]) = {
+    import scala.language.postfixOps
+    val idMap =
+      workPointList.filter { wp =>
+        wp._id("wpType").asInt32().getValue == WorkPointType.DumpSite.id
+      } map {
+        wp =>
+          Json.parse(wp._id.toJson()).validate[DumpSiteID].asOpt.get -> wp
+      } toMap
+
+    val summaryMapF = getSummaryMap(idMap.keys.toSeq)
+    for (summaryMap <- summaryMapF) yield {
+      for ((id, summary) <- summaryMap) yield {
+        val wp = idMap(id)
+        wp.summary = Some(summary)
+        wp
+      }
+    }
   }
 }

@@ -4,11 +4,11 @@
                     <div class="map_container">
                         <gmap-map :zoom="1" :center="getPosition(buildCase)" ref="map" class="map_canvas">
                             <gmap-marker key="bc" :clickable="true" :title="buildCase.builder" :position="getPosition(buildCase)" 
-                                icon="http://icons.iconarchive.com/icons/icons-land/vista-map-markers/48/Map-Marker-Ball-Azure-icon.png"
+                                icon="http://icons.iconarchive.com/icons/icons-land/transport/48/Excavator-icon.png"
                                 @click="toggleInfoWindow('BuildCase', buildCase, 0)"
                             />
                             <gmap-marker v-for="(dumpSite, index) in dumpSiteList" :key="index" :clickable="true" :title="dumpSite.name" :position="getPosition(dumpSite)" 
-                                icon="http://icons.iconarchive.com/icons/icons-land/vista-map-markers/48/Map-Marker-Ball-Pink-icon.png"
+                                icon="http://icons.iconarchive.com/icons/creative-freedom/shimmer/48/Recycle-icon.png"
                                 @click="toggleInfoWindow('DumpSite', dumpSite, index+1)"
                             />
                             <gmap-info-window :options="infoOptions" :position="infoWindowPos" :opened="infoWinOpen" @closeclick="infoWinOpen=false"

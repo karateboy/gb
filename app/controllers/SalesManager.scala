@@ -298,4 +298,19 @@ object SalesManager extends Controller {
     val list = WorkPointType.getWorkList
     Ok(Json.toJson(list))
   }
+
+  def getAreaWorkPoint(typeListStr: String, bottomLeftJson: String, upperRightJson: String) = Security.Authenticated.async {
+    import WorkPoint._
+    val typeList = typeListStr.split(",").toList
+    val typeIdList = typeList map { WorkPointType.withName }
+    val idList = typeIdList map { _.id }
+    val bottomLeft = Json.parse(bottomLeftJson).validate[LatLng].asOpt.get
+    val upperRight = Json.parse(upperRightJson).validate[LatLng].asOpt.get
+
+    val f = WorkPoint.getAreaList(idList, bottomLeft, upperRight)
+    for (wpList <- f) yield {
+      Ok(Json.toJson(wpList))
+    }
+
+  }
 }

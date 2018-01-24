@@ -14,9 +14,11 @@ import org.mongodb.scala.model._
 import org.mongodb.scala.bson._
 import MongoDB._
 
+case class LatLng(lat: Double, lng: Double)
 case class Note(date: Date, comment: String, person: String)
 case class Input(name: String, code: Option[String], freq: Option[String], volume: Double)
 case class Output(name: String, code: Option[String], freq: Option[String], volume: Double)
+case class Summary(title: String, content: String)
 
 abstract class IWorkPointID() {
   val wpType: Int
@@ -33,7 +35,7 @@ abstract class IWorkPoint() {
 
 case class WorkPoint(_id: Document,
                      location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output],
-                     notes: Seq[Note], tag: Seq[String], owner: Option[String], state: Option[String]) extends IWorkPoint
+                     notes: Seq[Note], owner: Option[String], state: Option[String], var summary: Option[Summary]) extends IWorkPoint
 
 case class WorkPointType(_id: Int, typeID: String, name: String)
 object WorkPointType extends Enumeration {
@@ -51,6 +53,9 @@ object WorkPointType extends Enumeration {
     GasStation -> "加油站")
 
   implicit val write = Json.writes[WorkPointType]
+
+  implicit val tReads: Reads[WorkPointType.Value] = EnumUtils.enumReads(WorkPointType)
+  implicit val tWrites: Writes[WorkPointType.Value] = EnumUtils.enumFormat(WorkPointType)
 
   val workList = List(BuildCase, CareHouse, Tank)
 
@@ -74,7 +79,7 @@ object WorkPoint {
   import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
 
   val codecRegistry = fromRegistries(fromProviders(classOf[WorkPoint],
-    classOf[Note], classOf[Input], classOf[Output]), DEFAULT_CODEC_REGISTRY)
+    classOf[Note], classOf[Input], classOf[Output], classOf[Summary]), DEFAULT_CODEC_REGISTRY)
 
   val collection = MongoDB.database.getCollection[WorkPoint](WorkPoint.ColName).withCodecRegistry(codecRegistry)
 
@@ -82,10 +87,13 @@ object WorkPoint {
     def writes(v: Document): JsValue = Json.parse(v.toJson())
   }
 
+  implicit val summaryWrite = Json.writes[Summary]
+  implicit val latlngRead = Json.reads[LatLng]
   implicit val outputWrite = Json.writes[Output]
   implicit val inputWrite = Json.writes[Input]
   implicit val noteWrite = Json.writes[Note]
   implicit val wpWrite = Json.writes[WorkPoint]
+  implicit val summaryRead = Json.reads[Summary]
   implicit val inRead = Json.reads[Input]
   implicit val outRead = Json.reads[Output]
   implicit val noteRead = Json.reads[Note]
@@ -117,6 +125,24 @@ object WorkPoint {
     val f = collection.find().toFuture()
     f.onFailure(errorHandler)
     f
+  }
+
+  def getAreaList(typeIdList: Seq[Int], bottomLeft: LatLng, upperRight: LatLng) = {
+
+    val filter1 = Filters.in("_id.wpType", typeIdList: _*)
+    val filter2 = Filters.geoWithinBox("location", bottomLeft.lng, bottomLeft.lat, upperRight.lng, upperRight.lat)
+    val filter = Filters.and(filter1, filter2)
+
+    val f = collection.find(filter).toFuture()
+    f.onFailure(errorHandler)
+    for {
+      wp <- f
+      bcWP <- BuildCase2.populateSummary(wp)
+      chWP <- CareHouse.populateSummary(wp)
+      dsWP <- DumpSite.populateSummary(wp)
+      tankWP <- Tank.populateSummary(wp)
+      gasWP <- GasStation.populateSummary(wp)
+    } yield bcWP ++ chWP ++ dsWP ++ tankWP ++ gasWP
   }
 
 }
