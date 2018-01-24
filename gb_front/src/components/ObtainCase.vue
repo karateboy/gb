@@ -35,7 +35,7 @@
 </style>
 <script>
 import BuildCase2List from "./BuildCase2List.vue";
-import CareHouseList from "./CareHouseList.vue"
+import CareHouseList from "./CareHouseList.vue";
 import { mapGetters } from "vuex";
 import axios from "axios";
 
@@ -46,31 +46,34 @@ export default {
       dirList: [
         {
           name: "北向",
-          url: "N"
+          typeID: "N"
         },
         {
           name: "南向",
-          url: "S"
+          typeID: "S"
         }
       ],
       typeIdx: 0,
-      typeList: [
-        {
-          name: "起造人",
-          url: "BuildCase"
-        },
-        {
-          name: "長照機構",
-          url: "CareHouse"
-        }
-      ]
+      typeList: []
     };
+  },
+  mounted() {
+    axios
+      .get("/TargetWorkPointType")
+      .then(resp => {
+        const ret = resp.data;
+        this.typeList.splice(0, this.typeList.length);
+        for (let type of ret) {
+          this.typeList.push(type);
+        }
+      })
+      .catch(err => alert(err));
   },
   computed: {
     ...mapGetters(["isAdmin"]),
     targetUrl() {
-      return `/Ownerless/${this.dirList[this.dirIdx].url}/${
-        this.typeList[this.typeIdx].url
+      return `/Ownerless/${this.dirList[this.dirIdx].typeID}/${
+        this.typeList[this.typeIdx].typeID
       }`;
     }
   },

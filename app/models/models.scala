@@ -41,7 +41,7 @@ object ModelHelper {
 
   import scala.concurrent._
 
-  def waitReadyResult[T](f: Future[T]) = {
+  def waitReadyResult[T](f: Future[T], ignoreError: Boolean = false) = {
     import scala.concurrent.duration._
     import scala.util._
 
@@ -51,7 +51,8 @@ object ModelHelper {
       case Success(t) =>
         t
       case Failure(ex) =>
-        Logger.error(ex.getMessage, ex)
+        if (!ignoreError)
+          Logger.error(ex.getMessage, ex)
         throw ex
     }
   }
@@ -184,7 +185,7 @@ object ExcelTool {
     }
     true
   }
-  
+
 }
 object EnumUtils {
   def enumReads[E <: Enumeration](enum: E): Reads[E#Value] = new Reads[E#Value] {

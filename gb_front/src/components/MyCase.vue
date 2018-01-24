@@ -33,21 +33,24 @@ export default {
   data() {
     return {
       typeIdx: 0,
-      typeList: [
-        {
-          name: "起造人",
-          url: "BuildCase"
-        },
-        {
-          name: "長照機構",
-          url: "CareHouse"
-        }
-      ]
+      typeList: []
     };
+  },
+  mounted() {
+    axios
+      .get("/TargetWorkPointType")
+      .then(resp => {
+        const ret = resp.data;
+        this.typeList.splice(0, this.typeList.length);
+        for (let type of ret) {
+          this.typeList.push(type);
+        }
+      })
+      .catch(err => alert(err));
   },
   computed: {
     targetUrl() {
-      return `/MyCase/${this.typeList[this.typeIdx].url}`;
+      return `/MyCase/${this.typeList[this.typeIdx].typeID}`;
     }
   },
   components: {

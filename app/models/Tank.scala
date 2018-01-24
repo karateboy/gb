@@ -11,43 +11,67 @@ import org.apache.poi.xssf.usermodel._
 import org.apache.poi.ss.usermodel._
 import java.util.Date
 import org.mongodb.scala.model._
-import org.mongodb.scala.model.Indexes._
 
+case class TankID(addr: String, wpType: Int = WorkPointType.Tank.id) extends IWorkPointID
+case class Tank(_id: TankID, county: String, count: Int,
+                var location: Option[Seq[Double]] = None, in: Seq[Input] = Seq.empty[Input], out: Seq[Output] = Seq.empty[Output],
+                notes: Seq[Note] = Seq.empty[Note], tag: Seq[String] = Seq.empty[String],
+                owner: Option[String] = None, state: Option[String] = None) extends IWorkPoint
 object Tank {
-  val useType = "tank"
-  def init() {
-    val path = current.path.getAbsolutePath + "/import/tank.xlsx"
-    importXLSX(path)(parser)
-  }
-  //
+  import org.mongodb.scala.bson.codecs.Macros._
+  import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
+  import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
   import java.io.File
-  def parser(sheet: XSSFSheet)={
+  import org.mongodb.scala.model._
+  import org.mongodb.scala.bson._
+  case class QueryParam(
+    bedGT: Option[Int] = None, bedLT: Option[Int] = None,
+    tag: Option[Seq[String]] = None,
+    state: Option[String] = None,
+    var owner: Option[String] = None,
+    keyword: Option[String] = None,
+    sortBy: String = "count+")
+
+  val codecRegistry = fromRegistries(
+    fromProviders(classOf[Tank], classOf[TankID], classOf[Note], classOf[Input], classOf[Output]), DEFAULT_CODEC_REGISTRY)
+
+  val ColName = WorkPoint.ColName
+  val collection = MongoDB.database.getCollection[Tank](WorkPoint.ColName).withCodecRegistry(codecRegistry)
+
+  def init() {
+    for (ret <- SysConfig.get(SysConfig.ImportTank)) {
+      if (!ret.asBoolean().getValue) {
+        val path = current.path.getAbsolutePath + "/import/tank.xlsx"
+        importXLSX(path)(parser)
+        convertAddrToLocation()
+        SysConfig.set(SysConfig.ImportTank, new BsonBoolean(true))
+      }
+    }
+  }
+
+  import java.io.File
+  def parser(sheet: XSSFSheet) = {
     var rowN = 2
     var finish = false
-    var seq = IndexedSeq.empty[OilUser]
+    var seq = IndexedSeq.empty[Tank]
     do {
       var row = sheet.getRow(rowN)
       if (row == null)
         finish = true
       else {
         try {
-          import com.github.nscala_time.time.Imports._
           val county = row.getCell(0).getStringCellValue
           val addr = row.getCell(1).getStringCellValue
-          val id = addr
           val x = row.getCell(2).getNumericCellValue
           val y = row.getCell(3).getNumericCellValue
           val lonlat = CoordinateTransform.tWD97_To_lonlat(x, y)
           val location = Seq(lonlat._1, lonlat._2)
-          val tank = row.getCell(4).getNumericCellValue.toInt
+          val count = row.getCell(4).getNumericCellValue.toInt
 
-          val tankCase = OilUser(_id = s"tank:$id",
-            useType = useType,
-            name = addr,
+          val tankCase = Tank(_id = TankID(addr),
             county = county,
-            addr = addr,
-            location = Some(location),
-            tank = tank)
+            count = count,
+            location = Some(location))
           seq = seq :+ tankCase
         } catch {
           case ex: java.lang.NullPointerException =>
@@ -60,15 +84,36 @@ object Tank {
       rowN += 1
     } while (!finish)
 
-    import scala.concurrent._
-    seq.map { bc =>
-      val f = OilUser.collection.replaceOne(Filters.eq("_id", bc._id), bc, UpdateOptions().upsert(true)).toFuture()
-      f.onFailure(errorHandler("Insert tank"))
-      ModelHelper.waitReadyResult(f)
+    val f = collection.insertMany(seq, InsertManyOptions().ordered(false)).toFuture()
+    f.onFailure(errorHandler)
+    waitReadyResult(f)
+    f
+  }
+
+  def convertAddrToLocation() = {
+    import org.mongodb.scala.model.Filters._
+    import org.mongodb.scala.model._
+    import WorkPoint.wpFilter
+
+    val tankListF = collection.find(wpFilter(WorkPointType.Tank.id)()).toFuture()
+    for (tankList <- tankListF) {
+      var failed = 0
+      Logger.info(s"油槽數 #=${tankList.length}")
+      tankList.map {
+        tank =>
+          val locationList = GoogleApi.queryAddr(tank._id.addr)
+          if (!locationList.isEmpty) {
+            val location = locationList(0)
+            tank.location = Some(location)
+            val f = collection.replaceOne(Filters.eq("_id", tank._id), tank).toFuture()
+            f.onFailure(errorHandler)
+            Logger.info(s"${tank._id.addr} 轉換成功!")
+          } else {
+            failed += 1
+            Logger.warn(s"${tank._id.addr} 無法轉換!")
+          }
+      }
+      Logger.info(s"共 ${failed} 筆無法轉換")
     }
-    
-    //val f = OilUser.collection.insertMany(seq, InsertManyOptions().ordered(false)).toFuture()
-    //f.onFailure(errorHandler("Insert tank"))
-    //f
   }
 }

@@ -35,16 +35,30 @@ case class WorkPoint(_id: Document,
                      location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output],
                      notes: Seq[Note], tag: Seq[String], owner: Option[String], state: Option[String]) extends IWorkPoint
 
+case class WorkPointType(_id: Int, typeID: String, name: String)
 object WorkPointType extends Enumeration {
   val BuildCase = Value(1)
   val CareHouse = Value(2)
   val DumpSite = Value(3)
+  val Tank = Value(4)
+  val GasStation = Value(5)
 
   val map = Map(
     BuildCase -> "起造人",
     CareHouse -> "機構",
-    DumpSite -> "棄置場")
+    DumpSite -> "棄置場",
+    Tank -> "油槽",
+    GasStation -> "加油站")
 
+  implicit val write = Json.writes[WorkPointType]
+
+  val workList = List(BuildCase, CareHouse, Tank)
+
+  def getList =
+    for (key <- values.toSeq) yield WorkPointType(key.id, key.toString(), map(key))
+
+  def getWorkList =
+    for (key <- workList) yield WorkPointType(key.id, key.toString(), map(key))
 }
 
 object WorkPoint {

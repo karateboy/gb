@@ -287,6 +287,15 @@ object SalesManager extends Controller {
     for (dumpSites <- f) yield {
       Ok(Json.toJson(dumpSites))
     }
+  }
 
+  def getWorkPointTypeList = Security.Authenticated {
+    val list = WorkPointType.getList
+    Ok(Json.toJson(list))
+  }
+
+  def getTargetWorkPointTypes = Security.Authenticated {
+    val list = WorkPointType.getWorkList
+    Ok(Json.toJson(list))
   }
 }

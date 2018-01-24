@@ -13,10 +13,14 @@ object SysConfig extends Enumeration {
   val valueKey = "value"
   val ImportDumpSite = Value
   val ImportCareHouse = Value
+  val ImportTank = Value
+  val ImportGasStation = Value
 
   val defaultConfig = Map(
     ImportDumpSite -> Document(valueKey -> false),
-    ImportCareHouse -> Document(valueKey -> false))
+    ImportCareHouse -> Document(valueKey -> false),
+    ImportTank -> Document(valueKey -> false),
+    ImportGasStation -> Document(valueKey -> false))
 
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {
@@ -34,10 +38,10 @@ object SysConfig extends Enumeration {
           }
 
           val f = collection.insertMany(docs.toList, new InsertManyOptions().ordered(false)).toFuture()
-          waitReadyResult(f)
+          waitReadyResult(f, ignoreError = true)
         }
     })
-    f.onFailure(errorHandler)
+
     waitReadyResult(f)
   }
 
@@ -57,5 +61,5 @@ object SysConfig extends Enumeration {
     }
   }
 
-  def set(_id: SysConfig.Value, v: BsonValue) = upsert(_id, Document(valueKey -> v))  
+  def set(_id: SysConfig.Value, v: BsonValue) = upsert(_id, Document(valueKey -> v))
 }

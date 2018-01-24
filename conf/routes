@@ -45,12 +45,14 @@ GET      /Ownerless/:dir/:typeID/:queryParam/excel          controllers.SalesMan
 POST     /ObtainCase                                        controllers.SalesManager.obtainCase()
 POST     /ReleaseCase                                       controllers.SalesManager.releaseCase()
 PUT      /BuildCase                                         controllers.Query.upsertBuildCase
-PUT		 /CareHouse											controllers.Query.upsertCareHouse
+PUT      /CareHouse                                         controllers.Query.upsertCareHouse
 
 GET      /BuildCaseTemplate                                 controllers.Application.getBuildCaseTemplate
 POST     /UploadBuildCase                                   controllers.Application.uploadBuildCase
 
 GET      /WorkPoint                                         controllers.SalesManager.getWorkPoint()
+GET      /WorkPointType                                     controllers.SalesManager.getWorkPointTypeList
+GET      /TargetWorkPointType                               controllers.SalesManager.getTargetWorkPointTypes
 
 GET      /Top3DumpSite/:lon/:lat                            controllers.SalesManager.getTop3DumpSite(lon: Double, lat: Double)
 #Report
