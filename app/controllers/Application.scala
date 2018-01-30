@@ -9,7 +9,6 @@ import play.api.Play.current
 import play.api.data._
 import play.api.data.Forms._
 import play.api.libs.ws._
-import play.api.libs.ws.ning.NingAsyncHttpClientConfigBuilder
 import scala.concurrent.Future
 import play.api.libs.json._
 import com.github.nscala_time.time.Imports._
