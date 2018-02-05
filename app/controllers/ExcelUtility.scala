@@ -123,4 +123,27 @@ object ExcelUtility {
     finishExcel(reportFilePath, pkg, wb)
   }
 
+  def exportCareHouse(careHouseList: Seq[CareHouse]) = {
+    val (reportFilePath, pkg, wb) = prepareTemplate("careHouse.xlsx")
+    val evaluator = wb.getCreationHelper().createFormulaEvaluator()
+    val format = wb.createDataFormat()
+    val sheet = wb.getSheetAt(0)
+
+    val dateStyle = wb.createCellStyle();
+    dateStyle.setDataFormat(format.getFormat("yyyy/mm/dd"))
+    
+    for {
+      (careHouse, idx) <- careHouseList.zipWithIndex
+      rowN = idx + 1
+    } {
+      val row = sheet.createRow(rowN)
+      row.createCell(0).setCellValue(careHouse._id.name)
+      row.createCell(1).setCellValue(careHouse._id.county)
+      row.createCell(2).setCellValue(careHouse.addr)
+      row.createCell(3).setCellValue(careHouse.phone)
+      row.createCell(4).setCellValue(careHouse.bed)
+    }
+    
+    finishExcel(reportFilePath, pkg, wb)
+  }
 }

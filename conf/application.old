@@ -1,0 +1,18 @@
+# This is the main configuration file for the application.
+play.crypto.secret="pyF__^idYziL_eT1/9lZP24h<CzNIgA7Ub4MSJPaqMx@<xF0HHHJzZai3hn7tmf^"
+
+# The application languages
+# ~~~~~
+play.i18n.langs = [ "zh-tw" ]
+play.http.filters= "Filters"
+my.mongodb.url="mongodb://localhost"
+my.mongodb.db="gb"
+
+#SQL
+#db.default.driver=com.microsoft.sqlserver.jdbc.SQLServerDriver
+#db.default.url="jdbc:sqlserver://localhost\\SQLEXPRESS:1433;databaseName=WasteMap"
+#db.default.user="sa"
+#db.default.password="abc123"
+#db.default.logStatements=true
+#play.modules.enabled += "scalikejdbc.PlayModule"
+#play.modules.disabled += "play.api.db.DBModule"
