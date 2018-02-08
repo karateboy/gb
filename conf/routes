@@ -30,7 +30,11 @@ POST     /Builder                                           controllers.Applicat
 GET      /Builder/:encodedID                                controllers.Query.getBuilder(encodedID)
 
 GET      /CheckOutBuildCase                                 controllers.Application.checkOutBuildCase
+GET      /CheckOutContractor                                controllers.Application.checkOutContractor
 POST     /BuildCase                                         controllers.Application.upsertBuildCase
+
+GET      /Contractor/:id                                    controllers.Application.getContractor(id)
+POST     /Contractor                                        controllers.Application.upsertContractor
 
 GET      /UsageRecord/:offset                               controllers.Application.getUsageRecord(offset: Int)
 
