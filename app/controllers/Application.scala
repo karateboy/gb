@@ -117,7 +117,6 @@ object Application extends Controller {
     Ok(Json.toJson(infoList))
   }
 
-
   def getBuildCaseTemplate = Security.Authenticated {
     import java.io.File
     val path = current.path.getAbsolutePath + "/report_template/buildCaseImport.xlsx"
@@ -193,7 +192,7 @@ object Application extends Controller {
         builder => {
           val userInfoOpt = Security.getUserinfo(request)
           val userID = userInfoOpt.get.id
-          val validCheckIn = if(builder.state == Builder.InvalidPhoneState)
+          val validCheckIn = if (builder.state == Builder.InvalidPhoneState)
             true
           else
             isVaildPhone(builder.phone)
@@ -230,6 +229,22 @@ object Application extends Controller {
       })
   }
 
+  def checkOutContractor = Security.Authenticated.async {
+    implicit request =>
+      val userInfoOpt = Security.getUserinfo(request)
+      val f = BuildCase2.checkOutContractor(userInfoOpt.get.id)
+      val retF =
+        for (buildCase <- f) yield {
+          Ok(Json.toJson(buildCase))
+        }
+
+      retF.recover({
+        case _: Throwable =>
+          Logger.info("recover from no content...")
+          NoContent
+      })
+  }
+
   def upsertBuildCase = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
       val ret = request.body.validate[BuildCase2]
@@ -254,6 +269,37 @@ object Application extends Controller {
         })
   }
 
+  def upsertContractor = Security.Authenticated.async(BodyParsers.parse.json) {
+    implicit request =>
+      val ret = request.body.validate[Contractor]
+      ret.fold(
+        error => {
+          Logger.error(JsError.toJson(error).toString())
+          Future { BadRequest(Json.obj("ok" -> false, "msg" -> JsError.toJson(error).toString())) }
+        },
+        contractor => {
+          val f = Contractor.upsert(contractor)
+
+          for (result <- f) yield {
+            Ok(Json.obj("ok" -> true))
+          }
+        })
+  }
+
+  def getContractor(_id: String) = Security.Authenticated.async {
+    implicit request =>
+
+      val f = Contractor.get(_id)
+
+      for (contractorOpt <- f) yield {
+        if (contractorOpt.isDefined) {
+          val contractor = contractorOpt.get
+          Ok(Json.toJson(contractor))
+        } else
+          NoContent
+      }
+  }
+
   def getUsageRecord(offset: Int) = Security.Authenticated.async {
     implicit request =>
       val userInfoOpt = Security.getUserinfo(request)
@@ -261,10 +307,9 @@ object Application extends Controller {
 
       val f = UsageRecord.getRecord(userID, offset)
       for (records <- f) yield {
-        if (records.isEmpty){
+        if (records.isEmpty) {
           Ok(Json.toJson(UsageRecord.emptyRecord(userID, offset)))
-        }
-        else{
+        } else {
           Ok(Json.toJson(records.head))
         }
       }

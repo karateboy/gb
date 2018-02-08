@@ -1,11 +1,3 @@
 {
-    "extends": "standard",
-    "eslint.validate": [
-        "javascript",
-        "javascriptreact",
-        {
-            "language": "vue",
-            "autoFix": true
-        }
-    ]
+    "extends": "standard"
 }

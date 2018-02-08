@@ -41,13 +41,13 @@ case class BuildCaseID(county: String, permitID: String, wpType: Int = WorkPoint
 case class SiteInfo(usage: String, floorDesc: String, addr: String, area: Option[Double])
 
 case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
-                      siteInfo: SiteInfo,
+                      siteInfo:   SiteInfo,
                       permitDate: Date, architect: String,
                       var location: Option[Seq[Double]] = None, in: Seq[Input] = Seq.empty[Input], out: Seq[Output] = Seq.empty[Output],
-                      contractor: Option[String] = None,
+                      contractor: Option[String] = None, contractorCheckDate: Option[Date] = None,
                       state: Option[String] = Some(BuildCaseState.Initial.toString()), owner: Option[String] = None,
-                      tag: Seq[String] = Seq.empty[String],
-                      notes: Seq[Note] = Seq.empty[Note], var editor: Option[String] = None) extends IWorkPoint {
+                      tag:   Seq[String] = Seq.empty[String],
+                      notes: Seq[Note]   = Seq.empty[Note], var editor: Option[String] = None) extends IWorkPoint {
   def getSummary = {
     val content = s"${siteInfo.addr}<br>" +
       s"${siteInfo.usage}<br>" +
@@ -60,11 +60,11 @@ case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
 object BuildCase2 {
   case class QueryParam(
     areaGT: Option[Double] = None, areaLT: Option[Double] = None,
-    tag: Option[Seq[String]] = None,
-    state: Option[String] = None,
-    var owner: Option[String] = None,
-    keyword: Option[String] = None,
-    sortBy: String = "siteInfo.area+")
+    tag:       Option[Seq[String]] = None,
+    state:     Option[String]      = None,
+    var owner: Option[String]      = None,
+    keyword:   Option[String]      = None,
+    sortBy:    String              = "siteInfo.area+")
 
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
@@ -392,7 +392,8 @@ object BuildCase2 {
           }
         else {
           import com.mongodb.client.model.ReturnDocument.AFTER
-          val f = collection.findOneAndUpdate(wpFilter(WorkPointType.BuildCase.id)(Filters.or(Filters.eq("location", null), Filters.eq("siteInfo.area", null))),
+          val f = collection.findOneAndUpdate(
+            wpFilter(WorkPointType.BuildCase.id)(Filters.or(Filters.eq("location", null), Filters.eq("siteInfo.area", null))),
             Updates.set("editor", editor),
             FindOneAndUpdateOptions().returnDocument(AFTER)).toFuture()
           f.onFailure(errorHandler)
@@ -408,7 +409,34 @@ object BuildCase2 {
     if (bc.location.isDefined && bc.siteInfo.area.isDefined)
       UsageRecord.addBuildCaseUsage(editor, bc._id)
 
+
     upsert(bc)
+  }
+
+  def checkOutContractor(editor: String) = {
+    val editingF = collection.find(wpFilter(WorkPointType.BuildCase.id)(Filters.eq("editor", editor))).toFuture()
+    editingF.onFailure(errorHandler)
+    val ff =
+      for (editing <- editingF) yield {
+        if (!editing.isEmpty)
+          Future {
+            editing.head
+          }
+        else {
+          import com.mongodb.client.model.ReturnDocument.AFTER
+          val threeDayAgo = DateTime.now() - 3.day
+          val f = collection.findOneAndUpdate(
+            wpFilter(WorkPointType.BuildCase.id)(
+              Filters.and(
+                Filters.eq("contractor", null),
+                Filters.not(Filters.gt("contractorCheckDate", threeDayAgo.toDate())))),
+            Updates.set("editor", editor),
+            FindOneAndUpdateOptions().returnDocument(AFTER)).toFuture()
+          f.onFailure(errorHandler)
+          f
+        }
+      }
+    ff flatMap { x => x }
   }
 
   def upsert(bc: BuildCase2) = {

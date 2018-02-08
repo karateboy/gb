@@ -51,8 +51,9 @@ object ModelHelper {
       case Success(t) =>
         t
       case Failure(ex) =>
-        if (!ignoreError)
+        if (!ignoreError) {
           Logger.error(ex.getMessage, ex)
+        }
         throw ex
     }
   }

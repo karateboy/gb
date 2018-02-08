@@ -69,6 +69,8 @@
                     </router-link>
                     <router-link to='/Intern/BuildCase' tag='li' role="presentation" active-class='active'><a>建案資訊</a>
                     </router-link>
+                    <router-link to='/Intern/Contractor' tag='li' role="presentation" active-class='active'><a>承造人</a>
+                    </router-link>
                     <router-link to='/Intern/Report' tag='li' role="presentation" active-class='active'><a>工作報告</a>
                     </router-link>
                 </ul>

@@ -7,6 +7,10 @@
                 <div class="col-sm-4"><input type="text" class="form-control" v-model="buildCase._id.county"></div>
             </div>
             <div class="form-group">
+                <label class="col-sm-1 control-label">建照:</label>
+                <div class="col-sm-4"><input type="text" class="form-control" v-model="buildCase._id.permitID"></div>
+            </div>
+            <div class="form-group">
                 <label class="col-sm-1 control-label">起造人:</label>
                 <div class="col-sm-4"><input type="text" class="form-control" v-model="buildCase.builder"></div>
             </div>

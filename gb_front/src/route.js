@@ -23,6 +23,7 @@ import UsageReport from './components/UsageReport.vue'
 import MyCase from './components/MyCase.vue'
 import ObtainCase from './components/ObtainCase.vue'
 import WorkPointMap from './components/WorkPointMap.vue'
+import UpdateContractor from './components/UpdateContractor.vue'
 
 export const routes = [{
         path: '/',
@@ -57,6 +58,11 @@ export const routes = [{
                 path: 'BuildCase',
                 component: UpdateBuildCase,
                 name: 'UpdateBuildCase'
+            },
+            {
+                path: 'Contractor',
+                component: UpdateContractor,
+                name: 'UpdateContractor'
             },
             {
                 path: 'Report',

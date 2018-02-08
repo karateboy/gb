@@ -23,6 +23,7 @@ object MongoDB {
       BuildCase2.init(colNames)
       DumpSite.init(colNames)
       CareHouse.init(colNames)
+      Contractor.init(colNames)
       Tank.init()
       GasStation.init()
       //OilUser.init(colNames)

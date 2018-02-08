@@ -38,7 +38,8 @@ object SysConfig extends Enumeration {
           }
 
           val f = collection.insertMany(docs.toList, new InsertManyOptions().ordered(false)).toFuture()
-          waitReadyResult(f, ignoreError = true)
+          import scala.concurrent.duration._
+          scala.concurrent.Await.ready(f, Duration.Inf)
         }
     })
 

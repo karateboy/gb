@@ -71,7 +71,7 @@ export default {
         _id: "",
         addr: undefined,
         phone: undefined,
-        contract: undefined
+        contact: undefined
       }
     };
   },
@@ -80,7 +80,9 @@ export default {
     this.checkOut();
   },
   watch: {
-    "buildCase.contractor": function(newContractor) {}
+    "buildCase.contractor": function(newContractor) {
+      if (newContractor) this.getContractor(newContractor);
+    }
   },
   methods: {
     checkOut() {
@@ -91,6 +93,10 @@ export default {
           const status = resp.status;
           if (status == 200) {
             this.buildCase = JSON.parse(JSON.stringify(ret));
+            this.contractor._id = "";
+            this.contractor.addr = undefined;
+            this.contractor.phone = undefined;
+            this.contractor.contact = undefined;
           } else {
             alert("已承造人待更新, 請稍後再試");
           }
@@ -106,6 +112,11 @@ export default {
           this.contractor._id = ret._id;
           this.contractor.addr = ret.addr;
           this.contractor.phone = ret.phone;
+        } else {
+          this.contractor._id = "";
+          this.contractor.addr = undefined;
+          this.contractor.phone = undefined;
+          this.contractor.contact = undefined;
         }
       });
     },
