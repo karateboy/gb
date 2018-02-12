@@ -15,6 +15,11 @@
                          :to="{name:'UpdateUser'}" active-class="active">
                 <a><i class="fa fa-th-large"></i>
                     <span class="nav-label">更新使用者</span> </a></router-link>
+            <router-link tag="li" :to="{name:'Download'}" active-class="active">
+                        <a>
+                            <i class="fa fa-download" aria-hidden="true"></i>
+                            <span class="nav-label"></span>下載</a>
+                    </router-link>        
         </ul>
         <router-view></router-view>
     </div>

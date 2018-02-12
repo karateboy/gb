@@ -6,42 +6,51 @@
         <div class="form-horizontal">
             <div class="form-group">
                 <label class="col-sm-2 control-label">建案縣市:</label>
-                <div class="col-sm-4">
+                <div class="col-sm-6">
                     <input type="text" class="form-control"
                            readonly :value="buildCase._id.county">
                 </div>
             </div>
             <div class="form-group">
                 <label class="col-sm-2 control-label">建照:</label>
-                <div class="col-sm-4">
+                <div class="col-sm-6">
                     <input type="text" class="form-control"
                            readonly :value="buildCase._id.permitID">
                 </div>
             </div>
             <div class="form-group">
+                <label class="col-sm-2 control-label">建築地點:</label>
+                <div class="col-sm-6">
+                    <input type="text" class="form-control"
+                           readonly :value="buildCase.siteInfo.addr">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">起造人:</label>
+                <div class="col-sm-6">
+                    <input type="text" class="form-control"
+                           readonly :value="buildCase.builder">
+                </div>
+            </div>
+            <div class="form-group">
                 <label class="col-sm-2 control-label">承造人:</label>
-                <div class="col-sm-4">
+                <div class="col-sm-6">
                     <input type="text" placeholder="承造人" class="form-control"
                            v-model="buildCase.contractor">
                 </div>
             </div>
             <div class="form-group">
                 <label class="col-sm-2 control-label">承造人地址:</label>
-                <div class="col-sm-4">
+                <div class="col-sm-6">
                     <input type="text" placeholder="地址" class="form-control"
                            v-model="contractor.addr">
                 </div>
-            </div>
-            <div class="form-group">
-                <label class="col-sm-2 control-label">承造人電話:</label>
-                <div class="col-sm-4">
-                    <input type="tel" class="form-control"
-                           v-model="contractor.phone">
-                </div>
-            </div>            
+            </div>                        
             <div class="form-group">
                 <div class="col-sm-offset-2 col-sm-2">
                     <button class="btn btn-primary" @click.prevent="updateBuildCase">更新</button>
+                </div>
+                <div class="col-sm-offset-2 col-sm-2">
                     <button class="btn btn-primary" @click.prevent="skipContractor">尚無承造人資訊</button>
                 </div>
             </div>

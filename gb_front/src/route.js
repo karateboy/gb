@@ -25,6 +25,8 @@ import ObtainCase from './components/ObtainCase.vue'
 import WorkPointMap from './components/WorkPointMap.vue'
 import UpdateContractor from './components/UpdateContractor.vue'
 
+import Download from './components/Download.vue'
+
 export const routes = [{
         path: '/',
         component: Dashboard,
@@ -116,6 +118,11 @@ export const routes = [{
                 component: UpdateUser,
                 name: 'UpdateUser'
             },
+            {
+                path: 'Download',
+                component: Download,
+                name: 'Download'
+            }
         ]
     },
     {

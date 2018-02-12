@@ -16,7 +16,14 @@ import org.mongodb.scala.bson._
 import MongoDB._
 import scala.util._
 
-case class Contractor(_id: String, addr: Option[String], phone: Option[String], contact: Option[String])
+case class Contractor(_id: String, addr: Option[String], phone: Option[String], contact: Option[String]){
+  def getDmOpt = {
+    if(addr.isEmpty || addr.get.length() == 0)
+      None
+    else
+      Some(DM(Some(_id), contact, addr.get))
+  }
+}
 
 object Contractor {
   import org.mongodb.scala.bson.codecs.Macros._
@@ -63,6 +70,12 @@ object Contractor {
         }
       Map(pairs: _*)
     }
-
   }
+  
+  def getList = {
+    val f = collection.find().toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+  
 }

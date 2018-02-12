@@ -62,6 +62,8 @@ GET      /WorkPoint/:typeIDS/:bottomLeft/:upperRight        controllers.SalesMan
 
 GET      /Top3DumpSite/:lon/:lat                            controllers.SalesManager.getTop3DumpSite(lon: Double, lat: Double)
 
+GET      /DownloadType                                      controllers.Application.getDownloadType
+GET		 /Download/:downloadType							controllers.Application.handleDownload(downloadType)
 #Report
 
 #JSON

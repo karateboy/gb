@@ -16,6 +16,7 @@ import Highchart._
 import models._
 import models.ModelHelper._
 import collection.JavaConversions._
+import java.nio.file.Files
 
 object Application extends Controller {
 
@@ -314,4 +315,32 @@ object Application extends Controller {
         }
       }
   }
+
+  def getDownloadType = Security.Authenticated {
+    Ok(Json.toJson(DownloadType.getList))
+  }
+
+  def handleDownload(downloadTypeStr: String) = Security.Authenticated.async {
+    val downloadType = DownloadType.withName(downloadTypeStr)
+
+    def contractorDM = {
+      import BuildCase2._
+      val f = Contractor.getList
+
+      for {
+        constractorList <- f
+      } yield {
+        val dmList = constractorList flatMap { _.getDmOpt }
+        val excel = ExcelUtility.exportDM(dmList)
+        Ok.sendFile(excel, fileName = _ =>
+          play.utils.UriEncoding.encodePathSegment("dm.xlsx", "UTF-8"),
+          onClose = () => { Files.deleteIfExists(excel.toPath()) })
+      }
+    }
+    downloadType match {
+      case DownloadType.Contractor =>
+        contractorDM
+    }
+  }
+
 }

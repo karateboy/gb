@@ -99,6 +99,11 @@
                             <i class="fa fa-pencil" aria-hidden="true"></i>
                             <span class="nav-label"></span>更新使用者</a>
                     </router-link>
+                    <router-link tag="li" :to="{name:'Download'}" active-class="active">
+                        <a>
+                            <i class="fa fa-download" aria-hidden="true"></i>
+                            <span class="nav-label"></span>下載</a>
+                    </router-link>
                 </ul>
             </li>
         </ul>
