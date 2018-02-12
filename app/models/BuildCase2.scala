@@ -47,13 +47,23 @@ case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
                       contractor: Option[String] = None, contractorCheckDate: Option[Date] = None,
                       state: Option[String] = Some(BuildCaseState.Initial.toString()), owner: Option[String] = None,
                       tag:   Seq[String] = Seq.empty[String],
-                      notes: Seq[Note]   = Seq.empty[Note], var editor: Option[String] = None) extends IWorkPoint {
+                      notes: Seq[Note]   = Seq.empty[Note], var editor: Option[String] = None, dm: Boolean = false) extends IWorkPoint {
   def getSummary = {
     val content = s"${siteInfo.addr}<br>" +
       s"${siteInfo.usage}<br>" +
       s"${siteInfo.floorDesc}<br>" +
       s"${siteInfo.area.getOrElse(0)}平方公尺"
     Summary(builder, content)
+  }
+
+  def getDM(builderMap: Map[String, Builder]) = {
+    if (personal)
+      None
+    else {
+      val builderInfo = builderMap(builder)
+      val dm = DM(Some(builder), Some(builderInfo.contact), builderInfo.addr)
+      Some(dm)
+    }
   }
 }
 
@@ -409,7 +419,6 @@ object BuildCase2 {
     if (bc.location.isDefined && bc.siteInfo.area.isDefined)
       UsageRecord.addBuildCaseUsage(editor, bc._id)
 
-
     upsert(bc)
   }
 
@@ -625,4 +634,8 @@ object BuildCase2 {
       }
     }
   }
+
+  def getNorthDM = query(Filters.and(Filters.in("_id.county", northCounty: _*), Filters.eq("dm", false)))()(0, 10000)
+  def getSouthDM = query(Filters.and(Filters.in("_id.county", northCounty: _*), Filters.eq("dm", false)))()(0, 10000)
+
 }

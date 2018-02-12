@@ -36,7 +36,7 @@ object ExcelUtility {
     new File(reportFilePath.toAbsolutePath().toString())
   }
 
-/*  def exportCareHouse(careHouseList: Seq[CareHouse]) = {
+  /*  def exportCareHouse(careHouseList: Seq[CareHouse]) = {
     val (reportFilePath, pkg, wb) = prepareTemplate("careHouse.xlsx")
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
     val format = wb.createDataFormat()
@@ -87,6 +87,27 @@ object ExcelUtility {
     finishExcel(reportFilePath, pkg, wb)
   }*/
 
+  def exportDM(dmList: Seq[DM]) = {
+    val (reportFilePath, pkg, wb) = prepareTemplate("dm.xlsx")
+    val evaluator = wb.getCreationHelper().createFormulaEvaluator()
+    val format = wb.createDataFormat()
+    val sheet = wb.getSheetAt(0)
+
+    val dateStyle = wb.createCellStyle();
+    dateStyle.setDataFormat(format.getFormat("yyyy/mm/dd"))
+
+    for {
+      (dm, idx) <- dmList.zipWithIndex
+      rowN = idx + 1
+    } {
+      val row = sheet.createRow(rowN)
+      row.createCell(0).setCellValue(dm.company.getOrElse(""))
+      row.createCell(1).setCellValue(dm.contact.getOrElse(""))
+      row.createCell(2).setCellValue(dm.addr)      
+    }    
+    finishExcel(reportFilePath, pkg, wb)
+  }
+
   def exportBuildCase(buildCaseList: Seq[BuildCase2], builderMap: Map[String, Builder]) = {
     val (reportFilePath, pkg, wb) = prepareTemplate("buildCase.xlsx")
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
@@ -95,7 +116,7 @@ object ExcelUtility {
 
     val dateStyle = wb.createCellStyle();
     dateStyle.setDataFormat(format.getFormat("yyyy/mm/dd"))
-    
+
     for {
       (buildCase, idx) <- buildCaseList.zipWithIndex
       rowN = idx + 1
@@ -106,12 +127,12 @@ object ExcelUtility {
       c0.setCellValue(buildCase.permitDate)
       row.createCell(1).setCellValue(buildCase._id.county)
       row.createCell(2).setCellValue(buildCase.builder)
-      if(!buildCase.personal){
+      if (!buildCase.personal) {
         val builder = builderMap(buildCase.builder)
         row.createCell(3).setCellValue(builder.contact)
         row.createCell(4).setCellValue(builder.addr)
         row.createCell(5).setCellValue(builder.phone)
-      }else{
+      } else {
         row.createCell(3).setCellValue("-")
         row.createCell(4).setCellValue("-")
         row.createCell(5).setCellValue("-")
@@ -131,7 +152,7 @@ object ExcelUtility {
 
     val dateStyle = wb.createCellStyle();
     dateStyle.setDataFormat(format.getFormat("yyyy/mm/dd"))
-    
+
     for {
       (careHouse, idx) <- careHouseList.zipWithIndex
       rowN = idx + 1
@@ -143,7 +164,7 @@ object ExcelUtility {
       row.createCell(3).setCellValue(careHouse.phone)
       row.createCell(4).setCellValue(careHouse.bed)
     }
-    
+
     finishExcel(reportFilePath, pkg, wb)
   }
 }

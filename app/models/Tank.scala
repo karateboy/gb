@@ -16,7 +16,7 @@ case class TankID(addr: String, wpType: Int = WorkPointType.Tank.id) extends IWo
 case class Tank(_id: TankID, county: String, count: Int,
                 var location: Option[Seq[Double]] = None, in: Seq[Input] = Seq.empty[Input], out: Seq[Output] = Seq.empty[Output],
                 notes: Seq[Note] = Seq.empty[Note], tag: Seq[String] = Seq.empty[String],
-                owner: Option[String] = None, state: Option[String] = None) extends IWorkPoint {
+                owner: Option[String] = None, state: Option[String] = None, dm: Boolean = false) extends IWorkPoint {
   def getSummary = {
     val content = s"${county}<br>" +
       s"${count}油槽"
@@ -32,11 +32,11 @@ object Tank {
   import org.mongodb.scala.bson._
   case class QueryParam(
     bedGT: Option[Int] = None, bedLT: Option[Int] = None,
-    tag: Option[Seq[String]] = None,
-    state: Option[String] = None,
-    var owner: Option[String] = None,
-    keyword: Option[String] = None,
-    sortBy: String = "count+")
+    tag:       Option[Seq[String]] = None,
+    state:     Option[String]      = None,
+    var owner: Option[String]      = None,
+    keyword:   Option[String]      = None,
+    sortBy:    String              = "count+")
 
   val codecRegistry = fromRegistries(
     fromProviders(classOf[Tank], classOf[TankID], classOf[Note], classOf[Input], classOf[Output]), DEFAULT_CODEC_REGISTRY)
@@ -74,7 +74,8 @@ object Tank {
           val location = Seq(lonlat._1, lonlat._2)
           val count = row.getCell(4).getNumericCellValue.toInt
 
-          val tankCase = Tank(_id = TankID(addr),
+          val tankCase = Tank(
+            _id = TankID(addr),
             county = county,
             count = count,
             location = Some(location))

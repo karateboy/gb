@@ -231,6 +231,38 @@ object SalesManager extends Controller {
       }
   }
 
+  def getOwnerlessDM(dir: String, typeID: String) = Security.Authenticated.async {
+    implicit request =>
+
+      val wpType = WorkPointType.withName(typeID)
+
+      def buildCase = {
+        import BuildCase2._
+        val f = if (dir.equalsIgnoreCase("N"))
+          BuildCase2.getNorthDM
+        else
+          BuildCase2.getSouthDM
+
+        val builderMapF = Builder.getMap
+        for {
+          buildCaseList <- f
+          builderMap <- builderMapF
+        } yield {
+          val dmList = buildCaseList flatMap { _.getDM(builderMap)}          
+          val excel = ExcelUtility.exportDM(dmList)
+          Ok.sendFile(excel, fileName = _ =>
+            play.utils.UriEncoding.encodePathSegment("dm.xlsx", "UTF-8"),
+            onClose = () => { Files.deleteIfExists(excel.toPath()) })
+        }
+      }
+
+      wpType match {
+        case WorkPointType.BuildCase =>
+          buildCase
+        
+      }
+  }
+  
   def obtainCase() = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
       import BuildCase2.idRead

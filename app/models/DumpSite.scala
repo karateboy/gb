@@ -23,7 +23,7 @@ case class DumpSiteID(county: String, dirNo: String, wpType: Int = WorkPointType
 case class DumpSite(_id: DumpSiteID, name: String, contact: String, phone: String, addr: String,
                     feature: String, siteType: String, area: Double,
                     in: Seq[Input] = Seq.empty[Input], out: Seq[Output] = Seq.empty[Output], notes: Seq[Note] = Seq.empty[Note],
-                    var location: Option[Seq[Double]] = None, owner: Option[String] = None, state: Option[String] = None) extends IWorkPoint {
+                    var location: Option[Seq[Double]] = None, owner: Option[String] = None, state: Option[String] = None, dm: Boolean = false) extends IWorkPoint {
   def getSummary = {
     val content = s"${feature}<br>" +
       s"${siteType}<br>" +
@@ -124,7 +124,8 @@ object DumpSite {
     import org.mongodb.scala.model.Filters._
     import org.mongodb.scala.model._
 
-    val noLocationListF = collection.find(Filters.and(Filters.eq("_id.wpType", WorkPointType.DumpSite.id),
+    val noLocationListF = collection.find(Filters.and(
+      Filters.eq("_id.wpType", WorkPointType.DumpSite.id),
       Filters.eq("location", null))).toFuture()
     for (noLocationList <- noLocationListF) {
       var failed = 0

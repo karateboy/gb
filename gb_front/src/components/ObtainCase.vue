@@ -26,8 +26,8 @@
               </div>
             </div>
         </div>
-        <build-case2-list v-if="typeIdx===0" :url="targetUrl" :param="{}" :obtainBtn="true" :download="isAdmin"></build-case2-list>
-        <care-house-list v-if="typeIdx===1" :url="targetUrl" :param="{}" :obtainBtn="true" :download="isAdmin"></care-house-list>
+        <build-case2-list v-if="typeIdx===0" :url="targetUrl" :param="{}" :obtainBtn="true" :download="isAdmin" :dm="isAdmin"></build-case2-list>
+        <care-house-list v-if="typeIdx===1" :url="targetUrl" :param="{}" :obtainBtn="true" :download="isAdmin" :dm="isAdmin"></care-house-list>
     </div>
 </template>
 <style>

@@ -45,6 +45,7 @@ GET      /MyCase/:typeID/:queryParam/excel                  controllers.SalesMan
 GET      /Ownerless/:dir/:typeID/:queryParam/:skip/:limit   controllers.SalesManager.getOwnerless(dir, typeID, queryParam, skip: Int, limit: Int)
 GET      /Ownerless/:dir/:typeID/:queryParam/count          controllers.SalesManager.getOwnerlessCount(dir, typeID, queryParam)
 GET      /Ownerless/:dir/:typeID/:queryParam/excel          controllers.SalesManager.getOwnerlessExcel(dir, typeID, queryParam)
+GET      /Ownerless/:dir/:typeID/dm                         controllers.SalesManager.getOwnerlessDM(dir, typeID)
 
 POST     /ObtainCase                                        controllers.SalesManager.obtainCase()
 POST     /ReleaseCase                                       controllers.SalesManager.releaseCase()

@@ -31,11 +31,14 @@ abstract class IWorkPoint() {
   val notes: Seq[Note]
   val owner: Option[String]
   val state: Option[String]
+  val dm: Boolean
 }
 
-case class WorkPoint(_id: Document,
-                     location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output],
-                     notes: Seq[Note], owner: Option[String], state: Option[String], var summary: Option[Summary]) extends IWorkPoint
+case class DM(company: Option[String], contact: Option[String], addr: String)
+case class WorkPoint(
+  _id:      Document,
+  location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output],
+  notes: Seq[Note], owner: Option[String], state: Option[String], var summary: Option[Summary], dm: Boolean) extends IWorkPoint
 
 case class WorkPointType(_id: Int, typeID: String, name: String)
 object WorkPointType extends Enumeration {
@@ -78,7 +81,8 @@ object WorkPoint {
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
   import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
 
-  val codecRegistry = fromRegistries(fromProviders(classOf[WorkPoint],
+  val codecRegistry = fromRegistries(fromProviders(
+    classOf[WorkPoint],
     classOf[Note], classOf[Input], classOf[Output], classOf[Summary]), DEFAULT_CODEC_REGISTRY)
 
   val collection = MongoDB.database.getCollection[WorkPoint](WorkPoint.ColName).withCodecRegistry(codecRegistry)

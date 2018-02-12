@@ -18,7 +18,7 @@ case class GasStationID(id: String, name: String, wpType: Int = WorkPointType.Ga
 case class GasStation(_id: GasStationID, county: String, addr: String, count: Int,
                       var location: Option[Seq[Double]] = None, in: Seq[Input] = Seq.empty[Input], out: Seq[Output] = Seq.empty[Output],
                       notes: Seq[Note] = Seq.empty[Note], tag: Seq[String] = Seq.empty[String],
-                      owner: Option[String] = None, state: Option[String] = None) extends IWorkPoint {
+                      owner: Option[String] = None, state: Option[String] = None, dm: Boolean = false) extends IWorkPoint {
   def getSummary = {
     val content = s"${_id.id}<br>" +
       s"$addr <br>" +
@@ -35,11 +35,11 @@ object GasStation {
   import org.mongodb.scala.bson._
   case class QueryParam(
     bedGT: Option[Int] = None, bedLT: Option[Int] = None,
-    tag: Option[Seq[String]] = None,
-    state: Option[String] = None,
-    var owner: Option[String] = None,
-    keyword: Option[String] = None,
-    sortBy: String = "count+")
+    tag:       Option[Seq[String]] = None,
+    state:     Option[String]      = None,
+    var owner: Option[String]      = None,
+    keyword:   Option[String]      = None,
+    sortBy:    String              = "count+")
 
   val codecRegistry = fromRegistries(
     fromProviders(classOf[GasStation], classOf[GasStationID], classOf[Note], classOf[Input], classOf[Output]), DEFAULT_CODEC_REGISTRY)
@@ -108,7 +108,8 @@ object GasStation {
           val lonlat = CoordinateTransform.tWD97_To_lonlat(x, y)
           val location = Some(Seq(lonlat._1, lonlat._2))
 
-          val gasStation = GasStation(_id = _id,
+          val gasStation = GasStation(
+            _id = _id,
             county = county,
             addr = addr,
             count = count,
