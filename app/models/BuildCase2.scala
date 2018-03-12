@@ -433,12 +433,12 @@ object BuildCase2 {
           }
         else {
           import com.mongodb.client.model.ReturnDocument.AFTER
-          val threeDayAgo = DateTime.now() - 3.day
+          val tenDayAgo = DateTime.now() - 10.day
           val f = collection.findOneAndUpdate(
             wpFilter(WorkPointType.BuildCase.id)(
               Filters.and(
                 Filters.eq("contractor", null),
-                Filters.not(Filters.gt("contractorCheckDate", threeDayAgo.toDate())))),
+                Filters.not(Filters.gt("contractorCheckDate", tenDayAgo.toDate())))),
             Updates.set("editor", editor),
             FindOneAndUpdateOptions().returnDocument(AFTER)).toFuture()
           f.onFailure(errorHandler)
@@ -565,13 +565,13 @@ object BuildCase2 {
     "苗栗", "台中", "南投",
     "彰化", "台南", "高雄", "屏東", "金門")
 
-  def northOwnerless(param: QueryParam) =
-    Filters.and(Filters.in("_id.county", northCounty: _*), Filters.eq("owner", null), getFilter(param))
-  def southOwnerless(param: QueryParam) =
-    Filters.and(Filters.in("_id.county", southCounty: _*), Filters.eq("owner", null), getFilter(param))
-
   val northCaseFilter = Filters.in("_id.county", northCounty: _*)
   val southCaseFilter = Filters.in("_id.county", southCounty: _*)
+
+  def northOwnerless(param: QueryParam) =
+    Filters.and(northCaseFilter, Filters.eq("owner", null), Filters.gt("siteInfo.area", 500), getFilter(param))
+  def southOwnerless(param: QueryParam) =
+    Filters.and(southCaseFilter, Filters.eq("owner", null), Filters.gt("siteInfo.area", 500), getFilter(param))
 
   def getNorthOwnerless(param: QueryParam) = query(northOwnerless(param))(getSortBy(param)) _
   def getNorthOwnerlessCount(param: QueryParam) = count(northOwnerless(param))
@@ -635,7 +635,7 @@ object BuildCase2 {
     }
   }
 
-  def getNorthDM = query(Filters.and(Filters.in("_id.county", northCounty: _*), Filters.eq("dm", false)))()(0, 10000)
-  def getSouthDM = query(Filters.and(Filters.in("_id.county", northCounty: _*), Filters.eq("dm", false)))()(0, 10000)
+  def getNorthDM = query(Filters.and(northCaseFilter, Filters.eq("dm", false)))()(0, 10000)
+  def getSouthDM = query(Filters.and(southCaseFilter, Filters.eq("dm", false)))()(0, 10000)
 
 }
