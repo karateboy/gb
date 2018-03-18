@@ -17,6 +17,9 @@ object User {
   import scala.concurrent._
   import scala.concurrent.duration._
 
+  val northSalesList = Seq("karateboy", "peterpan", "yu0109", "abojes123")
+  val southSalesList = Seq("gregosby251", "dannylien", "小巫", "Bim")
+  
   val ColName = "users"
   val collection = MongoDB.database.getCollection(ColName)
   implicit val userRead = Json.reads[User]
@@ -84,4 +87,5 @@ object User {
     f.onFailure { errorHandler }
     for (ret <- f) yield ret.map { toUser }
   }
+  
 }

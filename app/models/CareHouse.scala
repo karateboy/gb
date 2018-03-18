@@ -221,7 +221,7 @@ object CareHouse {
   import WorkPoint.wpFilter
   def careHouseFilter(bsons: Bson*) = wpFilter(WorkPointType.CareHouse.id)(bsons: _*)
 
-  def query(filter: Bson)(sortBy: Bson = Sorts.descending("siteInfo.area"))(skip: Int, limit: Int) = {
+  def query(filter: Bson)(sortBy: Bson = Sorts.descending("bed"))(skip: Int, limit: Int) = {
     val f = collection.find(careHouseFilter(filter)).sort(sortBy).skip(skip).limit(limit).toFuture()
     f.onFailure(errorHandler)
     f
@@ -304,5 +304,32 @@ object CareHouse {
         wp
       }
     }
+  }
+  
+  def splitOwnerless(caseFilter: Bson, userList: Seq[String]) = {
+    val bcListF = collection.find(careHouseFilter(caseFilter)).sort(Sorts.descending("bed")).toFuture()
+    val ret =
+      for (bcList <- bcListF) yield {
+        val updateModelList =
+          for ((bc, idx) <- bcList.zipWithIndex) yield {
+            val owner = userList(idx % userList.length)
+            UpdateOneModel(Filters.eq("_id", bc._id), Updates.set("owner", owner))
+          }
+        val f = collection.bulkWrite(updateModelList, BulkWriteOptions().ordered(false)).toFuture()
+        f.onFailure(errorHandler)
+        f
+      }
+    ret.flatMap(x => x)
+  }
+  def splitNorthOwnerless = {
+    val userList = User.northSalesList
+    val caseFilter = Filters.and(northCaseFilter, Filters.eq("owner", null))
+    splitOwnerless(caseFilter, userList)
+  }
+
+  def splitSouthOwnerless = {
+    val userList = User.southSalesList
+    val caseFilter = Filters.and(southCaseFilter, Filters.eq("owner", null))
+    splitOwnerless(caseFilter, userList)
   }
 }

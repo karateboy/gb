@@ -48,6 +48,7 @@
             <div>
               <button  v-if="download" class="btn btn-primary" @click="downloadExcel()">下載Excel</button>
               <button v-if="dm" class="btn btn-primary" @click="downloadDM()">下載DM 信封</button>
+              <button v-if="splitCase" class="btn btn-primary" @click="splitCaseList()">平均分配名單</button>
             </div>
         </div>
         <div v-else class="alert alert-info" role="alert">無</div>
@@ -85,6 +86,10 @@ export default {
       default: false
     },
     dm: {
+      type: Boolean,
+      default: false
+    },
+    splitCase: {
       type: Boolean,
       default: false
     }
@@ -244,6 +249,15 @@ export default {
       let url =
         baseUrl() + `${this.url}/dm`;
       window.open(url);
+    },
+    splitCaseList(){
+      let url =
+        baseUrl() + `${this.url}/split`;
+      axios.get(url).then(resp=>{
+        let ret = resp.data
+        let msg = `${ret.updated}個名單被分派`
+        alert(msg)
+      })
     }
   },
   components: {

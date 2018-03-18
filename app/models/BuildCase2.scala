@@ -638,10 +638,37 @@ object BuildCase2 {
   def getNorthDM = query(Filters.and(northCaseFilter, Filters.eq("dm", false)))()(0, 10000)
   def getSouthDM = query(Filters.and(southCaseFilter, Filters.eq("dm", false)))()(0, 10000)
 
+  def splitOwnerless(caseFilter: Bson, userList: Seq[String]) = {
+    val bcListF = collection.find(caseFilter).sort(Sorts.descending("siteInfo.area")).toFuture()
+    val ret =
+      for (bcList <- bcListF) yield {
+        val updateModelList =
+          for ((bc, idx) <- bcList.zipWithIndex) yield {
+            val owner = userList(idx % userList.length)
+            UpdateOneModel(Filters.eq("_id", bc._id), Updates.set("owner", owner))
+          }
+        val f = collection.bulkWrite(updateModelList, BulkWriteOptions().ordered(false)).toFuture()
+        f.onFailure(errorHandler)
+        f
+      }
+    ret.flatMap(x => x)
+  }
+  def splitNorthOwnerless = {
+    val userList = User.northSalesList
+    val caseFilter = Filters.and(northCaseFilter, Filters.eq("owner", null), Filters.gt("siteInfo.area", 500))
+    splitOwnerless(caseFilter, userList)
+  }
+
+  def splitSouthOwnerless = {
+    val userList = User.southSalesList
+    val caseFilter = Filters.and(southCaseFilter, Filters.eq("owner", null), Filters.gt("siteInfo.area", 500))
+    splitOwnerless(caseFilter, userList)
+  }
+  
   def trimArchitect = {
-    for(list <- collection.find(wpFilter(WorkPointType.BuildCase.id)()).toFuture()){
-      for(bc <- list){
-        
+    for (list <- collection.find(wpFilter(WorkPointType.BuildCase.id)()).toFuture()) {
+      for (bc <- list) {
+
       }
     }
   }

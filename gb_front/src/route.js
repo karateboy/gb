@@ -97,6 +97,11 @@ export const routes = [{
                 component: UsageReport,
                 name: 'UsageReport'
             },
+            {
+                path: 'AssignCase',
+                component: ObtainCase,
+                name: 'AssignCase'
+            }
         ]
     },
     {

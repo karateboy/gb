@@ -26,8 +26,8 @@
               </div>
             </div>
         </div>
-        <build-case2-list v-if="typeIdx===0" :url="targetUrl" :param="{}" :obtainBtn="true" :download="isAdmin" :dm="isAdmin"></build-case2-list>
-        <care-house-list v-if="typeIdx===1" :url="targetUrl" :param="{}" :obtainBtn="true" :download="isAdmin" :dm="isAdmin"></care-house-list>
+        <build-case2-list v-if="typeIdx===0" :url="targetUrl" :param="{}" :obtainBtn="true" :download="isAdmin" :dm="isAdmin" :split-case="isAdmin"></build-case2-list>
+        <care-house-list v-if="typeIdx===1" :url="targetUrl" :param="{}" :obtainBtn="true" :download="isAdmin" :dm="isAdmin" :split-case="isAdmin"></care-house-list>
     </div>
 </template>
 <style>
@@ -54,27 +54,25 @@ export default {
         }
       ],
       typeIdx: 0,
-      typeList: []
+      typeList: [
+        {
+          _id: 1,
+          typeID: "BuildCase",
+          name: "起造人"
+        },
+        {
+          _id: 2,
+          typeID: "CareHouse",
+          name: "長照機構"
+        }
+      ]
     };
   },
-  mounted() {
-    axios
-      .get("/TargetWorkPointType")
-      .then(resp => {
-        const ret = resp.data;
-        this.typeList.splice(0, this.typeList.length);
-        for (let type of ret) {
-          this.typeList.push(type);
-        }
-      })
-      .catch(err => alert(err));
-  },
+  mounted() {},
   computed: {
     ...mapGetters(["isAdmin"]),
     targetUrl() {
-      return `/Ownerless/${this.dirList[this.dirIdx].typeID}/${
-        this.typeList[this.typeIdx].typeID
-      }`;
+      return `/Ownerless/${this.dirList[this.dirIdx].typeID}/${this.typeList[this.typeIdx].typeID}`;
     }
   },
   methods: {},

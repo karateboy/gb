@@ -43,8 +43,9 @@
                 </tbody>
             </table>
             <pagination for="cardList" :records="total" :per-page="5" count-text="第{from}到第{to}筆/共{count}筆|{count} 筆|1筆"></pagination>
-            <div v-if="download">
-              <button class="btn btn-primary" @click="downloadExcel()">下載Excel</button>
+            <div>
+              <button v-if="download" class="btn btn-primary" @click="downloadExcel()">下載Excel</button>
+              <button v-if="splitCase" class="btn btn-primary" @click="splitCaseList()">平均分配名單</button>
             </div>            
         </div>
         <div v-else class="alert alert-info" role="alert">無</div>
@@ -77,6 +78,10 @@ export default {
       default: false
     },
     download: {
+      type: Boolean,
+      default: false
+    },
+    splitCase: {
       type: Boolean,
       default: false
     }
@@ -224,6 +229,14 @@ export default {
       let url =
         baseUrl() + `${this.url}/${encodeURIComponent(paramJson)}/excel`;
       window.open(url);
+    },
+    splitCaseList() {
+      let url = baseUrl() + `${this.url}/split`;
+      axios.get(url).then(resp => {
+        let ret = resp.data;
+        let msg = `${ret.updated}個名單被分派`;
+        alert(msg);
+      });
     }
   },
   components: {

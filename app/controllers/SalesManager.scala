@@ -248,7 +248,7 @@ object SalesManager extends Controller {
           buildCaseList <- f
           builderMap <- builderMapF
         } yield {
-          val dmList = buildCaseList flatMap { _.getDM(builderMap)}          
+          val dmList = buildCaseList flatMap { _.getDM(builderMap) }
           val excel = ExcelUtility.exportDM(dmList)
           Ok.sendFile(excel, fileName = _ =>
             play.utils.UriEncoding.encodePathSegment("dm.xlsx", "UTF-8"),
@@ -259,10 +259,32 @@ object SalesManager extends Controller {
       wpType match {
         case WorkPointType.BuildCase =>
           buildCase
-        
+
       }
   }
-  
+
+  def getOwnerlessSplit(dir: String, typeID: String) = Security.Authenticated.async {
+    implicit request =>
+      val wpType = WorkPointType.withName(typeID)
+
+      wpType match {
+        case WorkPointType.BuildCase =>
+          val f = if (dir.equalsIgnoreCase("N"))
+            BuildCase2.splitNorthOwnerless
+          else
+            BuildCase2.splitSouthOwnerless
+
+          for (ret <- f) yield Ok(Json.obj("updated" -> ret.getModifiedCount))
+        case WorkPointType.CareHouse =>
+          val f = if (dir.equalsIgnoreCase("N"))
+            CareHouse.splitNorthOwnerless
+          else
+            CareHouse.splitSouthOwnerless
+
+          for (ret <- f) yield Ok(Json.obj("updated" -> ret.getModifiedCount))
+
+      }
+  }
   def obtainCase() = Security.Authenticated.async(BodyParsers.parse.json) {
     implicit request =>
       import BuildCase2.idRead
