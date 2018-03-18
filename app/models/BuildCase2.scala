@@ -638,4 +638,11 @@ object BuildCase2 {
   def getNorthDM = query(Filters.and(northCaseFilter, Filters.eq("dm", false)))()(0, 10000)
   def getSouthDM = query(Filters.and(southCaseFilter, Filters.eq("dm", false)))()(0, 10000)
 
+  def trimArchitect = {
+    for(list <- collection.find(wpFilter(WorkPointType.BuildCase.id)()).toFuture()){
+      for(bc <- list){
+        
+      }
+    }
+  }
 }

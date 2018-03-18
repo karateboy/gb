@@ -16,8 +16,8 @@ import MongoDB._
 
 case class LatLng(lat: Double, lng: Double)
 case class Note(date: Date, comment: String, person: String)
-case class Input(name: String, code: Option[String], freq: Option[String], volume: Double)
-case class Output(name: String, code: Option[String], freq: Option[String], volume: Double)
+case class Input(name: String, code: Option[String], freq: Option[String], volume: Option[Double], price: Option[Double])
+case class Output(name: String, code: Option[String], freq: Option[String], volume: Option[Double])
 case class Summary(title: String, content: String)
 
 abstract class IWorkPointID() {
@@ -50,7 +50,7 @@ object WorkPointType extends Enumeration {
 
   val map = Map(
     BuildCase -> "起造人",
-    CareHouse -> "機構",
+    CareHouse -> "長照機構",
     DumpSite -> "棄置場",
     Tank -> "油槽",
     GasStation -> "加油站")
@@ -85,7 +85,7 @@ object WorkPoint {
     classOf[WorkPoint],
     classOf[Note], classOf[Input], classOf[Output], classOf[Summary]), DEFAULT_CODEC_REGISTRY)
 
-  val collection = MongoDB.database.getCollection[WorkPoint](WorkPoint.ColName).withCodecRegistry(codecRegistry)
+  private val collection = MongoDB.database.getCollection[WorkPoint](WorkPoint.ColName).withCodecRegistry(codecRegistry)
 
   implicit val documentWrites: Writes[Document] = new Writes[Document] {
     def writes(v: Document): JsValue = Json.parse(v.toJson())
@@ -98,7 +98,7 @@ object WorkPoint {
   implicit val noteWrite = Json.writes[Note]
   implicit val wpWrite = Json.writes[WorkPoint]
   implicit val summaryRead = Json.reads[Summary]
-  implicit val inRead = Json.reads[Input]
+  implicit val inputRead = Json.reads[Input]
   implicit val outRead = Json.reads[Output]
   implicit val noteRead = Json.reads[Note]
   //implicit val wpRead = Json.reads[WorkPoint]

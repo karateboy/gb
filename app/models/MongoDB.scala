@@ -26,6 +26,8 @@ object MongoDB {
       Contractor.init(colNames)
       Tank.init()
       GasStation.init()
+      
+      Facility.init(colNames)
       //OilUser.init(colNames)
       //RecyclePlant.init(colNames)
       //Purifier.init(colNames)
