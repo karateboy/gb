@@ -6,6 +6,7 @@ import play.api.libs.json._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
 import play.api.Play.current
+import scala.collection.JavaConversions._
 
 case class FacilityType(_id: Int, typeID: String, name: String)
 object FacilityType extends Enumeration {
@@ -33,18 +34,20 @@ object FacilityType extends Enumeration {
 }
 
 import java.util.Date
-case class FacilityID(no: String, name: String, fcType: Int)
+case class AirPollutant(VOC: Double = 0, TSP: Double = 0, SOx: Double = 0, NOx: Double = 0,
+                        noVOCtotal: Double = 0, total: Double = 0)
+
 case class WasteInput(wasteCode: String, wasteName: String, method: String, totalQuantity: Double, deadLine: Date, price: Option[Double])
-case class Facility(_id: FacilityID, addr: Option[String], phone: Option[String],
+case class Facility(_id: String, name: String, fcType: Int, addr: Option[String], phone: Option[String],
                     var location: Option[Seq[Double]] = None, in: Seq[WasteInput] = Seq.empty[WasteInput],
                     out: Seq[Output] = Seq.empty[Output], notes: Seq[Note] = Seq.empty[Note],
-                    tag: Seq[String] = Seq.empty[String], owner: Option[String] = None, state: Option[String] = None, dm: Boolean = false,
-                    voc: Double = 0, tsp: Double = 0, sox: Double = 0, nox: Double = 0, pollutant: Double = 0, grade: Option[String] = None) {
+                    tag: Seq[String] = Seq.empty[String], owner: Option[String] = None, state: Option[String] = None,
+                    pollutant: Option[AirPollutant] = None, grade: Option[String] = None) {
   def getSummary = {
     val content = s"電話：${phone}<br>" +
       s"地址：${addr}<br>"
 
-    Summary(_id.name, content)
+    Summary(name, content)
   }
 }
 
@@ -61,43 +64,53 @@ object Facility {
     state:     Option[String]      = None,
     var owner: Option[String]      = None,
     keyword:   Option[String]      = None,
-    sortBy:    String              = "tsp+")
+    sortBy:    String              = "pollutant+")
 
   import WorkPoint.outputWrite
   import WorkPoint.outRead
   import WorkPoint.noteRead
   import WorkPoint.noteWrite
+  implicit val pRead = Json.reads[AirPollutant]
+  implicit val pWrite = Json.writes[AirPollutant]
   implicit val wiRead = Json.reads[WasteInput]
   implicit val wiWrite = Json.writes[WasteInput]
-  implicit val fcIdRead = Json.reads[FacilityID]
   implicit val fcRead = Json.reads[Facility]
-  implicit val fcIdWrite = Json.writes[FacilityID]
   implicit val fcWrite = Json.writes[Facility]
 
   val codecRegistry = fromRegistries(
-    fromProviders(classOf[Facility], classOf[FacilityID], classOf[Note], classOf[WasteInput], classOf[Output]), DEFAULT_CODEC_REGISTRY)
+    fromProviders(classOf[Facility], classOf[Note], classOf[WasteInput], classOf[Output], classOf[AirPollutant]), DEFAULT_CODEC_REGISTRY)
 
   val ColName = "facility"
   val collection = MongoDB.database.getCollection[Facility](ColName).withCodecRegistry(codecRegistry)
 
+  def resetSysConfig = {
+    Logger.info("Reset facility related SysConfig")
+    val f1 = SysConfig.set(SysConfig.ImportFacility, BsonBoolean(false))
+    val f2 = SysConfig.set(SysConfig.ImportFacilityPollutant, BsonBoolean(false))
+    val f3 = SysConfig.set(SysConfig.ImportProcessPlant1, BsonBoolean(false))
+    val f4 = SysConfig.set(SysConfig.ImportProcessPlant2, BsonBoolean(false))
+    val f5 = SysConfig.set(SysConfig.ImportProcessPlant3, BsonBoolean(false))
+    import scala.concurrent._
+    val f = Future.sequence(Seq(f1, f2, f3, f4, f5))
+    waitReadyResult(f)
+  }
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {
+      resetSysConfig
       val f = MongoDB.database.createCollection(ColName).toFuture()
       f.onFailure(errorHandler)
       waitReadyResult(f)
 
-      val cf0 = collection.createIndex(Indexes.ascending("_id.no")).toFuture()
-      val cf1 = collection.createIndex(Indexes.ascending("_id.fcType")).toFuture()
-      val cf2 = collection.createIndex(Indexes.ascending("_id.name")).toFuture()
+      val cf1 = collection.createIndex(Indexes.ascending("fcType")).toFuture()
+      val cf2 = collection.createIndex(Indexes.ascending("name")).toFuture()
       val cf3 = collection.createIndex(Indexes.geo2dsphere("location")).toFuture()
       val cf4 = collection.createIndex(
-        Indexes.compoundIndex(Indexes.ascending("_id.fcType"), Indexes.geo2dsphere("location"))).toFuture()
+        Indexes.compoundIndex(Indexes.ascending("fcType"), Indexes.geo2dsphere("location"))).toFuture()
 
-      val cf5 = collection.createIndex(Indexes.ascending("tsp")).toFuture()
+      val cf5 = collection.createIndex(Indexes.ascending("pollutant.noVOCtotal")).toFuture()
       val cf6 = collection.createIndex(Indexes.ascending("in.code")).toFuture()
       val cf7 = collection.createIndex(Indexes.ascending("grade")).toFuture()
 
-      cf0.onFailure(errorHandler)
       cf1.onFailure(errorHandler)
       cf2.onFailure(errorHandler)
       cf3.onFailure(errorHandler)
@@ -107,42 +120,41 @@ object Facility {
       cf7.onFailure(errorHandler)
     }
 
-    for (imported <- SysConfig.get(SysConfig.ImportFacility)) {
+    /*
+    {
+      val imported = waitReadyResult(SysConfig.get(SysConfig.ImportFacility))
       if (!imported.asBoolean().getValue) {
         if (importFacility) {
           SysConfig.set(SysConfig.ImportFacility, BsonBoolean(true))
         }
       }
+    }
+    *
+    */
 
-      for (imported <- SysConfig.get(SysConfig.ImportFacilityPollutant)) {
-        if (!imported.asBoolean().getValue) {
-          if (importAirPollutant) {
-            SysConfig.set(SysConfig.ImportFacilityPollutant, BsonBoolean(true))
-          }
+    {
+      val imported = waitReadyResult(SysConfig.get(SysConfig.ImportFacilityPollutant))
+      if (!imported.asBoolean().getValue) {
+        if (importAirPollutant) {
+          SysConfig.set(SysConfig.ImportFacilityPollutant, BsonBoolean(true))
         }
       }
     }
 
-    for (imported <- SysConfig.get(SysConfig.ImportProcessPlant1)) {
+    {
+      val imported = waitReadyResult(SysConfig.get(SysConfig.ImportProcessPlant1))
       if (!imported.asBoolean().getValue) {
         if (importProcessPlant1) {
           SysConfig.set(SysConfig.ImportProcessPlant1, BsonBoolean(true))
         }
       }
     }
-    
-    for (imported <- SysConfig.get(SysConfig.ImportProcessPlant2)) {
+
+    {
+      val imported = waitReadyResult(SysConfig.get(SysConfig.ImportProcessPlant2))
       if (!imported.asBoolean().getValue) {
         if (importProcessPlant2) {
           SysConfig.set(SysConfig.ImportProcessPlant2, BsonBoolean(true))
-        }
-      }
-    }
-    
-    for (imported <- SysConfig.get(SysConfig.ImportProcessPlant3)) {
-      if (!imported.asBoolean().getValue) {
-        if (importProcessPlant3) {
-          SysConfig.set(SysConfig.ImportProcessPlant3, BsonBoolean(true))
         }
       }
     }
@@ -184,26 +196,31 @@ object Facility {
               case "再利用機構" => FacilityType.RecyclePlant.id
               case "處理機構"  => FacilityType.ProcessPlant.id
             }
-            val id = FacilityID(props.fac_no, props.fac_name, fcType)
             val location = if (fcObj.geometry.coordinates.length == 2)
               Some(fcObj.geometry.coordinates)
             else
               None
-            Facility(id, props.fac_addr, None, location)
+            Facility(
+              _id = props.fac_no,
+              name = props.fac_name,
+              fcType = fcType,
+              addr = props.fac_addr,
+              phone = None,
+              location = location)
         }
 
         val writeModelSeq = facilities map { facility =>
-          val filter = Filters.and(
-            Filters.eq("_id", facility._id),
-            Filters.gt("pollutant", 0))
-          ReplaceOneModel(filter, facility, UpdateOptions().upsert(true))
+          val updates = Updates.combine(
+            Updates.set("addr", facility.addr),
+            Updates.set("location", facility.location))
+          UpdateOneModel(Filters.eq("_id", facility._id), updates)
         }
 
         val f = collection.bulkWrite(writeModelSeq, BulkWriteOptions().ordered(false)).toFuture()
 
         f.onFailure(errorHandler)
-        waitReadyResult(f)
-        Logger.info("facilities has been inserted.")
+        val ret = waitReadyResult(f)
+        Logger.info(s"${ret.getModifiedCount} facilities has been updated.")
       })
 
     true
@@ -214,27 +231,34 @@ object Facility {
     val reader = CSVReader.open(new File(current.path.getAbsolutePath + "/import/air_pollutant.csv"))
     val recordList = reader.allWithHeaders()
     val updateModelList = recordList map { pollutant =>
+      val airPollutant = AirPollutant(
+        VOC = pollutant("VOCs").toDouble,
+        TSP = pollutant("TSP").toDouble,
+        SOx = pollutant("SOx").toDouble,
+        NOx = pollutant("NOx").toDouble,
+        noVOCtotal = pollutant("TSP").toDouble + pollutant("SOx").toDouble + pollutant("NOx").toDouble,
+        total = pollutant("VOCs").toDouble + pollutant("TSP").toDouble + pollutant("SOx").toDouble + pollutant("NOx").toDouble)
+
       val updates = Updates.combine(
-        Updates.set("voc", pollutant("VOCs").toDouble),
-        Updates.set("tsp", pollutant("TSP").toDouble),
-        Updates.set("sox", pollutant("SOx").toDouble),
-        Updates.set("nox", pollutant("NOx").toDouble),
-        Updates.set("pollutant", pollutant("Total(不含VOCs)").toDouble))
-      UpdateOneModel(Filters.eq("_id.no", pollutant("FacilityID")), updates)
+        Updates.set("name", pollutant("FacilityName")),
+        Updates.set("fcType", FacilityType.Factory.id),
+        Updates.set("pollutant", airPollutant))
+      UpdateOneModel(Filters.eq("_id", pollutant("FacilityID")), updates, UpdateOptions().upsert(true))
     }
     Logger.info(s"Updating ${updateModelList.length} pollutants")
 
     val f = collection.bulkWrite(updateModelList, BulkWriteOptions().ordered(false)).toFuture()
     f.onFailure(errorHandler)
-    waitReadyResult(f)
-    Logger.info("pollutants has been updated.")
+    val ret = waitReadyResult(f)
+    Logger.info(s"${ret.getMatchedCount} pollutants has been matched. upsert=${ret.getUpserts().length}")
 
     true
   }
 
-  def importProcessPlant(fileName:String, grade:String) = {
+  def importProcessPlant(fileName: String, grade: String) = {
     val elem = xml.XML.loadFile(new File(current.path.getAbsolutePath + "/import/" + fileName))
     var plantWasteInputMap = Map.empty[String, Seq[WasteInput]]
+    var plantNoNameMap = Map.empty[String, String]
     elem match {
       case <EmsData>{ emsData @ _* }</EmsData> =>
         Logger.info(s"${emsData.length}")
@@ -251,22 +275,28 @@ object Facility {
           val wi = WasteInput(wasteCode.text, wasteName.text, method.text, totalQuantity.text.toDouble, date, None)
           val seq = plantWasteInputMap.getOrElse(plantNo.text, Seq.empty[WasteInput])
           plantWasteInputMap = plantWasteInputMap + (plantNo.text -> (seq :+ (wi)))
+          plantNoNameMap = plantNoNameMap + (plantNo.text -> company_name.text)
         }
     }
     Logger.info(s"total ${plantWasteInputMap.size} plants")
     val updateModels = for ((plantNo, wiSeq) <- plantWasteInputMap) yield {
-      val updates = Updates.combine(Updates.set("in", wiSeq), Updates.set("grade", grade))
-      UpdateOneModel(Filters.eq("_id.no", plantNo), updates)
+      val updates = Updates.combine(
+        Updates.set("name", plantNoNameMap(plantNo)),
+        Updates.set("fcType", FacilityType.ProcessPlant.id),
+        Updates.set("in", wiSeq),
+        Updates.set("grade", grade))
+      UpdateOneModel(Filters.eq("_id", plantNo), updates, UpdateOptions().upsert(true))
     }
 
     val f = collection.bulkWrite(updateModels.toList, BulkWriteOptions().ordered(false)).toFuture()
-    waitReadyResult(f)
-    Logger.info(s"${grade}級處理機構資訊已更新.")
+    val ret = waitReadyResult(f)
+    val upserts = ret.getUpserts.length
+    Logger.info(s"${ret.getModifiedCount} ${grade}級處理機構資訊已更新. upsert=(${upserts})")
 
     true
   }
 
-  def importCleanPlant(fileName:String, grade:String) = {
+  def importCleanPlant(fileName: String, grade: String) = {
     val elem = xml.XML.loadFile(new File(current.path.getAbsolutePath + "/import/" + fileName))
     var plantWasteInputMap = Map.empty[String, Seq[WasteInput]]
     elem match {
@@ -294,8 +324,8 @@ object Facility {
     }
 
     val f = collection.bulkWrite(updateModels.toList, BulkWriteOptions().ordered(false)).toFuture()
-    waitReadyResult(f)
-    Logger.info(s"${grade}級處理機構資訊已更新.")
+    val ret = waitReadyResult(f)
+    Logger.info(s"${ret.getModifiedCount} ${grade}級處理機構資訊已更新.")
 
     true
   }
@@ -303,7 +333,7 @@ object Facility {
   def importProcessPlant1 = importProcessPlant("甲級處理機構.xml", "甲")
   def importProcessPlant2 = importProcessPlant("乙級處理機構.xml", "乙")
   def importProcessPlant3 = importCleanPlant("丙級處理機構.xml", "丙")
-  
+
   def upsert(ch: Facility) = {
     val f = collection.replaceOne(Filters.eq("_id", ch._id), ch, UpdateOptions().upsert(true)).toFuture()
     f.onFailure(errorHandler)
@@ -408,28 +438,25 @@ object Facility {
     f
   }
 
-  def getCareHouse(_id: CareHouseID) = {
+  def get(_id: String) = {
     val f = collection.find(Filters.eq("_id", _id)).toFuture()
     f.onFailure(errorHandler)
     f
   }
 
-  def getCareHouseList(ids: Seq[CareHouseID]) = {
+  def getList(ids: Seq[String]) = {
     val f = collection.find(Filters.in("_id", ids: _*)).toFuture()
     f.onFailure(errorHandler)
     f
   }
 
-  def getSummaryMap(ids: Seq[CareHouseID]) = {
-    val f = getCareHouseList(ids)
+  def getSummaryMap(ids: Seq[String]) = {
+    val f = getList(ids)
     for (bcList <- f) yield {
       val pair =
-        for (bc <- bcList) yield bc._id -> bc.getSummary
+        for (bc <- bcList) yield bc._id -> ""
 
       pair.toMap
     }
-  }
-
-  def populateSummary(fcIdList: Seq[FacilityID]) = {
   }
 }
