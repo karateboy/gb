@@ -10,7 +10,8 @@ object WasteWorker {
   case object Start
   case object GrabFactoryInfo
   case object GrabProcessPlantInfo
-  
+  case object ExportFactorySheet
+
   var count = 0
   def createWorker(implicit context: ActorSystem) = {
     val prop = Props(classOf[WasteWorker])
@@ -22,15 +23,20 @@ object WasteWorker {
     val worker = createWorker
     worker ! Start
   }
-  
+
   def grabFactoryInfo()(implicit context: ActorSystem) = {
     val worker = createWorker
     worker ! GrabFactoryInfo
   }
-  
+
   def grabProcessPlantInfo()(implicit context: ActorSystem) = {
     val worker = createWorker
     worker ! GrabProcessPlantInfo
+  }
+
+  def exportFactorSheet()(implicit context: ActorSystem) = {
+    val worker = createWorker
+    worker ! ExportFactorySheet
   }
 }
 
@@ -42,12 +48,15 @@ class WasteWorker() extends Actor with ActorLogging {
     case Start =>
       Logger.info(s"開始抓取廢棄物網頁...")
       grabber
-    case GrabFactoryInfo=>
+    case GrabFactoryInfo =>
       Logger.info(s"開始抓取工廠資訊...")
       grabFactoryInfo
-    case GrabProcessPlantInfo=>
+    case GrabProcessPlantInfo =>
       Logger.info(s"開始抓取處理廠資訊...")
       grabProcessPlantInfo
+    case ExportFactorySheet =>
+      Logger.info(s"開始匯出工廠資訊...")
+      exportFactorySheet
   }
 
   def grabber = {
@@ -69,7 +78,7 @@ class WasteWorker() extends Actor with ActorLogging {
       self ! PoisonPill
     }
   }
-  
+
   def grabFactoryInfo = {
     val listF = Facility.getFactoryList
     for (list <- listF) {
@@ -89,7 +98,7 @@ class WasteWorker() extends Actor with ActorLogging {
       self ! PoisonPill
     }
   }
-  
+
   def grabProcessPlantInfo = {
     val listF = Facility.getProcessPlantList
     for (list <- listF) {
@@ -106,6 +115,29 @@ class WasteWorker() extends Actor with ActorLogging {
         }
       }
       Logger.info(s"結束抓取處理廠資訊 成功=${success} 失敗=${failed}")
+      self ! PoisonPill
+    }
+  }
+
+  def exportFactorySheet() = {
+    val listF = Facility.getFactoryListByPollutant
+    for (list <- listF) {
+      Logger.info(s"總共 ${list.length}")
+      var no = 0
+      for (facility <- list) {
+        import controllers.ExcelUtility
+        Logger.info(s"匯出${no}_${facility.name}")
+        try {
+          if (!facility.wasteOut.getOrElse(Seq.empty[WasteOutput]).isEmpty) {
+            ExcelUtility.exportFactorySheet(s"${no}_${facility.name}", facility)
+            no += 1
+          }
+        } catch {
+          case ex: Throwable =>
+            Logger.error(s"無法匯出 ${facility.name}", ex)
+        }
+      }
+      Logger.info(s"結束匯出有槽工廠表")
       self ! PoisonPill
     }
   }

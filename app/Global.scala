@@ -35,6 +35,15 @@ object Global extends GlobalSettings {
         SysConfig.set(SysConfig.GrabProcessPlantInfo, BsonBoolean(true))
       }
     }
+
+    for (grabed <- SysConfig.get(SysConfig.ExportFactorySheet)) {
+      import org.mongodb.scala.bson._
+      if (!grabed.asBoolean().getValue) {
+        WasteWorker.exportFactorSheet()(app.actorSystem)
+        SysConfig.set(SysConfig.ExportFactorySheet, BsonBoolean(true))
+      }
+    }
+
     //ConvertWorker.start()(app.actorSystem)
   }
 

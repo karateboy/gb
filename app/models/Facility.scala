@@ -114,8 +114,8 @@ object Facility {
         Indexes.compoundIndex(Indexes.ascending("fcType"), Indexes.geo2dsphere("location"))).toFuture()
 
       val cf5 = collection.createIndex(Indexes.ascending("pollutant.noVOCtotal")).toFuture()
-      val cf6 = collection.createIndex(Indexes.ascending("wasteIn.code")).toFuture()
-      val cf7 = collection.createIndex(Indexes.ascending("wasteOut.code")).toFuture()
+      val cf6 = collection.createIndex(Indexes.ascending("wasteIn.wasteCode")).toFuture()
+      val cf7 = collection.createIndex(Indexes.ascending("wasteOut.wasteCode")).toFuture()
       val cf8 = collection.createIndex(Indexes.ascending("grade")).toFuture()
 
       cf1.onFailure(errorHandler)
@@ -291,7 +291,8 @@ object Facility {
       val updates = Updates.combine(
         Updates.set("name", plantNoNameMap(plantNo)),
         Updates.set("fcType", FacilityType.ProcessPlant.id),
-        Updates.set("in", wiSeq),
+        Updates.unset("in"),
+        Updates.set("wasteIn", wiSeq),
         Updates.set("grade", grade))
       UpdateOneModel(Filters.eq("_id", plantNo), updates, UpdateOptions().upsert(true))
     }
@@ -601,6 +602,13 @@ object Facility {
     f.onFailure(errorHandler)
     for (ret <- f) yield ret
   }
+  
+  def getFactoryListByPollutant = {
+    val filter = Filters.eq("fcType", 1)
+    val f = collection.find(filter).sort(Sorts.descending("pollutant.noVOCtotal")).toFuture()
+    f.onFailure(errorHandler)
+    for (ret <- f) yield ret
+  }
 
   def getProcessPlantList = {
     val filter = Filters.eq("fcType", 2)
@@ -608,4 +616,14 @@ object Facility {
     f.onFailure(errorHandler)
     for (ret <- f) yield ret
   }
+  
+  def findTop3ProcessPlant(location:Seq[Double], wasteCode:String) = {
+    val geometry = geojson.Point(geojson.Position(location: _*))
+    val filter = Filters.and(Filters.elemMatch("wasteIn", Filters.eq("wasteCode", wasteCode)),
+        Filters.nearSphere("location", geometry))
+    val f = collection.find(filter).limit(3).toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
+  
 }

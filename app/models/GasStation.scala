@@ -168,4 +168,12 @@ object GasStation {
       }
     }
   }
+
+  def getNearest(location: Seq[Double]) = {
+    val geometry = geojson.Point(geojson.Position(location: _*))
+    val filter = Filters.nearSphere("location", geometry)
+    val f = collection.find(WorkPoint.wpFilter(WorkPointType.GasStation.id)(filter)).first().toFuture()
+    f.onFailure(errorHandler)
+    f
+  }
 }
