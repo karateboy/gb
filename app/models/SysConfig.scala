@@ -20,6 +20,7 @@ object SysConfig extends Enumeration {
   val ImportProcessPlant1 = Value
   val ImportProcessPlant2 = Value
   val ImportProcessPlant3 = Value
+  val GrabWasteInfo = Value
   val TrimArchitect = Value
 
   val defaultConfig = Map(
@@ -32,6 +33,7 @@ object SysConfig extends Enumeration {
     ImportProcessPlant1 ->Document(valueKey -> false),
     ImportProcessPlant2 ->Document(valueKey -> false),
     ImportProcessPlant3 ->Document(valueKey -> false),
+    GrabWasteInfo  ->Document(valueKey -> false),
     TrimArchitect -> Document(valueKey -> false))
 
   def init(colNames: Seq[String]) {

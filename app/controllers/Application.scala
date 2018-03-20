@@ -343,4 +343,8 @@ object Application extends Controller {
     }
   }
 
+  def testGrabber = Action {
+    Facility.wasteGrabber("A43A9296")
+    Ok("")
+  }
 }

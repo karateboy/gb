@@ -38,10 +38,12 @@ case class AirPollutant(VOC: Double = 0, TSP: Double = 0, SOx: Double = 0, NOx: 
                         noVOCtotal: Double = 0, total: Double = 0)
 
 case class WasteInput(wasteCode: String, wasteName: String, method: String, totalQuantity: Double, deadLine: Date, price: Option[Double])
+case class WasteOutput(date: Date, wasteCode: String, wasteName: String, method: String, quantity: Double, unit: String)
+
 case class Facility(_id: String, name: String, fcType: Int, addr: Option[String], phone: Option[String],
-                    var location: Option[Seq[Double]] = None, in: Seq[WasteInput] = Seq.empty[WasteInput],
-                    out: Seq[Output] = Seq.empty[Output], notes: Seq[Note] = Seq.empty[Note],
-                    tag: Seq[String] = Seq.empty[String], owner: Option[String] = None, state: Option[String] = None,
+                    var location: Option[Seq[Double]] = None, wasteIn: Option[Seq[WasteInput]] = None,
+                    wasteOut: Option[Seq[WasteOutput]] = None, notes: Option[Seq[Note]] = None,
+                    tag: Option[Seq[String]] = None, owner: Option[String] = None, state: Option[String] = None,
                     pollutant: Option[AirPollutant] = None, grade: Option[String] = None) {
   def getSummary = {
     val content = s"電話：${phone}<br>" +
@@ -64,7 +66,7 @@ object Facility {
     state:     Option[String]      = None,
     var owner: Option[String]      = None,
     keyword:   Option[String]      = None,
-    sortBy:    String              = "pollutant+")
+    sortBy:    String              = "pollutant.noVOCtotal+")
 
   import WorkPoint.outputWrite
   import WorkPoint.outRead
@@ -74,11 +76,14 @@ object Facility {
   implicit val pWrite = Json.writes[AirPollutant]
   implicit val wiRead = Json.reads[WasteInput]
   implicit val wiWrite = Json.writes[WasteInput]
+  implicit val woRead = Json.reads[WasteOutput]
+  implicit val woWrite = Json.writes[WasteOutput]
+
   implicit val fcRead = Json.reads[Facility]
   implicit val fcWrite = Json.writes[Facility]
 
   val codecRegistry = fromRegistries(
-    fromProviders(classOf[Facility], classOf[Note], classOf[WasteInput], classOf[Output], classOf[AirPollutant]), DEFAULT_CODEC_REGISTRY)
+    fromProviders(classOf[Facility], classOf[Note], classOf[WasteInput], classOf[WasteOutput], classOf[AirPollutant]), DEFAULT_CODEC_REGISTRY)
 
   val ColName = "facility"
   val collection = MongoDB.database.getCollection[Facility](ColName).withCodecRegistry(codecRegistry)
@@ -89,9 +94,9 @@ object Facility {
     val f2 = SysConfig.set(SysConfig.ImportFacilityPollutant, BsonBoolean(false))
     val f3 = SysConfig.set(SysConfig.ImportProcessPlant1, BsonBoolean(false))
     val f4 = SysConfig.set(SysConfig.ImportProcessPlant2, BsonBoolean(false))
-    val f5 = SysConfig.set(SysConfig.ImportProcessPlant3, BsonBoolean(false))
+    val f5 = SysConfig.set(SysConfig.GrabWasteInfo, BsonBoolean(false))
     import scala.concurrent._
-    val f = Future.sequence(Seq(f1, f2, f3, f4, f5))
+    val f = Future.sequence(Seq(f1, f2, f3, f4))
     waitReadyResult(f)
   }
   def init(colNames: Seq[String]) {
@@ -108,8 +113,9 @@ object Facility {
         Indexes.compoundIndex(Indexes.ascending("fcType"), Indexes.geo2dsphere("location"))).toFuture()
 
       val cf5 = collection.createIndex(Indexes.ascending("pollutant.noVOCtotal")).toFuture()
-      val cf6 = collection.createIndex(Indexes.ascending("in.code")).toFuture()
-      val cf7 = collection.createIndex(Indexes.ascending("grade")).toFuture()
+      val cf6 = collection.createIndex(Indexes.ascending("wasteIn.code")).toFuture()
+      val cf7 = collection.createIndex(Indexes.ascending("wasteOut.code")).toFuture()
+      val cf8 = collection.createIndex(Indexes.ascending("grade")).toFuture()
 
       cf1.onFailure(errorHandler)
       cf2.onFailure(errorHandler)
@@ -118,6 +124,7 @@ object Facility {
       cf5.onFailure(errorHandler)
       cf6.onFailure(errorHandler)
       cf7.onFailure(errorHandler)
+      cf8.onFailure(errorHandler)
     }
 
     /*
@@ -245,12 +252,12 @@ object Facility {
         Updates.set("pollutant", airPollutant))
       UpdateOneModel(Filters.eq("_id", pollutant("FacilityID")), updates, UpdateOptions().upsert(true))
     }
-    Logger.info(s"Updating ${updateModelList.length} pollutants")
+    Logger.info(s"更新 ${updateModelList.length} 空汙紀錄")
 
     val f = collection.bulkWrite(updateModelList, BulkWriteOptions().ordered(false)).toFuture()
     f.onFailure(errorHandler)
     val ret = waitReadyResult(f)
-    Logger.info(s"${ret.getMatchedCount} pollutants has been matched. upsert=${ret.getUpserts().length}")
+    Logger.info(s"${ret.getMatchedCount} 空汙染比對成功. 新增=${ret.getUpserts().length}")
 
     true
   }
@@ -261,7 +268,7 @@ object Facility {
     var plantNoNameMap = Map.empty[String, String]
     elem match {
       case <EmsData>{ emsData @ _* }</EmsData> =>
-        Logger.info(s"${emsData.length}")
+        Logger.info(s"${emsData.length}筆資料")
         val dataSeq = emsData.filter(_.label == "Data")
         for (dataNode <- dataSeq) {
           val plantNo = dataNode \ "Tre_No"
@@ -278,7 +285,7 @@ object Facility {
           plantNoNameMap = plantNoNameMap + (plantNo.text -> company_name.text)
         }
     }
-    Logger.info(s"total ${plantWasteInputMap.size} plants")
+    Logger.info(s"共 ${plantWasteInputMap.size} 廠")
     val updateModels = for ((plantNo, wiSeq) <- plantWasteInputMap) yield {
       val updates = Updates.combine(
         Updates.set("name", plantNoNameMap(plantNo)),
@@ -291,7 +298,7 @@ object Facility {
     val f = collection.bulkWrite(updateModels.toList, BulkWriteOptions().ordered(false)).toFuture()
     val ret = waitReadyResult(f)
     val upserts = ret.getUpserts.length
-    Logger.info(s"${ret.getModifiedCount} ${grade}級處理機構資訊已更新. upsert=(${upserts})")
+    Logger.info(s"${ret.getModifiedCount} ${grade}級處理機構資訊已更新. 新增=(${upserts})")
 
     true
   }
@@ -319,7 +326,7 @@ object Facility {
     }
     Logger.info(s"total ${plantWasteInputMap.size} plants")
     val updateModels = for ((plantNo, wiSeq) <- plantWasteInputMap) yield {
-      val updates = Updates.combine(Updates.set("in", wiSeq), Updates.set("grade", grade))
+      val updates = Updates.combine(Updates.set("wasteIn", wiSeq), Updates.set("grade", grade))
       UpdateOneModel(Filters.eq("_id.no", plantNo), updates)
     }
 
@@ -458,5 +465,61 @@ object Facility {
 
       pair.toMap
     }
+  }
+
+  def wasteGrabber(no: String) = {
+    import org.jsoup._
+    val url = s"https://prtr.epa.gov.tw/FacilityInfo/DetailIndex?registrationno=${no}&keyword=${no}"
+    try {
+      val doc = Jsoup.connect(url).get
+      val latElem = doc.getElementById("hidLat")
+      val lat = latElem.attr("value").toDouble
+      val lonElem = doc.getElementById("hidLon")
+      val lon = lonElem.attr("value").toDouble
+      val detailInfo = doc.getElementById("divDetailInfo")
+      val basicInfo = detailInfo.child(1).child(0)
+      val addrElm = basicInfo.child(1)
+      val addr = addrElm.text().split("：")(1)
+
+      val latestReport = doc.getElementById("divLatestReport")
+      val airDiv = latestReport.child(0)
+      val waterDiv = latestReport.child(1)
+      val wasteDiv = latestReport.child(2)
+      val wasteTab = wasteDiv.child(2)
+      val entries = wasteTab.child(0).children()
+
+      val woList =
+      for { (entry, idx) <- entries.zipWithIndex if idx > 0 } yield {
+        val dateTime = entry.child(0).text().toDateTime("YYYY 年 MM 月")
+        val waste = entry.child(1).text().split(" ")
+        val wasteCode = waste(0)
+        val wasteName = waste(1)
+        val method = entry.child(2).text()
+        val quantity = entry.child(3).text().toDouble
+        val unit = entry.child(4).text()
+        WasteOutput(
+          date = dateTime.toDate(),
+          wasteCode = wasteCode, wasteName = wasteName, method = method, quantity = quantity, unit = unit)
+      }
+
+      val updates = Updates.combine(
+        Updates.set("addr", addr),
+        Updates.set("location", Seq(lon, lat)),
+        Updates.set("wasteOut", woList.toSeq)
+      )
+      val f = collection.updateOne(Filters.eq("_id", no), updates).toFuture()
+      f.onFailure(errorHandler)
+      true
+    } catch {
+      case ex: Exception =>
+        Logger.error(s"unable to handle ${no}", ex)
+        false
+    }
+  }
+
+  def getList = {
+    val f = collection.find().toFuture()
+    f.onFailure(errorHandler)
+    for (ret <- f) yield ret
   }
 }

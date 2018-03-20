@@ -25,7 +25,7 @@ libraryDependencies += "org.apache.poi" % "poi-ooxml-schemas" % "3.17"
 libraryDependencies += "com.itextpdf" % "itextpdf" % "5.5.12"
 libraryDependencies += "com.itextpdf.tool" % "xmlworker" % "5.5.12"
 libraryDependencies += "com.github.tototoshi" %% "scala-csv" % "1.3.5"
-
+libraryDependencies += "org.jsoup" % "jsoup" % "1.11.2"
 
 mappings in Universal ++=
 (baseDirectory.value / "report_template" * "*" get) map

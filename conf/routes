@@ -65,6 +65,8 @@ GET      /Top3DumpSite/:lon/:lat                            controllers.SalesMan
 
 GET      /DownloadType                                      controllers.Application.getDownloadType
 GET      /Download/:downloadType                            controllers.Application.handleDownload(downloadType)
+
+GET	 	 /Test												controllers.Application.testGrabber
 #Report
 
 #JSON
