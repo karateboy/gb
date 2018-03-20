@@ -44,7 +44,8 @@ case class Facility(_id: String, name: String, fcType: Int, addr: Option[String]
                     var location: Option[Seq[Double]] = None, wasteIn: Option[Seq[WasteInput]] = None,
                     wasteOut: Option[Seq[WasteOutput]] = None, notes: Option[Seq[Note]] = None,
                     tag: Option[Seq[String]] = None, owner: Option[String] = None, state: Option[String] = None,
-                    pollutant: Option[AirPollutant] = None, grade: Option[String] = None) {
+                    pollutant: Option[AirPollutant] = None, grade: Option[String] = None, checkDate: Option[Date] = None,
+                    contact: Option[String] = None) {
   def getSummary = {
     val content = s"電話：${phone}<br>" +
       s"地址：${addr}<br>"
@@ -473,9 +474,17 @@ object Facility {
     try {
       val doc = Jsoup.connect(url).get
       val latElem = doc.getElementById("hidLat")
-      val lat = latElem.attr("value").toDouble
+      val latOpt =
+        if (latElem != null && latElem.attr("value") != null)
+          Some(latElem.attr("value").toDouble)
+        else
+          None
       val lonElem = doc.getElementById("hidLon")
-      val lon = lonElem.attr("value").toDouble
+      val lonOpt =
+        if (lonElem != null && lonElem.attr("value") != null)
+          Some(lonElem.attr("value").toDouble)
+        else
+          None
       val detailInfo = doc.getElementById("divDetailInfo")
       val basicInfo = detailInfo.child(1).child(0)
       val addrElm = basicInfo.child(1)
@@ -489,24 +498,27 @@ object Facility {
       val entries = wasteTab.child(0).children()
 
       val woList =
-      for { (entry, idx) <- entries.zipWithIndex if idx > 0 } yield {
-        val dateTime = entry.child(0).text().toDateTime("YYYY 年 MM 月")
-        val waste = entry.child(1).text().split(" ")
-        val wasteCode = waste(0)
-        val wasteName = waste(1)
-        val method = entry.child(2).text()
-        val quantity = entry.child(3).text().toDouble
-        val unit = entry.child(4).text()
-        WasteOutput(
-          date = dateTime.toDate(),
-          wasteCode = wasteCode, wasteName = wasteName, method = method, quantity = quantity, unit = unit)
-      }
+        for { (entry, idx) <- entries.zipWithIndex if idx > 0 } yield {
+          val dateTime = entry.child(0).text().toDateTime("YYYY 年 MM 月")
+          val waste = entry.child(1).text().split(" ")
+          val wasteCode = waste(0)
+          val wasteName = waste(1)
+          val method = entry.child(2).text()
+          val quantity = entry.child(3).text().toDouble
+          val unit = entry.child(4).text()
+          WasteOutput(
+            date = dateTime.toDate(),
+            wasteCode = wasteCode, wasteName = wasteName, method = method, quantity = quantity, unit = unit)
+        }
+      val locationOpt = for {
+        lon <- lonOpt
+        lat <- latOpt
+      } yield Seq(lon, lat)
 
       val updates = Updates.combine(
         Updates.set("addr", addr),
-        Updates.set("location", Seq(lon, lat)),
-        Updates.set("wasteOut", woList.toSeq)
-      )
+        Updates.set("location", locationOpt.getOrElse(None)),
+        Updates.set("wasteOut", woList.toSeq))
       val f = collection.updateOne(Filters.eq("_id", no), updates).toFuture()
       f.onFailure(errorHandler)
       true
@@ -517,8 +529,82 @@ object Facility {
     }
   }
 
+  def grabFactoryInfo(no: String) = {
+    import org.jsoup._
+    val url = s"https://waste.epa.gov.tw/prog/view_data/view_fac.asp?fac_no=${no}"
+    try {
+      //val file = new File(current.path.getAbsolutePath + "/import/列管事業機構基本資料.html")
+      val doc = Jsoup.connect(url).get
+      val infoTab = doc.getElementById("OrgInfoTable")
+      val infoList = infoTab.child(1)
+      val epDep = infoList.child(7)
+      val phone = epDep.child(1).text()
+      Logger.debug(s"phone=$phone")
+      val contact = epDep.child(3).text()
+      Logger.debug(s"contact=$contact")
+
+      val updates = Updates.combine(
+        Updates.set("phone", phone),
+        Updates.set("contact", contact))
+      val f = collection.updateOne(Filters.eq("_id", no), updates).toFuture()
+      f.onFailure(errorHandler)
+      true
+    } catch {
+      case ex: Exception =>
+        Logger.error(s"unable to handle ${no}", ex)
+        false
+    }
+  }
+
+  def grabProcessPlantInfo(no: String) = {
+    import org.jsoup._
+    val url = s"https://waste.epa.gov.tw/prog/view_data/view_tre.asp?tre_no=${no}"
+    try {
+      val doc = Jsoup.connect(url).get
+      val infoTab = doc.getElementById("OrgInfoTable")
+      val infoList = infoTab.child(1)
+      val contactTr = infoList.child(8)
+      val contact = contactTr.child(1).text()
+      val phoneTr = infoList.child(9)
+      val phone = phoneTr.child(1).text()
+      Logger.debug(s"phone=$phone contact=$contact")
+
+      val updates = Updates.combine(
+        Updates.set("phone", phone),
+        Updates.set("contact", contact))
+      val f = collection.updateOne(Filters.eq("_id", no), updates).toFuture()
+      f.onFailure(errorHandler)
+      true
+    } catch {
+      case ex: Exception =>
+        Logger.error(s"unable to handle ${no}", ex)
+        false
+    }
+  }
+
+  def getNoAddrList = {
+    val filter = Filters.or(Filters.eq("addr", null), Filters.eq("location", null))
+    val f = collection.find(filter).toFuture()
+    f.onFailure(errorHandler)
+    for (ret <- f) yield ret
+  }
+
   def getList = {
     val f = collection.find().toFuture()
+    f.onFailure(errorHandler)
+    for (ret <- f) yield ret
+  }
+
+  def getFactoryList = {
+    val filter = Filters.eq("fcType", 1)
+    val f = collection.find(filter).toFuture()
+    f.onFailure(errorHandler)
+    for (ret <- f) yield ret
+  }
+
+  def getProcessPlantList = {
+    val filter = Filters.eq("fcType", 2)
+    val f = collection.find(filter).toFuture()
     f.onFailure(errorHandler)
     for (ret <- f) yield ret
   }

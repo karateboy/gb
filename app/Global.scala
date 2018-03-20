@@ -14,13 +14,27 @@ object Global extends GlobalSettings {
 
     for (grabed <- SysConfig.get(SysConfig.GrabWasteInfo)) {
       import org.mongodb.scala.bson._
-      Logger.debug(s"grabed = ${grabed.asBoolean().getValue}")
       if (!grabed.asBoolean().getValue) {
         WasteWorker.start()(app.actorSystem)
         SysConfig.set(SysConfig.GrabWasteInfo, BsonBoolean(true))
       }
     }
 
+    for (grabed <- SysConfig.get(SysConfig.GrabFactoryInfo)) {
+      import org.mongodb.scala.bson._
+      if (!grabed.asBoolean().getValue) {
+        WasteWorker.grabFactoryInfo()(app.actorSystem)
+        SysConfig.set(SysConfig.GrabFactoryInfo, BsonBoolean(true))
+      }
+    }
+
+    for (grabed <- SysConfig.get(SysConfig.GrabProcessPlantInfo)) {
+      import org.mongodb.scala.bson._
+      if (!grabed.asBoolean().getValue) {
+        WasteWorker.grabProcessPlantInfo()(app.actorSystem)
+        SysConfig.set(SysConfig.GrabProcessPlantInfo, BsonBoolean(true))
+      }
+    }
     //ConvertWorker.start()(app.actorSystem)
   }
 
