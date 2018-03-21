@@ -166,6 +166,9 @@ object Facility {
         }
       }
     }
+
+    // Import recycle plant
+    importRecyclePlant
   }
 
   case class FacilityGeoObj(features: Seq[FacilityObj])
@@ -291,8 +294,7 @@ object Facility {
       val updates = Updates.combine(
         Updates.set("name", plantNoNameMap(plantNo)),
         Updates.set("fcType", FacilityType.ProcessPlant.id),
-        Updates.unset("in"),
-        Updates.set("wasteIn", wiSeq),
+        Updates.addEachToSet("wasteIn", wiSeq:_*),
         Updates.set("grade", grade))
       UpdateOneModel(Filters.eq("_id", plantNo), updates, UpdateOptions().upsert(true))
     }
@@ -342,6 +344,25 @@ object Facility {
   def importProcessPlant1 = importProcessPlant("甲級處理機構.xml", "甲")
   def importProcessPlant2 = importProcessPlant("乙級處理機構.xml", "乙")
   def importProcessPlant3 = importCleanPlant("丙級處理機構.xml", "丙")
+
+  def importRecyclePlant() = {
+    def listFiles = {
+      val dir = current.path.getAbsolutePath + "/import/recycle/"
+      val allFiles = new java.io.File(dir).listFiles().toList
+      allFiles.filter(p => p != null)
+    }
+
+    for (f <- listFiles) {
+      try {
+        ExcelTool.importXLSX(f, false)(Facility.recyclePlantParser)
+      } catch {
+        case ex: Throwable =>
+          Logger.error(s"Failed to process ${f.getAbsolutePath}", ex)
+      }
+    }
+
+    true
+  }
 
   def upsert(ch: Facility) = {
     val f = collection.replaceOne(Filters.eq("_id", ch._id), ch, UpdateOptions().upsert(true)).toFuture()
@@ -519,13 +540,17 @@ object Facility {
       val updates = Updates.combine(
         Updates.set("addr", addr),
         Updates.set("location", locationOpt.getOrElse(None)),
-        Updates.set("wasteOut", woList.toSeq))
+        Updates.set("wasteOut", woList.toSeq),
+        Updates.set("checkDate", DateTime.now().toDate()))
       val f = collection.updateOne(Filters.eq("_id", no), updates).toFuture()
       f.onFailure(errorHandler)
       true
     } catch {
       case ex: Exception =>
-        Logger.error(s"unable to handle ${no}", ex)
+        Logger.error(s"無 ${no} 資料", ex)
+        val updates = Updates.set("checkDate", DateTime.now().toDate())
+        val f = collection.updateOne(Filters.eq("_id", no), updates).toFuture()
+        f.onFailure(errorHandler)
         false
     }
   }
@@ -583,8 +608,11 @@ object Facility {
     }
   }
 
-  def getNoAddrList = {
-    val filter = Filters.or(Filters.eq("addr", null), Filters.eq("location", null))
+  def grabWasteInfoList = {
+    val oneMonthBefore = DateTime.now() - 1.month
+    val filter1 = Filters.and(Filters.or(Filters.eq("addr", null), Filters.eq("location", null)), Filters.eq("checkDate", null))
+    val filter2 = Filters.lt("checkDate", oneMonthBefore.toDate())
+    val filter = Filters.or(filter1, filter2)
     val f = collection.find(filter).toFuture()
     f.onFailure(errorHandler)
     for (ret <- f) yield ret
@@ -602,7 +630,7 @@ object Facility {
     f.onFailure(errorHandler)
     for (ret <- f) yield ret
   }
-  
+
   def getFactoryListByPollutant = {
     val filter = Filters.eq("fcType", 1)
     val f = collection.find(filter).sort(Sorts.descending("pollutant.noVOCtotal")).toFuture()
@@ -616,14 +644,61 @@ object Facility {
     f.onFailure(errorHandler)
     for (ret <- f) yield ret
   }
-  
-  def findTop3ProcessPlant(location:Seq[Double], wasteCode:String) = {
+
+  def findTop3ProcessPlant(location: Seq[Double], wasteCode: String) = {
     val geometry = geojson.Point(geojson.Position(location: _*))
-    val filter = Filters.and(Filters.elemMatch("wasteIn", Filters.eq("wasteCode", wasteCode)),
-        Filters.nearSphere("location", geometry))
+    val filter = Filters.and(
+      Filters.elemMatch("wasteIn", Filters.eq("wasteCode", wasteCode)),
+      Filters.nearSphere("location", geometry))
     val f = collection.find(filter).limit(3).toFuture()
     f.onFailure(errorHandler)
     f
   }
-  
+
+  def recyclePlantParser(sheet: org.apache.poi.xssf.usermodel.XSSFSheet) = {
+    import org.mongodb.scala.model._
+    var rowN = 1
+    var finish = false
+    var seq = Seq.empty[UpdateOneModel[Nothing]]
+    do {
+      var row = sheet.getRow(rowN)
+      if (row == null)
+        finish = true
+      else {
+        try {
+          //WasteInput(wasteCode: String, wasteName: String, method: String, totalQuantity: Double, deadLine: Date, price: Option[Double])
+          import com.github.nscala_time.time.Imports._
+          val id = row.getCell(1).getStringCellValue
+          val name = row.getCell(2).getStringCellValue
+          val phone = row.getCell(3).getStringCellValue
+          val addr = row.getCell(4).getStringCellValue
+          val wasteCode = row.getCell(5).getStringCellValue.drop(1).takeWhile(_ != ')')
+          val wasteName = row.getCell(5).getStringCellValue.dropWhile(_ != ')').drop(1)
+          val deadLine = row.getCell(9).getDateCellValue
+          val wi = WasteInput(wasteCode, wasteName, "", 10000, deadLine, None)
+          val updates = Updates.combine(
+            Updates.set("name", name),
+            Updates.set("phone", phone),
+            Updates.set("addr", addr),
+            Updates.set("fcType", FacilityType.RecyclePlant.id),
+            Updates.addToSet("wasteIn", wi))
+          val model = UpdateOneModel(Filters.eq("_id", id), updates, UpdateOptions().upsert(true))
+          seq = seq.:+(model)
+        } catch {
+          case ex: java.lang.NullPointerException =>
+          // last row Ignore it...
+
+          case ex: Throwable =>
+            Logger.error(s"failed to convert row=$rowN...", ex)
+        }
+      }
+      rowN += 1
+    } while (!finish)
+
+    val f = collection.bulkWrite(seq, BulkWriteOptions().ordered(false)).toFuture()
+
+    f.onFailure(errorHandler)
+    val ret = waitReadyResult(f)
+    Logger.info(s"${ret.getModifiedCount} 再利用廠已經更新  upserts(${ret.getUpserts.length})")
+  }
 }

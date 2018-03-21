@@ -28,9 +28,9 @@ object ExcelUtility {
     (reportFilePath, pkg, wb)
   }
 
-  private def exportTemplate(templateFile: String, newFileName:String) = {
+  private def exportTemplate(templateFile: String, newFileName: String) = {
     val templatePath = Paths.get(current.path.getAbsolutePath + docRoot + templateFile)
-    val reportFilePath =Paths.get(current.path.getAbsolutePath + "/export/" + newFileName + ".xlsx")
+    val reportFilePath = Paths.get(current.path.getAbsolutePath + "/export/" + newFileName + ".xlsx")
 
     Files.copy(templatePath, reportFilePath, StandardCopyOption.REPLACE_EXISTING)
 
@@ -117,8 +117,8 @@ object ExcelUtility {
       val row = sheet.createRow(rowN)
       row.createCell(0).setCellValue(dm.company.getOrElse(""))
       row.createCell(1).setCellValue(dm.contact.getOrElse(""))
-      row.createCell(2).setCellValue(dm.addr)      
-    }    
+      row.createCell(2).setCellValue(dm.addr)
+    }
     finishExcel(reportFilePath, pkg, wb)
   }
 
@@ -181,46 +181,56 @@ object ExcelUtility {
 
     finishExcel(reportFilePath, pkg, wb)
   }
-  
-  def exportFactorySheet(newFileName:String, factory:Facility) = {
-    val (reportFilePath, pkg, wb) = exportTemplate("factory.xlsx", newFileName)
+
+  def exportFactorySheet(newFileName: String, factory: Facility) = {
+    val escapedFileName = newFileName.replace("/", "_").replace("\\", "_")
+    val (reportFilePath, pkg, wb) = exportTemplate("factory.xlsx", escapedFileName)
     val evaluator = wb.getCreationHelper().createFormulaEvaluator()
     val format = wb.createDataFormat()
     val sheet = wb.getSheetAt(0)
-    
+
+    var missingWasteCodeSet = Set.empty[String]
+
     sheet.getRow(1).getCell(0).setCellValue(factory.name)
-    for(contact<-factory.contact)
+    for (contact <- factory.contact)
       sheet.getRow(2).getCell(1).setCellValue(contact)
-    
-    for(phone<-factory.phone)
+
+    for (phone <- factory.phone)
       sheet.getRow(2).getCell(3).setCellValue(phone)
-    
-    for(addr<-factory.addr)
+
+    for (addr <- factory.addr)
       sheet.getRow(6).getCell(1).setCellValue(addr)
-      
-    for(location<-factory.location){
+
+    for (location <- factory.location) {
       val gasStationF = GasStation.getNearest(location)
       val gasStation = waitReadyResult(gasStationF)
       sheet.getRow(7).getCell(1).setCellValue(s"${gasStation._id.name}:${gasStation.addr}")
     }
-    
-    for(wasteOutList <- factory.wasteOut){
+
+    for (wasteOutList <- factory.wasteOut) {
       sheet.getRow(0).getCell(6).setCellValue(wasteOutList.head.date)
-      for{(wo, idx)<- wasteOutList.zipWithIndex
+      for {
+        (wo, idx) <- wasteOutList.zipWithIndex
         row = idx + 9
-        }{         
+      } {
         sheet.getRow(row).getCell(0).setCellValue(wo.wasteCode)
         sheet.getRow(row).getCell(1).setCellValue(wo.wasteName)
         sheet.getRow(row).getCell(2).setCellValue(wo.quantity)
-        for(location<-factory.location){
-          val top3 = waitReadyResult(Facility.findTop3ProcessPlant(location, wo.wasteCode)) 
-          val desp = top3 map {proc=>            
-            s"${proc.name.take(4)}${proc.phone.getOrElse("")}"}
+        for (location <- factory.location) {
+          val top3 = waitReadyResult(Facility.findTop3ProcessPlant(location, wo.wasteCode))
+          if (top3.isEmpty) {
+            missingWasteCodeSet = missingWasteCodeSet + wo.wasteCode
+          }
+
+          val desp = top3 map { proc =>
+            s"${proc.name.take(4)}${proc.phone.getOrElse("")}"
+          }
           sheet.getRow(row).getCell(4).setCellValue(desp.mkString(","))
-        }       
+        }
       }
     }
-      
+
     finishExcel(reportFilePath, pkg, wb)
+    missingWasteCodeSet
   }
 }

@@ -12,13 +12,7 @@ object Global extends GlobalSettings {
     super.onStart(app)
     MongoDB.init()
 
-    for (grabed <- SysConfig.get(SysConfig.GrabWasteInfo)) {
-      import org.mongodb.scala.bson._
-      if (!grabed.asBoolean().getValue) {
-        WasteWorker.start()(app.actorSystem)
-        SysConfig.set(SysConfig.GrabWasteInfo, BsonBoolean(true))
-      }
-    }
+    WasteWorker.start()(app.actorSystem)
 
     for (grabed <- SysConfig.get(SysConfig.GrabFactoryInfo)) {
       import org.mongodb.scala.bson._
