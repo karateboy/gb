@@ -540,7 +540,7 @@ object Facility {
       val updates = Updates.combine(
         Updates.set("addr", addr),
         Updates.set("location", locationOpt.getOrElse(None)),
-        Updates.set("wasteOut", woList.toSeq),
+        Updates.addEachToSet("wasteOut", woList.toSeq:_*),
         Updates.set("checkDate", DateTime.now().toDate()))
       val f = collection.updateOne(Filters.eq("_id", no), updates).toFuture()
       f.onFailure(errorHandler)
@@ -609,9 +609,9 @@ object Facility {
   }
 
   def grabWasteInfoList = {
-    val oneMonthBefore = DateTime.now() - 1.month
+    val oneWeekBefore = DateTime.now() - 7.day
     val filter1 = Filters.and(Filters.or(Filters.eq("addr", null), Filters.eq("location", null)), Filters.eq("checkDate", null))
-    val filter2 = Filters.lt("checkDate", oneMonthBefore.toDate())
+    val filter2 = Filters.lt("checkDate", oneWeekBefore.toDate())
     val filter = Filters.or(filter1, filter2)
     val f = collection.find(filter).toFuture()
     f.onFailure(errorHandler)

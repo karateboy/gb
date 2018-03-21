@@ -62,13 +62,11 @@ class WasteWorker() extends Actor with ActorLogging {
       var success = 0
       var failed = 0
       for (facility <- list) {
-        if (facility.addr.isEmpty || facility.location.isEmpty) {
-          if (Facility.wasteGrabber(facility._id)) {
-            success += 1
-            Logger.info(s"成功處理 ${facility._id} ${facility.name}")
-          } else
-            failed += 1
-        }
+        if (Facility.wasteGrabber(facility._id)) {
+          success += 1
+          Logger.info(s"成功處理 ${facility._id} ${facility.name}")
+        } else
+          failed += 1
       }
       Logger.info(s"結束抓取 成功=${success} 失敗=${failed}")
       self ! PoisonPill
@@ -136,7 +134,7 @@ class WasteWorker() extends Actor with ActorLogging {
         }
       }
       Logger.info(s"結束匯出有槽工廠表")
-      for(wasteCode <- missingWasteCodeSet){
+      for (wasteCode <- missingWasteCodeSet) {
         Logger.info(s"無法媒合${wasteCode}")
       }
       self ! PoisonPill
