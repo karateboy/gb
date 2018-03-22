@@ -91,13 +91,12 @@ object Facility {
 
   def resetSysConfig = {
     Logger.info("Reset facility related SysConfig")
-    val f1 = SysConfig.set(SysConfig.ImportFacility, BsonBoolean(false))
     val f2 = SysConfig.set(SysConfig.ImportFacilityPollutant, BsonBoolean(false))
     val f3 = SysConfig.set(SysConfig.ImportProcessPlant1, BsonBoolean(false))
     val f4 = SysConfig.set(SysConfig.ImportProcessPlant2, BsonBoolean(false))
     val f5 = SysConfig.set(SysConfig.GrabWasteInfo, BsonBoolean(false))
     import scala.concurrent._
-    val f = Future.sequence(Seq(f1, f2, f3, f4))
+    val f = Future.sequence(Seq(f2, f3, f4))
     waitReadyResult(f)
   }
   def init(colNames: Seq[String]) {
@@ -128,18 +127,6 @@ object Facility {
       cf8.onFailure(errorHandler)
     }
 
-    /*
-    {
-      val imported = waitReadyResult(SysConfig.get(SysConfig.ImportFacility))
-      if (!imported.asBoolean().getValue) {
-        if (importFacility) {
-          SysConfig.set(SysConfig.ImportFacility, BsonBoolean(true))
-        }
-      }
-    }
-    *
-    */
-
     {
       val imported = waitReadyResult(SysConfig.get(SysConfig.ImportFacilityPollutant))
       if (!imported.asBoolean().getValue) {
@@ -168,7 +155,14 @@ object Facility {
     }
 
     // Import recycle plant
-    importRecyclePlant
+    {
+      val imported = waitReadyResult(SysConfig.get(SysConfig.ImportRecyclePlant))
+      if (!imported.asBoolean().getValue) {
+        if (importRecyclePlant) {
+          SysConfig.set(SysConfig.ImportRecyclePlant, BsonBoolean(true))
+        }
+      }
+    }
   }
 
   case class FacilityGeoObj(features: Seq[FacilityObj])
