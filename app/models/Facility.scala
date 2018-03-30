@@ -91,13 +91,12 @@ object Facility {
 
   def resetSysConfig = {
     Logger.info("Reset facility related SysConfig")
-    val f1 = SysConfig.set(SysConfig.ImportFacility, BsonBoolean(false))
     val f2 = SysConfig.set(SysConfig.ImportFacilityPollutant, BsonBoolean(false))
     val f3 = SysConfig.set(SysConfig.ImportProcessPlant1, BsonBoolean(false))
     val f4 = SysConfig.set(SysConfig.ImportProcessPlant2, BsonBoolean(false))
     val f5 = SysConfig.set(SysConfig.GrabWasteInfo, BsonBoolean(false))
     import scala.concurrent._
-    val f = Future.sequence(Seq(f1, f2, f3, f4))
+    val f = Future.sequence(Seq(f2, f3, f4))
     waitReadyResult(f)
   }
   def init(colNames: Seq[String]) {

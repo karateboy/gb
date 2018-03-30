@@ -15,11 +15,9 @@ object SysConfig extends Enumeration {
   val ImportCareHouse = Value
   val ImportTank = Value
   val ImportGasStation = Value
-  val ImportFacility = Value
   val ImportFacilityPollutant = Value
   val ImportProcessPlant1 = Value
   val ImportProcessPlant2 = Value
-  val ImportProcessPlant3 = Value
   val GrabWasteInfo = Value
   val GrabFactoryInfo = Value
   val GrabProcessPlantInfo = Value
@@ -31,11 +29,9 @@ object SysConfig extends Enumeration {
     ImportCareHouse -> Document(valueKey -> false),
     ImportTank -> Document(valueKey -> false),
     ImportGasStation -> Document(valueKey -> false),
-    ImportFacility -> Document(valueKey -> false),
     ImportFacilityPollutant -> Document(valueKey -> false),
     ImportProcessPlant1 -> Document(valueKey -> false),
     ImportProcessPlant2 -> Document(valueKey -> false),
-    ImportProcessPlant3 -> Document(valueKey -> false),
     GrabWasteInfo -> Document(valueKey -> false),
     GrabFactoryInfo -> Document(valueKey -> false),
     GrabProcessPlantInfo -> Document(valueKey -> false),
@@ -48,21 +44,21 @@ object SysConfig extends Enumeration {
       f.onFailure(errorHandler)
     }
 
-    val f = collection.count().toFuture()
-    f.onSuccess({
-      case count: Long =>
-        if (count != defaultConfig.size) {
-          val docs = defaultConfig map {
-            kv =>
-              kv._2 + ("_id" -> kv._1.toString)
-          }
+    val idSet = values map { _.toString() }
+    //Clean up unused
+    val f1 = collection.deleteMany(Filters.not(Filters.in("_id", idSet.toList: _*))).toFuture()
+    f1.onFailure(errorHandler)
+    val updateModels =
+      for ((k, defaultDoc) <- defaultConfig) yield {
+        UpdateOneModel(
+          Filters.eq("_id", k.toString()),
+          Updates.setOnInsert(valueKey, defaultDoc(valueKey)), UpdateOptions().upsert(true))
+      }
 
-          val f = collection.insertMany(docs.toList, new InsertManyOptions().ordered(false)).toFuture()
-          import scala.concurrent.duration._
-          scala.concurrent.Await.ready(f, Duration.Inf)
-        }
-    })
+    val f2 = collection.bulkWrite(updateModels.toList, BulkWriteOptions().ordered(false)).toFuture()
 
+    import scala.concurrent._
+    val f = Future.sequence(List(f1, f2))
     waitReadyResult(f)
   }
 
