@@ -241,6 +241,10 @@ object CareHouse {
     Filters.and(Filters.in("_id.county", northCounty: _*), Filters.eq("owner", null), getFilter(param))
   def southOwnerless(param: QueryParam) =
     Filters.and(Filters.nin("_id.county", northCounty: _*), Filters.eq("owner", null), getFilter(param))
+  def northAll(param: QueryParam) =
+    Filters.and(Filters.in("_id.county", northCounty: _*), getFilter(param))
+  def southAll(param: QueryParam) =
+    Filters.and(Filters.nin("_id.county", northCounty: _*), getFilter(param))
 
   val northCaseFilter = Filters.in("_id.county", northCounty: _*)
   val southCaseFilter = Filters.nin("_id.county", northCounty: _*)
@@ -249,6 +253,11 @@ object CareHouse {
   def getNorthOwnerlessCount(param: QueryParam) = count(northOwnerless(param))
   def getSouthOwnerless(param: QueryParam) = query(southOwnerless(param))(getSortBy(param)) _
   def getSouthOwnerlessCount(param: QueryParam) = count(southOwnerless(param))
+
+  def getNorthAll(param: QueryParam) = query(northAll(param))(getSortBy(param)) _
+  def getNorthAllCount(param: QueryParam) = count(northAll(param))
+  def getSouthAll(param: QueryParam) = query(southAll(param))(getSortBy(param)) _
+  def getSouthAllCount(param: QueryParam) = count(southAll(param))
 
   def obtain(_id: CareHouseID, owner: String) = {
     val filter = Filters.and(Filters.eq("_id", _id), Filters.eq("owner", null))
@@ -305,7 +314,7 @@ object CareHouse {
       }
     }
   }
-  
+
   def splitOwnerless(caseFilter: Bson, userList: Seq[String]) = {
     val bcListF = collection.find(careHouseFilter(caseFilter)).sort(Sorts.descending("bed")).toFuture()
     val ret =

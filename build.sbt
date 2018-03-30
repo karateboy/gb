@@ -1,6 +1,6 @@
 name := """gb"""
 
-version := "1.0.34"
+version := "1.0.36"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
@@ -31,10 +31,13 @@ mappings in Universal ++=
 (baseDirectory.value / "report_template" * "*" get) map
     (x => x -> ("report_template/" + x.getName))
     
- mappings in Universal ++=
+mappings in Universal ++=
 (baseDirectory.value / "import" * "*" get) map
     (x => x -> ("import/" + x.getName))
-    
+
+mappings in Universal ++=
+(baseDirectory.value / "import/recycle/" * "*" get) map
+    (x => x -> ("import/recycle/" + x.getName))    
 
 //libraryDependencies += "com.google.guava" % "guava" % "19.0"
 

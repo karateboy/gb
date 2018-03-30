@@ -26,6 +26,7 @@ import WorkPointMap from './components/WorkPointMap.vue'
 import UpdateContractor from './components/UpdateContractor.vue'
 
 import Download from './components/Download.vue'
+import CaseList from './components/CaseList.vue'
 
 export const routes = [{
         path: '/',
@@ -101,6 +102,19 @@ export const routes = [{
                 path: 'AssignCase',
                 component: ObtainCase,
                 name: 'AssignCase'
+            }
+        ]
+    },
+    {
+        path: '/SalesAdmin',
+        component: Intern,
+        name: 'SalesAdmin',
+        children: [
+            {
+                path: 'CaseList',
+                component: CaseList,
+                name: 'CaseList',
+                props:true
             }
         ]
     },

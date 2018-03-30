@@ -58,6 +58,20 @@
                     </router-link> 
                 </ul>
             </li>
+            <li v-show="isAdmin">
+                <a>
+                    <i class="fa fa-user-circle-o" aria-hidden="true"></i>
+                    <span class="nav-label">業務主管</span>
+                    <span class="fa arrow"></span>
+                </a>
+                <ul class="nav nav-second-level collapse">
+                    <router-link tag="li" :to="{name:'CaseList', params:{ url:'AllCase'}}" active-class="active">
+                        <a>
+                            <i class="fa fa-search" aria-hidden="true"></i>
+                            <span class="nav-label"></span>全部名單</a>
+                    </router-link>
+                </ul>
+            </li>
             <li v-show="isIntern">
                 <a>
                     <i class="fa fa-users" aria-hidden="true"></i>

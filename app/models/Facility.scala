@@ -128,18 +128,6 @@ object Facility {
       cf8.onFailure(errorHandler)
     }
 
-    /*
-    {
-      val imported = waitReadyResult(SysConfig.get(SysConfig.ImportFacility))
-      if (!imported.asBoolean().getValue) {
-        if (importFacility) {
-          SysConfig.set(SysConfig.ImportFacility, BsonBoolean(true))
-        }
-      }
-    }
-    *
-    */
-
     {
       val imported = waitReadyResult(SysConfig.get(SysConfig.ImportFacilityPollutant))
       if (!imported.asBoolean().getValue) {
@@ -165,10 +153,14 @@ object Facility {
           SysConfig.set(SysConfig.ImportProcessPlant2, BsonBoolean(true))
         }
       }
-    }
 
-    // Import recycle plant
-    importRecyclePlant
+      val importRecycle = waitReadyResult(SysConfig.get(SysConfig.ImportRecyclePlant))
+      if (!importRecycle.asBoolean().getValue) {
+        if (importRecyclePlant) {
+          SysConfig.set(SysConfig.ImportRecyclePlant, BsonBoolean(true))
+        }
+      }
+    }
   }
 
   case class FacilityGeoObj(features: Seq[FacilityObj])
@@ -294,7 +286,7 @@ object Facility {
       val updates = Updates.combine(
         Updates.set("name", plantNoNameMap(plantNo)),
         Updates.set("fcType", FacilityType.ProcessPlant.id),
-        Updates.addEachToSet("wasteIn", wiSeq:_*),
+        Updates.addEachToSet("wasteIn", wiSeq: _*),
         Updates.set("grade", grade))
       UpdateOneModel(Filters.eq("_id", plantNo), updates, UpdateOptions().upsert(true))
     }
@@ -540,7 +532,7 @@ object Facility {
       val updates = Updates.combine(
         Updates.set("addr", addr),
         Updates.set("location", locationOpt.getOrElse(None)),
-        Updates.addEachToSet("wasteOut", woList.toSeq:_*),
+        Updates.addEachToSet("wasteOut", woList.toSeq: _*),
         Updates.set("checkDate", DateTime.now().toDate()))
       val f = collection.updateOne(Filters.eq("_id", no), updates).toFuture()
       f.onFailure(errorHandler)

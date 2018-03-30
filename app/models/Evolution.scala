@@ -6,10 +6,5 @@ import org.mongodb.scala.bson._
 
 object Evolution {
   def upgrade = {
-    for(v <- SysConfig.get(SysConfig.TrimArchitect)){
-      if(!v.asBoolean().getValue){
-        
-      }
-    }
   }
 }

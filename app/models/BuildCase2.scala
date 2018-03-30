@@ -573,10 +573,19 @@ object BuildCase2 {
   def southOwnerless(param: QueryParam) =
     Filters.and(southCaseFilter, Filters.eq("owner", null), Filters.gt("siteInfo.area", 500), getFilter(param))
 
+  def northAll(param: QueryParam) =
+    Filters.and(northCaseFilter, Filters.gt("siteInfo.area", 500), getFilter(param))
+  def southAll(param: QueryParam) =
+    Filters.and(southCaseFilter, Filters.gt("siteInfo.area", 500), getFilter(param))
+
+  def getNorthAll(param: QueryParam) = query(northAll(param))(getSortBy(param)) _
+  def getNorthAllCount(param: QueryParam) = count(northAll(param))
   def getNorthOwnerless(param: QueryParam) = query(northOwnerless(param))(getSortBy(param)) _
   def getNorthOwnerlessCount(param: QueryParam) = count(northOwnerless(param))
   def getSouthOwnerless(param: QueryParam) = query(southOwnerless(param))(getSortBy(param)) _
   def getSouthOwnerlessCount(param: QueryParam) = count(southOwnerless(param))
+  def getSouthAll(param: QueryParam) = query(southAll(param))(getSortBy(param)) _
+  def getSouthAllCount(param: QueryParam) = count(southAll(param))
 
   def obtain(_id: BuildCaseID, owner: String) = {
     val filter = Filters.and(Filters.eq("_id", _id), Filters.eq("owner", null))
@@ -664,7 +673,7 @@ object BuildCase2 {
     val caseFilter = Filters.and(southCaseFilter, Filters.eq("owner", null), Filters.gt("siteInfo.area", 500))
     splitOwnerless(caseFilter, userList)
   }
-  
+
   def trimArchitect = {
     for (list <- collection.find(wpFilter(WorkPointType.BuildCase.id)()).toFuture()) {
       for (bc <- list) {

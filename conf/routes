@@ -48,6 +48,10 @@ GET      /Ownerless/:dir/:typeID/:queryParam/excel          controllers.SalesMan
 GET      /Ownerless/:dir/:typeID/dm                         controllers.SalesManager.getOwnerlessDM(dir, typeID)
 GET      /Ownerless/:dir/:typeID/split                      controllers.SalesManager.getOwnerlessSplit(dir, typeID)
 
+GET      /AllCase/:dir/:typeID/:queryParam/:skip/:limit   controllers.SalesManager.getAllCase(dir, typeID, queryParam, skip: Int, limit: Int)
+GET      /AllCase/:dir/:typeID/:queryParam/count          controllers.SalesManager.getAllCaseCount(dir, typeID, queryParam)
+GET      /AllCase/:dir/:typeID/:queryParam/excel          controllers.SalesManager.getAllCaseExcel(dir, typeID, queryParam)
+
 POST     /ObtainCase                                        controllers.SalesManager.obtainCase()
 POST     /ReleaseCase                                       controllers.SalesManager.releaseCase()
 PUT      /BuildCase                                         controllers.Query.upsertBuildCase
