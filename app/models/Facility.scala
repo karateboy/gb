@@ -79,7 +79,8 @@ object Facility {
   implicit val wiWrite = Json.writes[WasteInput]
   implicit val woRead = Json.reads[WasteOutput]
   implicit val woWrite = Json.writes[WasteOutput]
-
+  implicit val qpRead = Json.reads[QueryParam]
+  implicit val qpWrite = Json.writes[QueryParam]
   implicit val fcRead = Json.reads[Facility]
   implicit val fcWrite = Json.writes[Facility]
 

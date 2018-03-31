@@ -94,6 +94,40 @@ object SalesManager extends Controller {
         }
       }
 
+      def facility = {
+        import Facility._
+        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
+        val f =
+          caseFilter match {
+            case CaseFilter.Ownerless =>
+              if (dir.equalsIgnoreCase("N"))
+                getNorthOwnerless(queryParam)(skip, limit)
+              else
+                getSouthOwnerless(queryParam)(skip, limit)
+            case CaseFilter.MyCase =>
+              queryParam.owner = Some(Security.getUserID(request))
+              query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
+            case CaseFilter.AllCase =>
+              if (dir.equalsIgnoreCase("N"))
+                getNorthAll(queryParam)(skip, limit)
+              else
+                getSouthAll(queryParam)(skip, limit)
+          }
+
+        for (careHouseList <- f) yield {
+          outputType match {
+            case OutputType.json =>
+              Ok(Json.toJson(careHouseList))
+            case OutputType.excel =>
+              val excel = ExcelUtility.exportCareHouse(careHouseList)
+              Ok.sendFile(excel, fileName = _ =>
+                play.utils.UriEncoding.encodePathSegment("careHouse.xlsx", "UTF-8"),
+                onClose = () => { Files.deleteIfExists(excel.toPath()) })
+          }
+        }
+
+      }
+
       wpType match {
         case WorkPointType.BuildCase =>
           buildCase

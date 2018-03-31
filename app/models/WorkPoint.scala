@@ -47,13 +47,15 @@ object WorkPointType extends Enumeration {
   val DumpSite = Value(3)
   val Tank = Value(4)
   val GasStation = Value(5)
+  val Facility = Value(6)
 
   val map = Map(
     BuildCase -> "起造人",
     CareHouse -> "長照機構",
     DumpSite -> "棄置場",
     Tank -> "油槽",
-    GasStation -> "加油站")
+    GasStation -> "加油站",
+    Facility -> "有槽事業")
 
   implicit val write = Json.writes[WorkPointType]
 

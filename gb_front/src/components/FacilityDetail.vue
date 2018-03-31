@@ -3,30 +3,22 @@
         <br>
         <div class="form-horizontal">
             <div class="form-group">
-                <label class="col-sm-1 control-label">縣市:</label>
-                <div class="col-sm-4"><input type="text" class="form-control" v-model="careHouse._id.county"></div>
+                <label class="col-sm-1 control-label">管制編號:</label>
+                <div class="col-sm-4"><input type="text" class="form-control" v-model="facility._id"></div>
             </div>
             <div class="form-group">
                 <label class="col-sm-1 control-label">名稱:</label>
-                <div class="col-sm-4"><input type="text" class="form-control" v-model="careHouse._id.name"></div>
+                <div class="col-sm-4"><input type="text" class="form-control" v-model="facility.name"></div>
             </div>
             <div class="form-group">
                 <label class="col-sm-1 control-label">電話:</label>
                 <div class="col-sm-4">
-                  <a :href="'tel:' + careHouse.phone">{{careHouse.phone}}</a>
-                  <input type="text" class="form-control" v-model="careHouse.phone"></div>
-            </div>
-            <div class="form-group">
-                <label class="col-sm-1 control-label">傳真:</label>
-                <div class="col-sm-4"><input type="text" class="form-control" v-model="careHouse.fax"></div>
-            </div>
-            <div class="form-group">
-                <label class="col-sm-1 control-label">email:</label>
-                <div class="col-sm-4"><input type="text" class="form-control" v-model="careHouse.email"></div>
+                  <a :href="'tel:' + facility.phone">{{facility.phone}}</a>
+                  <input type="text" class="form-control" v-model="facility.phone"></div>
             </div>
             <div class="form-group">
                 <label class="col-sm-1 control-label">業務:</label>
-                <div class="col-sm-4"><input type="text" class="form-control" :value="careHouse.owner" readonly></div>
+                <div class="col-sm-4"><input type="text" class="form-control" :value="facility.owner" readonly></div>
             </div>
             <entry-item id="entryModal" :ioType='ioType' :opType='opType' :entryIndex='entryIndex'
                                    :entry='getEntry()'
@@ -34,39 +26,25 @@
                                    @updateEntry='updateEntry'
                 ></entry-item>
             <div class="form-group">
-                <label class="col-sm-1 control-label">輸入:</label>
+                <label class="col-sm-1 control-label">處理代碼:</label>
                     <div class="col-sm-4">
                         <table class="table table-bordered">
                             <thead>
                             <tr>
                                 <th>名稱</th>
                                 <th>代碼</th>
-                                <th>頻率</th>
                                 <th>數量</th>
-                                <th></th>
                             </tr>
                             </thead>
                             <tbody>
-                            <tr v-for="(input, idx) in careHouse.in" :key="idx">
-                                <td>{{input.name}}</td>
-                                <td>{{input.code}}</td>
-                                <td>{{input.freq}}</td>
-                                <td>{{input.volume}}</td>
-                                <td>
-                                    <button class="btn btn-danger" @click="delEntry('in',idx)">
-                                        <i class="fa fa-trash" aria-hidden="true"></i>&nbsp;刪除
-                                    </button>
-                                    <button class="btn btn-warning" @click="editEntry('in',idx)" data-toggle="modal" data-target="#entryModal">
-                                        <i class="fa fa-pencil" aria-hidden="true"></i>&nbsp;更新
-                                    </button>
-                                </td>
+                            <tr v-for="(wi, idx) in facility.wasteIn" :key="idx">
+                                <td>{{wi.wasteName}}</td>
+                                <td>{{wi.wasteCode}}</td>
+                                <td>{{wi.totalQuantity}}</td>
                             </tr>
                             </tbody>
                         </table>
                     </div>
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#entryModal" @click="opType='add';ioType='in'">
-                        <i class="fa fa-plus" aria-hidden="true"></i>&nbsp;新增
-                    </button>
             </div>
             <div class="form-group">
                 <label class="col-sm-1 control-label">產出:</label>
@@ -74,36 +52,24 @@
                         <table class="table table-bordered">
                             <thead>
                             <tr>
-                                <th>名稱</th>
+                                <th>日期</th>
                                 <th>代碼</th>
                                 <th>頻率</th>
                                 <th>數量</th>
-                                <th></th>
                             </tr>
                             </thead>
                             <tbody>
-                            <tr v-for="(input, idx) in careHouse.out" :key="idx">
-                                <td>{{input.name}}</td>
-                                <td>{{input.code}}</td>
-                                <td>{{input.freq}}</td>
-                                <td>{{input.volume}}</td>
-                                <td>
-                                    <button class="btn btn-danger" @click="delEntry('out',idx)">
-                                        <i class="fa fa-trash" aria-hidden="true"></i>&nbsp;刪除
-                                    </button>
-                                    <button class="btn btn-warning" @click="editEntry('out',idx)" data-toggle="modal" data-target="#entryModal">
-                                        <i class="fa fa-pencil" aria-hidden="true"></i>&nbsp;更新
-                                    </button>
-                                </td>
+                            <tr v-for="(wo, idx) in facility.wasteOut" :key="idx">
+                                <td>{{wo.date}}</td>
+                                <td>{{wo.wasteCode}}</td>
+                                <td>{{wo.wasteName}}</td>
+                                <td>{{wo.quantity}}</td>
                             </tr>
                             </tbody>
                         </table>
                     </div>
-                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#entryModal" @click="opType='add';ioType='out'">
-                        <i class="fa fa-plus" aria-hidden="true"></i>&nbsp;新增
-                    </button>
             </div>
-            <div class="panel panel-success" v-for="(note, idx) in careHouse.notes" :key="idx">
+            <div class="panel panel-success" v-for="(note, idx) in facility.notes" :key="idx">
                 <div class="panel-heading">{{noteHeader(note)}}</div>
                 <div class="panel-body">
                     {{note.comment}}
@@ -134,7 +100,7 @@ import EntryItem from "./EntryItem.vue";
 
 export default {
   props: {
-    careHouse: {
+    facility: {
       type: Object,
       required: true
     }
@@ -176,10 +142,10 @@ export default {
         person: this.user.name
       };
 
-      this.careHouse.notes.push(newNote);
+      this.facility.notes.push(newNote);
 
       axios
-        .put("/CareHouse", this.careHouse)
+        .put("/Facility", this.facility)
         .then(resp => {
           let ret = resp.data;
           if (ret.Ok) {
@@ -191,21 +157,21 @@ export default {
     getEntry() {
       if (this.opType === "add") return this.entry;
       else {
-        if (this.ioType === "in" && this.careHouse.in.length != 0)
-          return this.careHouse.in[this.entryIndex];
-        else if (this.ioType === "out" && this.careHouse.out.length != 0)
-          return this.careHouse.out[this.entryIndex];
+        if (this.ioType === "in" && this.facility.in.length != 0)
+          return this.facility.in[this.entryIndex];
+        else if (this.ioType === "out" && this.facility.out.length != 0)
+          return this.facility.out[this.entryIndex];
         else return this.entry;
       }
     },
     addEntry(evt) {
       var copy = Object.assign({}, evt.entry);
-      if (evt.ioType === "in") this.careHouse.in.push(copy);
-      else this.careHouse.out.push(copy);
+      if (evt.ioType === "in") this.facility.in.push(copy);
+      else this.facility.out.push(copy);
     },
     delEntry(ioType, idx) {
-      if (ioType === "in") this.careHouse.in.splice(idx, 1);
-      else this.careHouse.out.splice(idx, 1);
+      if (ioType === "in") this.facility.in.splice(idx, 1);
+      else this.facility.out.splice(idx, 1);
     },
     editEntry(ioType, idx) {
       this.ioType = ioType;
@@ -214,9 +180,9 @@ export default {
     },
     updateEntry(evt) {
       if (this.ioType === "in") {
-        this.careHouse.in[this.entryIndex] = evt.entry;
+        this.facility.in[this.entryIndex] = evt.entry;
       } else {
-        this.careHouse.out[this.entryIndex] = evt.entry;
+        this.facility.out[this.entryIndex] = evt.entry;
       }
     }
   },

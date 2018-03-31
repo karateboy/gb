@@ -30,6 +30,7 @@
         </div>
         <build-case2-list v-if="typeIdx===0" :url="targetUrl" :param="{}" :obtainBtn="obtainBtn" :download="true" :dm="isAdmin" :split-case="isAdmin"></build-case2-list>
         <care-house-list v-if="typeIdx===1" :url="targetUrl" :param="{}" :obtainBtn="obtainBtn" :download="true" :dm="isAdmin" :split-case="isAdmin"></care-house-list>
+        <facility-list v-if="typeIdx===2" :url="targetUrl" :param="{}" :obtainBtn="obtainBtn" :download="true" :dm="isAdmin" :split-case="isAdmin"></facility-list>
     </div>
 </template>
 <style>
@@ -38,6 +39,7 @@
 <script>
 import BuildCase2List from "./BuildCase2List.vue";
 import CareHouseList from "./CareHouseList.vue";
+import FacilityList from "./FacilityList.vue";
 import { mapGetters } from "vuex";
 import axios from "axios";
 
@@ -76,6 +78,11 @@ export default {
           _id: 2,
           typeID: "CareHouse",
           name: "長照機構"
+        },
+        {
+          _id: 3,
+          typeID: "Facility",
+          name: "有槽工廠"
         }
       ]
     };
@@ -92,7 +99,8 @@ export default {
   methods: {},
   components: {
     BuildCase2List,
-    CareHouseList
+    CareHouseList,
+    FacilityList
   }
 };
 </script>

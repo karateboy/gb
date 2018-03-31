@@ -10,35 +10,34 @@
                 </div>
             </div>
         </div>
-        <div v-if="careHouseList.length != 0" class="table-responsive">
+        <div v-if="facilityList.length != 0" class="table-responsive">
             <table class="table table-hover table-bordered table-condensed">
                 <thead>
                     <tr class="info">
                         <th></th>
-                        <th @click="toggleSort('_id.name')"><a>機構名稱&nbsp;<span v-html = "sortDir('_id.name')"></span></a></th>
-                        <th @click="toggleSort('_id.county')"><a>縣市&nbsp;<span v-html = "sortDir('_id.county')"></span></a></th>
+                        <th @click="toggleSort('name')"><a>名稱&nbsp;<span v-html = "sortDir('name')"></span></a></th>
                         <th @click="toggleSort('phone')"><a>電話&nbsp;<span v-html = "sortDir('phone')"></span></a></th>
-                        <th @click="toggleSort('bed')"><a>床數&nbsp;<span v-html = "sortDir('bed')"></span></a></th>
+                        <th @click="toggleSort('pollutant.noVOCtotal')"><a>空汙&nbsp;<span v-html = "sortDir('pollutant.noVOCtotal')"></span></a></th>
                         <th @click="toggleSort('addr')"><a>地址&nbsp;<span v-html = "sortDir('addr')"></span></a></th>                        
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(careHouse, index) in careHouseList" :class='{success: selectedIndex == index}' :key="careHouse._id.name">
+                    <tr v-for="(facility, index) in facilityList" :class='{success: selectedIndex == index}' :key="facility._id">
                         <td>
-                            <button class="btn btn-primary" @click="editCareHouse(index)">
+                            <button class="btn btn-primary" @click="editFacility(index)">
                                 <i class="fa fa-pen"></i>&nbsp;細節</button>
-                            <button class="btn btn-primary" @click="obtainCase(careHouse)" v-if="obtainBtn">
+                            <button class="btn btn-primary" @click="obtainCase(facility)" v-if="obtainBtn">
                                 <i class="fa fa-pen"></i>&nbsp;取得</button>  
-                            <button class="btn btn-primary" @click="releaseCase(careHouse)" v-if="!obtainBtn">
+                            <button class="btn btn-primary" @click="releaseCase(facility)" v-if="!obtainBtn">
                                 <i class="fa fa-pen"></i>&nbsp;歸還</button> 
-                            <button class="btn btn-primary" @click="caseMap(index)" :disabled="!careHouse.location">
+                            <button class="btn btn-primary" @click="caseMap(index)" :disabled="!facility.location">
                                 <i class="fa fa-pen"></i>&nbsp;地圖</button>                                                                  
                         </td>
-                        <td>{{ careHouse._id.name}}</td>
-                        <td>{{ careHouse._id.county}}</td>
-                        <td>{{ careHouse.phone}}</td>
-                        <td>{{ careHouse.bed}}</td>
-                        <td>{{ careHouse.addr}}</td>
+                        <td>{{ facility._id.name}}</td>
+                        <td>{{ facility._id.county}}</td>
+                        <td>{{ facility.phone}}</td>
+                        <td>{{ facility.bed}}</td>
+                        <td>{{ facility.addr}}</td>
                     </tr>
                 </tbody>
             </table>
@@ -49,8 +48,8 @@
             </div>            
         </div>
         <div v-else class="alert alert-info" role="alert">無</div>
-        <care-house-detail v-if="display === 'detail'" :careHouse="careHouseList[selectedIndex]"></care-house-detail>
-        <build-case2-map v-if="display === 'map'" :careHouse="careHouseList[selectedIndex]"></build-case2-map>
+        <facility-detail v-if="display === 'detail'" :facility="facilityList[selectedIndex]"></facility-detail>
+        <build-case2-map v-if="display === 'map'" :facility="facilityList[selectedIndex]"></build-case2-map>
     </div>
 </template>
 <style scoped>
@@ -59,7 +58,7 @@
 <script>
 import axios from "axios";
 import moment from "moment";
-import CareHouseDetail from "./CareHouseDetail.vue";
+import FacilityDetail from "./FacilityDetail.vue";
 import { Pagination, PaginationEvent } from "vue-pagination-2";
 import baseUrl from "../baseUrl";
 
@@ -88,7 +87,7 @@ export default {
   },
   data() {
     return {
-      careHouseList: [],
+      facilityList: [],
       limit: 5,
       total: 0,
       display: "",
@@ -117,10 +116,10 @@ export default {
   methods: {
     processResp(resp) {
       const ret = resp.data;
-      this.careHouseList.splice(0, this.careHouseList.length);
+      this.facilityList.splice(0, this.facilityList.length);
 
-      for (let careHouse of ret) {
-        this.careHouseList.push(careHouse);
+      for (let facility of ret) {
+        this.facilityList.push(facility);
       }
     },
     fetchCareHouse(skip, limit) {
@@ -164,7 +163,7 @@ export default {
       let skip = (page - 1) * this.limit;
       this.fetchCareHouse(skip, this.limit);
     },
-    editCareHouse(idx) {
+    editFacility(idx) {
       this.selectedIndex = idx;
       this.display = "detail";
     },
@@ -172,8 +171,8 @@ export default {
       this.selectedIndex = idx;
       this.display = "map";
     },
-    obtainCase(careHouse) {
-      let _id = careHouse._id;
+    obtainCase(facility) {
+      let _id = facility._id;
       axios
         .post("/ObtainCase", _id)
         .then(resp => {
@@ -187,8 +186,8 @@ export default {
         })
         .catch(err => alert(err));
     },
-    releaseCase(careHouse) {
-      let _id = careHouse._id;
+    releaseCase(facility) {
+      let _id = facility._id;
       axios
         .post("/ReleaseCase", _id)
         .then(resp => {
@@ -240,7 +239,7 @@ export default {
     }
   },
   components: {
-    CareHouseDetail,
+    FacilityDetail,
     Pagination
   }
 };

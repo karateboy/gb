@@ -24,7 +24,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(buildCase, index) in buildCaseList" :class='{success: selectedIndex == index}'>
+                    <tr v-for="(buildCase, index) in buildCaseList" :key="buildCase._id.permitID" :class='{success: selectedIndex == index}'>
                         <td>
                             <button class="btn btn-primary" @click="editBuildCase(index)">
                                 <i class="fa fa-pen"></i>&nbsp;細節</button>
