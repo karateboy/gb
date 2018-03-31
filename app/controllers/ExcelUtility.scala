@@ -182,6 +182,25 @@ object ExcelUtility {
     finishExcel(reportFilePath, pkg, wb)
   }
 
+  def exportFacility(facilityList: Seq[Facility]) = {
+    val (reportFilePath, pkg, wb) = prepareTemplate("careHouse.xlsx")
+    val evaluator = wb.getCreationHelper().createFormulaEvaluator()
+    val format = wb.createDataFormat()
+    val sheet = wb.getSheetAt(0)
+
+    val dateStyle = wb.createCellStyle();
+    dateStyle.setDataFormat(format.getFormat("yyyy/mm/dd"))
+
+    for {
+      (facility, idx) <- facilityList.zipWithIndex
+      rowN = idx + 1
+    } {
+      val row = sheet.createRow(rowN)
+    }
+
+    finishExcel(reportFilePath, pkg, wb)
+  }
+  
   def exportFactorySheet(newFileName: String, factory: Facility) = {
     val escapedFileName = newFileName.replace("/", "_").replace("\\", "_")
     val (reportFilePath, pkg, wb) = exportTemplate("factory.xlsx", escapedFileName)

@@ -440,11 +440,19 @@ object Facility {
 
   val northCaseFilter = Filters.in("_id.county", northCounty: _*)
   val southCaseFilter = Filters.nin("_id.county", northCounty: _*)
+  def northAll(param: QueryParam) =
+    Filters.and(northCaseFilter, getFilter(param))
+  def southAll(param: QueryParam) =
+    Filters.and(southCaseFilter, getFilter(param))
 
   def getNorthOwnerless(param: QueryParam) = query(northOwnerless(param))(getSortBy(param)) _
   def getNorthOwnerlessCount(param: QueryParam) = count(northOwnerless(param))
   def getSouthOwnerless(param: QueryParam) = query(southOwnerless(param))(getSortBy(param)) _
   def getSouthOwnerlessCount(param: QueryParam) = count(southOwnerless(param))
+  def getNorthAll(param: QueryParam) = query(northAll(param))(getSortBy(param)) _
+  def getNorthAllCount(param: QueryParam) = count(northAll(param))
+  def getSouthAll(param: QueryParam) = query(southAll(param))(getSortBy(param)) _
+  def getSouthAllCount(param: QueryParam) = count(southAll(param))
 
   def obtain(_id: CareHouseID, owner: String) = {
     val filter = Filters.and(Filters.eq("_id", _id), Filters.eq("owner", null))

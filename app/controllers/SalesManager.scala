@@ -114,14 +114,14 @@ object SalesManager extends Controller {
                 getSouthAll(queryParam)(skip, limit)
           }
 
-        for (careHouseList <- f) yield {
+        for (facilityList <- f) yield {
           outputType match {
             case OutputType.json =>
-              Ok(Json.toJson(careHouseList))
+              Ok(Json.toJson(facilityList))
             case OutputType.excel =>
-              val excel = ExcelUtility.exportCareHouse(careHouseList)
+              val excel = ExcelUtility.exportFacility(facilityList)
               Ok.sendFile(excel, fileName = _ =>
-                play.utils.UriEncoding.encodePathSegment("careHouse.xlsx", "UTF-8"),
+                play.utils.UriEncoding.encodePathSegment("facility.xlsx", "UTF-8"),
                 onClose = () => { Files.deleteIfExists(excel.toPath()) })
           }
         }
@@ -133,6 +133,8 @@ object SalesManager extends Controller {
           buildCase
         case WorkPointType.CareHouse =>
           careHouse
+        case WorkPointType.Facility =>
+          facility
       }
   }
 
@@ -161,8 +163,8 @@ object SalesManager extends Controller {
                 getSouthAllCount(queryParam)
           }
 
-        for (objList <- f) yield {
-          Ok(Json.toJson(objList))
+        for (count <- f) yield {
+          Ok(Json.toJson(count))
         }
       }
 
@@ -186,16 +188,42 @@ object SalesManager extends Controller {
                 getSouthAllCount(queryParam)
           }
 
-        for (objList <- f) yield {
-          Ok(Json.toJson(objList))
+        for (count <- f) yield {
+          Ok(Json.toJson(count))
         }
       }
 
+      def facility = {
+        import Facility._
+        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
+        val f =
+          casefilter match {
+            case CaseFilter.Ownerless =>
+              if (dir.equalsIgnoreCase("N"))
+                getNorthOwnerlessCount(queryParam)
+              else
+                getSouthOwnerlessCount(queryParam)
+            case CaseFilter.MyCase =>
+              queryParam.owner = Some(Security.getUserID(request))
+              count(getFilter(queryParam))
+            case CaseFilter.AllCase =>
+              if (dir.equalsIgnoreCase("N"))
+                getNorthAllCount(queryParam)
+              else
+                getSouthAllCount(queryParam)
+          }
+
+        for (count <- f) yield {
+          Ok(Json.toJson(count))
+        }
+      }
       wpType match {
         case WorkPointType.BuildCase =>
           buildCase
         case WorkPointType.CareHouse =>
           careHouse
+        case WorkPointType.Facility =>
+          facility
       }
   }
 
