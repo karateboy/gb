@@ -36,12 +36,12 @@
                     <span class="fa arrow"></span>
                 </a>
                 <ul class="nav nav-second-level collapse">
-                    <router-link tag="li" :to="{name:'MyCase'}" active-class="active">
+                    <router-link tag="li" :to="{name:'MyCase', params:{ url:'Case/MyCase'}}" active-class="active">
                         <a>
                             <i class="fa fa-diamond" aria-hidden="true"></i>
                             <span class="nav-label"></span>我的名單</a>
                     </router-link>
-                    <router-link tag="li" :to="{name:'ObtainCase'}" active-class="active">
+                    <router-link tag="li" :to="{name:'ObtainCase', params:{ url:'Case/Ownerless', obtainBtn:true}}" active-class="active">
                         <a>
                             <i class="fa fa-search" aria-hidden="true"></i>
                             <span class="nav-label"></span>取得名單</a>
@@ -65,7 +65,7 @@
                     <span class="fa arrow"></span>
                 </a>
                 <ul class="nav nav-second-level collapse">
-                    <router-link tag="li" :to="{name:'CaseList', params:{ url:'AllCase'}}" active-class="active">
+                    <router-link tag="li" :to="{name:'CaseList', params:{ url:'Case/AllCase'}}" active-class="active">
                         <a>
                             <i class="fa fa-search" aria-hidden="true"></i>
                             <span class="nav-label"></span>全部名單</a>

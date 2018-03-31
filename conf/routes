@@ -3,74 +3,67 @@
 # ~~~~
 
 # Home page
-GET      /                                                  controllers.Assets.at(path="/public", file="index.html")
-GET      /Customer                                          controllers.Assets.at(path="/public", file="customer.html")
+GET      /                                                     controllers.Assets.at(path="/public", file="index.html")
+GET      /Customer                                             controllers.Assets.at(path="/public", file="customer.html")
 
 # Map static resources from the /public folder to the /assets URL path
-GET      /assets/*file                                      controllers.Assets.versioned(path="/public", file: Asset)
-GET      /html/*file                                        controllers.Assets.at(path="/public/html", file)
-GET      /dist/*file                                        controllers.Assets.at(path="/public/dist", file)
+GET      /assets/*file                                         controllers.Assets.versioned(path="/public", file: Asset)
+GET      /html/*file                                           controllers.Assets.at(path="/public/html", file)
+GET      /dist/*file                                           controllers.Assets.at(path="/public/dist", file)
 
-GET      /logout                                            controllers.Login.logout
-POST     /authenticate                                      controllers.Login.authenticate
-GET      /testAuthenticated                                 controllers.Login.testAuthenticated
+GET      /logout                                               controllers.Login.logout
+POST     /authenticate                                         controllers.Login.authenticate
+GET      /testAuthenticated                                    controllers.Login.testAuthenticated
 
-POST     /User                                              controllers.Application.newUser
-GET      /User                                              controllers.Application.getAllUsers
-PUT      /User/:id                                          controllers.Application.updateUser(id)
-DELETE   /User/:id                                          controllers.Application.deleteUser(id)
+POST     /User                                                 controllers.Application.newUser
+GET      /User                                                 controllers.Application.getAllUsers
+PUT      /User/:id                                             controllers.Application.updateUser(id)
+DELETE   /User/:id                                             controllers.Application.deleteUser(id)
 
-GET      /Group                                             controllers.Application.getGroupInfoList
+GET      /Group                                                controllers.Application.getGroupInfoList
 
-GET      /ImportBuildCase                                   controllers.Application.testParseMonthlyBuildCase
-GET      /TestCheckBuildCase                                controllers.Application.testImportCheckBuildCase()
+GET      /ImportBuildCase                                      controllers.Application.testParseMonthlyBuildCase
+GET      /TestCheckBuildCase                                   controllers.Application.testImportCheckBuildCase()
 
-GET      /CheckOutBuilder                                   controllers.Application.checkOutBuilder
-POST     /Builder                                           controllers.Application.upsertBuilder
-GET      /Builder/:encodedID                                controllers.Query.getBuilder(encodedID)
+GET      /CheckOutBuilder                                      controllers.Application.checkOutBuilder
+POST     /Builder                                              controllers.Application.upsertBuilder
+GET      /Builder/:encodedID                                   controllers.Query.getBuilder(encodedID)
 
-GET      /CheckOutBuildCase                                 controllers.Application.checkOutBuildCase
-GET      /CheckOutContractor                                controllers.Application.checkOutContractor
-POST     /BuildCase                                         controllers.Application.upsertBuildCase
+GET      /CheckOutBuildCase                                    controllers.Application.checkOutBuildCase
+GET      /CheckOutContractor                                   controllers.Application.checkOutContractor
+POST     /BuildCase                                            controllers.Application.upsertBuildCase
 
-GET      /Contractor/:id                                    controllers.Application.getContractor(id)
-POST     /Contractor                                        controllers.Application.upsertContractor
+GET      /Contractor/:id                                       controllers.Application.getContractor(id)
+POST     /Contractor                                           controllers.Application.upsertContractor
 
-GET      /UsageRecord/:offset                               controllers.Application.getUsageRecord(offset: Int)
+GET      /UsageRecord/:offset                                  controllers.Application.getUsageRecord(offset: Int)
 
-GET      /MyCase/:typeID/:queryParam/:skip/:limit           controllers.SalesManager.getMyCase(typeID, queryParam, skip:Int, limit:Int)
-GET      /MyCase/:typeID/:queryParam/count                  controllers.SalesManager.getMyCaseCount(typeID, queryParam)
-GET      /MyCase/:typeID/:queryParam/excel                  controllers.SalesManager.getMyCaseExcel(typeID, queryParam)
+GET      /Case/Ownerless/:dir/:typeID/dm                       controllers.SalesManager.getOwnerlessDM(dir, typeID)
+GET      /Case/Ownerless/:dir/:typeID/split                    controllers.SalesManager.getOwnerlessSplit(dir, typeID)
 
-GET      /Ownerless/:dir/:typeID/:queryParam/:skip/:limit   controllers.SalesManager.getOwnerless(dir, typeID, queryParam, skip: Int, limit: Int)
-GET      /Ownerless/:dir/:typeID/:queryParam/count          controllers.SalesManager.getOwnerlessCount(dir, typeID, queryParam)
-GET      /Ownerless/:dir/:typeID/:queryParam/excel          controllers.SalesManager.getOwnerlessExcel(dir, typeID, queryParam)
-GET      /Ownerless/:dir/:typeID/dm                         controllers.SalesManager.getOwnerlessDM(dir, typeID)
-GET      /Ownerless/:dir/:typeID/split                      controllers.SalesManager.getOwnerlessSplit(dir, typeID)
+GET      /Case/:filter/:dir/:typeID/:queryParam/:skip/:limit   controllers.SalesManager.getCaseList(filter, output="json", dir, typeID, queryParam, skip:Int, limit:Int)
+GET      /Case/:filter/:dir/:typeID/:queryParam/count          controllers.SalesManager.getCaseCount(filter, dir, typeID, queryParam)
+GET      /Case/:filter/:dir/:typeID/:queryParam/excel          controllers.SalesManager.getCaseList(filter, output="excel", dir, typeID, queryParam, skip:Int=0, limit:Int=0)
 
-GET      /AllCase/:dir/:typeID/:queryParam/:skip/:limit   controllers.SalesManager.getAllCase(dir, typeID, queryParam, skip: Int, limit: Int)
-GET      /AllCase/:dir/:typeID/:queryParam/count          controllers.SalesManager.getAllCaseCount(dir, typeID, queryParam)
-GET      /AllCase/:dir/:typeID/:queryParam/excel          controllers.SalesManager.getAllCaseExcel(dir, typeID, queryParam)
+POST     /ObtainCase                                           controllers.SalesManager.obtainCase()
+POST     /ReleaseCase                                          controllers.SalesManager.releaseCase()
+PUT      /BuildCase                                            controllers.Query.upsertBuildCase
+PUT      /CareHouse                                            controllers.Query.upsertCareHouse
 
-POST     /ObtainCase                                        controllers.SalesManager.obtainCase()
-POST     /ReleaseCase                                       controllers.SalesManager.releaseCase()
-PUT      /BuildCase                                         controllers.Query.upsertBuildCase
-PUT      /CareHouse                                         controllers.Query.upsertCareHouse
+GET      /BuildCaseTemplate                                    controllers.Application.getBuildCaseTemplate
+POST     /UploadBuildCase                                      controllers.Application.uploadBuildCase
 
-GET      /BuildCaseTemplate                                 controllers.Application.getBuildCaseTemplate
-POST     /UploadBuildCase                                   controllers.Application.uploadBuildCase
+GET      /WorkPoint                                            controllers.SalesManager.getWorkPoint()
+GET      /WorkPointType                                        controllers.SalesManager.getWorkPointTypeList
+GET      /TargetWorkPointType                                  controllers.SalesManager.getTargetWorkPointTypes
+GET      /WorkPoint/:typeIDS/:bottomLeft/:upperRight           controllers.SalesManager.getAreaWorkPoint(typeIDS, bottomLeft, upperRight)
 
-GET      /WorkPoint                                         controllers.SalesManager.getWorkPoint()
-GET      /WorkPointType                                     controllers.SalesManager.getWorkPointTypeList
-GET      /TargetWorkPointType                               controllers.SalesManager.getTargetWorkPointTypes
-GET      /WorkPoint/:typeIDS/:bottomLeft/:upperRight        controllers.SalesManager.getAreaWorkPoint(typeIDS, bottomLeft, upperRight)
+GET      /Top3DumpSite/:lon/:lat                               controllers.SalesManager.getTop3DumpSite(lon: Double, lat: Double)
 
-GET      /Top3DumpSite/:lon/:lat                            controllers.SalesManager.getTop3DumpSite(lon: Double, lat: Double)
+GET      /DownloadType                                         controllers.Application.getDownloadType
+GET      /Download/:downloadType                               controllers.Application.handleDownload(downloadType)
 
-GET      /DownloadType                                      controllers.Application.getDownloadType
-GET      /Download/:downloadType                            controllers.Application.handleDownload(downloadType)
-
-GET	 	 /Test												controllers.Application.testGrabber
+GET      /Test                                                 controllers.Application.testGrabber
 #Report
 
 #JSON

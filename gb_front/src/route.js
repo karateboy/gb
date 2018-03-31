@@ -20,8 +20,6 @@ import UpdateBuilder from './components/UpdateBuilder.vue'
 import UpdateBuildCase from './components/UpdateBuildCase.vue'
 import UsageReport from './components/UsageReport.vue'
 
-import MyCase from './components/MyCase.vue'
-import ObtainCase from './components/ObtainCase.vue'
 import WorkPointMap from './components/WorkPointMap.vue'
 import UpdateContractor from './components/UpdateContractor.vue'
 
@@ -80,13 +78,15 @@ export const routes = [{
         name: 'Sales',
         children: [{
                 path: 'MyCase',
-                component: MyCase,
-                name: 'MyCase'
+                component: CaseList,
+                name: 'MyCase',
+                props: true
             },
             {
                 path: 'ObtainCase',
-                component: ObtainCase,
-                name: 'ObtainCase'
+                component: CaseList,
+                name: 'ObtainCase',
+                props: true
             },
             {
                 path: 'Map',
@@ -109,14 +109,12 @@ export const routes = [{
         path: '/SalesAdmin',
         component: Intern,
         name: 'SalesAdmin',
-        children: [
-            {
-                path: 'CaseList',
-                component: CaseList,
-                name: 'CaseList',
-                props:true
-            }
-        ]
+        children: [{
+            path: 'CaseList',
+            component: CaseList,
+            name: 'CaseList',
+            props: true
+        }]
     },
     {
         path: '/System',

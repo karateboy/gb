@@ -28,8 +28,8 @@
               </div>
             </div>
         </div>
-        <build-case2-list v-if="typeIdx===0" :url="targetUrl" :param="{}" :obtainBtn="true" :download="isAdmin" :dm="isAdmin" :split-case="isAdmin"></build-case2-list>
-        <care-house-list v-if="typeIdx===1" :url="targetUrl" :param="{}" :obtainBtn="true" :download="isAdmin" :dm="isAdmin" :split-case="isAdmin"></care-house-list>
+        <build-case2-list v-if="typeIdx===0" :url="targetUrl" :param="{}" :obtainBtn="obtainBtn" :download="true" :dm="isAdmin" :split-case="isAdmin"></build-case2-list>
+        <care-house-list v-if="typeIdx===1" :url="targetUrl" :param="{}" :obtainBtn="obtainBtn" :download="true" :dm="isAdmin" :split-case="isAdmin"></care-house-list>
     </div>
 </template>
 <style>
@@ -46,6 +46,10 @@ export default {
     url: {
       type: String,
       required: true
+    },
+    obtainBtn: {
+      type: Boolean,
+      default: false
     }
   },
   data() {

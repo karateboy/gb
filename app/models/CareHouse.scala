@@ -38,6 +38,7 @@ object CareHouse {
     keyword:   Option[String]      = None,
     sortBy:    String              = "bed+")
 
+  val defaultQueryParam = QueryParam()
   import WorkPoint._
   implicit val chIdRead = Json.reads[CareHouseID]
   implicit val chRead = Json.reads[CareHouse]

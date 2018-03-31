@@ -15,214 +15,148 @@ import models.ModelHelper._
 import collection.JavaConversions._
 import java.nio.file.Files
 import play.utils.UriEncoding
+
 object SalesManager extends Controller {
   import org.mongodb.scala.model._
 
-  def getMyCase(typeID: String, queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
+  def getCaseList(filter: String, output: String, dir: String, typeID: String, queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
     implicit request =>
-      val wpType = WorkPointType.withName(typeID)
-
-      wpType match {
-        case WorkPointType.BuildCase =>
-          val paramOpt = Json.parse(queryParamJson).validate[BuildCase2.QueryParam].asOpt
-          val queryParam = paramOpt.getOrElse(BuildCase2.defaultQueryParam)
-          queryParam.owner = Some(Security.getUserID(request))
-          val f = BuildCase2.query(BuildCase2.getFilter(queryParam))(BuildCase2.getSortBy(queryParam))(skip, limit)
-          for (wpList <- f)
-            yield Ok(Json.toJson(wpList))
-
-        case WorkPointType.CareHouse =>
-          {
-            import CareHouse._
-            val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
-            val queryParam = paramOpt.getOrElse(QueryParam())
-            queryParam.owner = Some(Security.getUserID(request))
-
-            val f = CareHouse.query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
-            for (wpList <- f)
-              yield Ok(Json.toJson(wpList))
-          }
-      }
-
-  }
-
-  def getMyCaseCount(typeID: String, queryParamJson: String) = Security.Authenticated.async {
-    implicit request =>
-      val wpType = WorkPointType.withName(typeID)
-
-      wpType match {
-        case WorkPointType.BuildCase => {
-          import BuildCase2._
-          val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
-          val queryParam = paramOpt.getOrElse(QueryParam())
-          queryParam.owner = Some(Security.getUserID(request))
-          val f = count(getFilter(queryParam))
-          for (count <- f)
-            yield Ok(Json.toJson(count))
-        }
-
-        case WorkPointType.CareHouse => {
-          import CareHouse._
-          val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
-          val queryParam = paramOpt.getOrElse(QueryParam())
-          queryParam.owner = Some(Security.getUserID(request))
-          val f = count(getFilter(queryParam))
-          for (count <- f)
-            yield Ok(Json.toJson(count))
-        }
-      }
-
-  }
-
-  def getMyCaseExcel(typeID: String, queryParamJson: String) = Security.Authenticated.async {
-    implicit request =>
-      val wpType = WorkPointType.withName(typeID)
-
-      def buildCase = {
-        import BuildCase2._
-        val paramOpt = Json.parse(queryParamJson).validate[QueryParam].asOpt
-        val queryParam = paramOpt.getOrElse(defaultQueryParam)
-        queryParam.owner = Some(Security.getUserID(request))
-
-        val f = query(getFilter(queryParam))(getSortBy(queryParam))(0, 10000)
-        val builderMapF = Builder.getMap
-        for {
-          buildCaseList <- f
-          builderMap <- builderMapF
-        } yield {
-          val excel = ExcelUtility.exportBuildCase(buildCaseList, builderMap)
-          Ok.sendFile(excel, fileName = _ =>
-            play.utils.UriEncoding.encodePathSegment("起造人.xlsx", "UTF-8"),
-            onClose = () => { Files.deleteIfExists(excel.toPath()) })
-        }
-      }
-
-      wpType match {
-        case WorkPointType.BuildCase =>
-          buildCase
-      }
-
-  }
-
-  def getOwnerless(dir: String, typeID: String, queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
-    implicit request =>
+      val caseFilter = CaseFilter.withName(filter)
+      val outputType = OutputType.withName(output)
       val wpType = WorkPointType.withName(typeID)
 
       def buildCase = {
         import BuildCase2._
         val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
-        val f = if (dir.equalsIgnoreCase("N"))
-          getNorthOwnerless(queryParam)(skip, limit)
-        else
-          getSouthOwnerless(queryParam)(skip, limit)
+        val f =
+          caseFilter match {
+            case CaseFilter.Ownerless =>
+              if (dir.equalsIgnoreCase("N"))
+                getNorthOwnerless(queryParam)(skip, limit)
+              else
+                getSouthOwnerless(queryParam)(skip, limit)
+            case CaseFilter.MyCase =>
+              queryParam.owner = Some(Security.getUserID(request))
+              BuildCase2.query(BuildCase2.getFilter(queryParam))(BuildCase2.getSortBy(queryParam))(skip, limit)
+            case CaseFilter.AllCase =>
+              if (dir.equalsIgnoreCase("N"))
+                getNorthAll(queryParam)(skip, limit)
+              else
+                getSouthAll(queryParam)(skip, limit)
+          }
 
-        for (objList <- f) yield {
-          Ok(Json.toJson(objList))
-        }
-      }
-
-      def careHouse = {
-        import CareHouse._
-        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
-        val f = if (dir.equalsIgnoreCase("N"))
-          getNorthOwnerless(queryParam)(skip, limit)
-        else
-          getSouthOwnerless(queryParam)(skip, limit)
-
-        for (objList <- f) yield {
-          Ok(Json.toJson(objList))
-        }
-      }
-
-      wpType match {
-        case WorkPointType.BuildCase =>
-          buildCase
-        case WorkPointType.CareHouse =>
-          careHouse
-      }
-  }
-
-  def getOwnerlessCount(dir: String, typeID: String, queryParamJson: String) = Security.Authenticated.async {
-    implicit request =>
-
-      val wpType = WorkPointType.withName(typeID)
-
-      def buildCase = {
-        import BuildCase2._
-        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
-
-        val f = if (dir.equalsIgnoreCase("N"))
-          getNorthOwnerlessCount(queryParam)
-        else
-          getSouthOwnerlessCount(queryParam)
-
-        for (count <- f)
-          yield Ok(Json.toJson(count))
-      }
-
-      def careHouse = {
-        import CareHouse._
-        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
-
-        val f = if (dir.equalsIgnoreCase("N"))
-          getNorthOwnerlessCount(queryParam)
-        else
-          getSouthOwnerlessCount(queryParam)
-
-        for (count <- f)
-          yield Ok(Json.toJson(count))
-      }
-
-      wpType match {
-        case WorkPointType.BuildCase =>
-          buildCase
-        case WorkPointType.CareHouse =>
-          careHouse
-      }
-  }
-
-  def getOwnerlessExcel(dir: String, typeID: String, queryParamJson: String) = Security.Authenticated.async {
-    implicit request =>
-
-      val wpType = WorkPointType.withName(typeID)
-
-      def buildCase = {
-        import BuildCase2._
-        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
-        val f = if (dir.equalsIgnoreCase("N"))
-          BuildCase2.getNorthOwnerless(queryParam)(0, 100000)
-        else
-          BuildCase2.getSouthOwnerless(queryParam)(0, 100000)
-
-        val builderMapF = Builder.getMap
         for {
           buildCaseList <- f
-          builderMap <- builderMapF
+          builderMap <- Builder.getMap
         } yield {
-          val excel = ExcelUtility.exportBuildCase(buildCaseList, builderMap)
-          Ok.sendFile(excel, fileName = _ =>
-            play.utils.UriEncoding.encodePathSegment("builder.xlsx", "UTF-8"),
-            onClose = () => { Files.deleteIfExists(excel.toPath()) })
+          outputType match {
+            case OutputType.json =>
+              Ok(Json.toJson(buildCaseList))
+            case OutputType.excel =>
+              val excel = ExcelUtility.exportBuildCase(buildCaseList, builderMap)
+              Ok.sendFile(excel, fileName = _ =>
+                play.utils.UriEncoding.encodePathSegment("起造人.xlsx", "UTF-8"),
+                onClose = () => { Files.deleteIfExists(excel.toPath()) })
+          }
         }
       }
 
       def careHouse = {
         import CareHouse._
         val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
-        val f = if (dir.equalsIgnoreCase("N"))
-          CareHouse.getNorthOwnerless(queryParam)(0, 100000)
-        else
-          CareHouse.getSouthOwnerless(queryParam)(0, 100000)
+        val f =
+          caseFilter match {
+            case CaseFilter.Ownerless =>
+              if (dir.equalsIgnoreCase("N"))
+                getNorthOwnerless(queryParam)(skip, limit)
+              else
+                getSouthOwnerless(queryParam)(skip, limit)
+            case CaseFilter.MyCase =>
+              queryParam.owner = Some(Security.getUserID(request))
+              query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
+            case CaseFilter.AllCase =>
+              if (dir.equalsIgnoreCase("N"))
+                getNorthAll(queryParam)(skip, limit)
+              else
+                getSouthAll(queryParam)(skip, limit)
+          }
 
-        for {
-          careHouseList <- f
-        } yield {
-          val excel = ExcelUtility.exportCareHouse(careHouseList)
-          Ok.sendFile(excel, fileName = _ =>
-            play.utils.UriEncoding.encodePathSegment("careHouse.xlsx", "UTF-8"),
-            onClose = () => { Files.deleteIfExists(excel.toPath()) })
+        for (careHouseList <- f) yield {
+          outputType match {
+            case OutputType.json =>
+              Ok(Json.toJson(careHouseList))
+            case OutputType.excel =>
+              val excel = ExcelUtility.exportCareHouse(careHouseList)
+              Ok.sendFile(excel, fileName = _ =>
+                play.utils.UriEncoding.encodePathSegment("careHouse.xlsx", "UTF-8"),
+                onClose = () => { Files.deleteIfExists(excel.toPath()) })
+          }
         }
       }
+
+      wpType match {
+        case WorkPointType.BuildCase =>
+          buildCase
+        case WorkPointType.CareHouse =>
+          careHouse
+      }
+  }
+
+  def getCaseCount(casefilterStr: String, dir: String, typeID: String, queryParamJson: String) = Security.Authenticated.async {
+    implicit request =>
+      val casefilter = CaseFilter.withName(casefilterStr)
+      val wpType = WorkPointType.withName(typeID)
+
+      def buildCase = {
+        import BuildCase2._
+        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
+        val f =
+          casefilter match {
+            case CaseFilter.Ownerless =>
+              if (dir.equalsIgnoreCase("N"))
+                getNorthOwnerlessCount(queryParam)
+              else
+                getSouthOwnerlessCount(queryParam)
+            case CaseFilter.MyCase =>
+              queryParam.owner = Some(Security.getUserID(request))
+              count(getFilter(queryParam))
+            case CaseFilter.AllCase =>
+              if (dir.equalsIgnoreCase("N"))
+                getNorthAllCount(queryParam)
+              else
+                getSouthAllCount(queryParam)
+          }
+
+        for (objList <- f) yield {
+          Ok(Json.toJson(objList))
+        }
+      }
+
+      def careHouse = {
+        import CareHouse._
+        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
+        val f =
+          casefilter match {
+            case CaseFilter.Ownerless =>
+              if (dir.equalsIgnoreCase("N"))
+                getNorthOwnerlessCount(queryParam)
+              else
+                getSouthOwnerlessCount(queryParam)
+            case CaseFilter.MyCase =>
+              queryParam.owner = Some(Security.getUserID(request))
+              count(getFilter(queryParam))
+            case CaseFilter.AllCase =>
+              if (dir.equalsIgnoreCase("N"))
+                getNorthAllCount(queryParam)
+              else
+                getSouthAllCount(queryParam)
+          }
+
+        for (objList <- f) yield {
+          Ok(Json.toJson(objList))
+        }
+      }
+
       wpType match {
         case WorkPointType.BuildCase =>
           buildCase
@@ -283,133 +217,6 @@ object SalesManager extends Controller {
 
           for (ret <- f) yield Ok(Json.obj("updated" -> ret.getModifiedCount))
 
-      }
-  }
-
-  def getAllCase(dir: String, typeID: String, queryParamJson: String, skip: Int, limit: Int) = Security.Authenticated.async {
-    implicit request =>
-      val wpType = WorkPointType.withName(typeID)
-
-      def buildCase = {
-        import BuildCase2._
-        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
-        val f = if (dir.equalsIgnoreCase("N"))
-          getNorthAll(queryParam)(skip, limit)
-        else
-          getSouthAll(queryParam)(skip, limit)
-
-        for (objList <- f) yield {
-          Ok(Json.toJson(objList))
-        }
-      }
-
-      def careHouse = {
-        import CareHouse._
-        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
-        val f = if (dir.equalsIgnoreCase("N"))
-          getNorthAll(queryParam)(skip, limit)
-        else
-          getSouthAll(queryParam)(skip, limit)
-
-        for (objList <- f) yield {
-          Ok(Json.toJson(objList))
-        }
-      }
-
-      wpType match {
-        case WorkPointType.BuildCase =>
-          buildCase
-        case WorkPointType.CareHouse =>
-          careHouse
-      }
-  }
-
-  def getAllCaseCount(dir: String, typeID: String, queryParamJson: String) = Security.Authenticated.async {
-    implicit request =>
-
-      val wpType = WorkPointType.withName(typeID)
-
-      def buildCase = {
-        import BuildCase2._
-        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
-
-        val f = if (dir.equalsIgnoreCase("N"))
-          getNorthAllCount(queryParam)
-        else
-          getSouthAllCount(queryParam)
-
-        for (count <- f)
-          yield Ok(Json.toJson(count))
-      }
-
-      def careHouse = {
-        import CareHouse._
-        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
-
-        val f = if (dir.equalsIgnoreCase("N"))
-          getNorthAllCount(queryParam)
-        else
-          getSouthAllCount(queryParam)
-
-        for (count <- f)
-          yield Ok(Json.toJson(count))
-      }
-
-      wpType match {
-        case WorkPointType.BuildCase =>
-          buildCase
-        case WorkPointType.CareHouse =>
-          careHouse
-      }
-  }
-
-  def getAllCaseExcel(dir: String, typeID: String, queryParamJson: String) = Security.Authenticated.async {
-    implicit request =>
-
-      val wpType = WorkPointType.withName(typeID)
-
-      def buildCase = {
-        import BuildCase2._
-        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
-        val f = if (dir.equalsIgnoreCase("N"))
-          BuildCase2.getNorthAll(queryParam)(0, 100000)
-        else
-          BuildCase2.getSouthAll(queryParam)(0, 100000)
-
-        val builderMapF = Builder.getMap
-        for {
-          buildCaseList <- f
-          builderMap <- builderMapF
-        } yield {
-          val excel = ExcelUtility.exportBuildCase(buildCaseList, builderMap)
-          Ok.sendFile(excel, fileName = _ =>
-            play.utils.UriEncoding.encodePathSegment("builder.xlsx", "UTF-8"),
-            onClose = () => { Files.deleteIfExists(excel.toPath()) })
-        }
-      }
-
-      def careHouse = {
-        import CareHouse._
-        val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(QueryParam())
-        val f = if (dir.equalsIgnoreCase("N"))
-          CareHouse.getNorthAll(queryParam)(0, 100000)
-        else
-          CareHouse.getSouthAll(queryParam)(0, 100000)
-
-        for {
-          careHouseList <- f
-        } yield {
-          val excel = ExcelUtility.exportCareHouse(careHouseList)
-          Ok.sendFile(excel, fileName = _ =>
-            play.utils.UriEncoding.encodePathSegment("careHouse.xlsx", "UTF-8"),
-            onClose = () => { Files.deleteIfExists(excel.toPath()) })
-        }
-      }
-      wpType match {
-        case WorkPointType.BuildCase =>
-          buildCase
-        case WorkPointType.CareHouse =>
-          careHouse
       }
   }
 
