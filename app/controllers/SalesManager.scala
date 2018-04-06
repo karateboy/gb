@@ -415,8 +415,45 @@ object SalesManager extends Controller {
           formRet.fold(validateErrHandler, form => {
             val f = updateForm(id, form)
             for (ret <- f)
-              yield Ok("")
+              yield Ok(Json.obj("Ok"->true))
 
+          })
+        })
+  }
+
+  def getCareHouseForm(idJson: String) = Security.Authenticated.async {
+    implicit request =>
+      import CareHouse._
+      import play.api.data.validation._
+      val idRet = Json.parse(idJson).validate[CareHouseID]
+
+      idRet.fold(
+        validateErrHandler,
+        _id => {
+          val chF = CareHouse.getCareHouse(_id)
+          for (chSeq <- chF) yield {
+            if (chSeq.isEmpty || chSeq(0).form.isEmpty)
+              Ok(Json.toJson(CareHouseForm()))
+            else
+              Ok(Json.toJson(chSeq(0).form))
+          }
+        })
+  }
+
+  def updateCareHouseForm(idJson: String) = Security.Authenticated.async(BodyParsers.parse.json) {
+    implicit request =>
+      import CareHouse._
+      import play.api.data.validation._
+      val idRet = Json.parse(idJson).validate[CareHouseID]
+      val formRet = request.body.validate[CareHouseForm]
+
+      idRet.fold(
+        validateErrHandler,
+        id => {
+          formRet.fold(validateErrHandler, form => {
+            val f = updateForm(id, form)
+            for (ret <- f)
+              yield Ok(Json.obj("Ok"->true))
           })
         })
   }

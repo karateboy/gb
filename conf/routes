@@ -34,6 +34,8 @@ GET      /CheckOutContractor                                   controllers.Appli
 POST     /BuildCase                                            controllers.Application.upsertBuildCase
 GET		 /BuildCaseForm/:idJson                                controllers.SalesManager.getBuildCaseForm(idJson)
 POST     /BuildCaseForm/:idJson                                controllers.SalesManager.updateBuildCaseForm(idJson)
+GET		 /CareHouseForm/:idJson                                controllers.SalesManager.getCareHouseForm(idJson)
+POST     /CareHouseForm/:idJson                                controllers.SalesManager.updateCareHouseForm(idJson)
 
 GET      /Contractor/:id                                       controllers.Application.getContractor(id)
 POST     /Contractor                                           controllers.Application.upsertContractor

@@ -28,22 +28,7 @@
                 <label class="col-sm-1 control-label">業務:</label>
                 <div class="col-sm-4"><input type="text" class="form-control" :value="careHouse.owner" readonly></div>
             </div>
-            <div class="panel panel-success" v-for="(note, idx) in careHouse.notes" :key="idx">
-                <div class="panel-heading">{{noteHeader(note)}}</div>
-                <div class="panel-body">
-                    {{note.comment}}
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="col-sm-1 control-label" for="comment">更新內容:</label>
-                <div class="col-sm-4"> <textarea class="form-control" rows="3" id="comment" v-model="comment"></textarea></div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-1 col-sm-offset-1">
-                    <button class='btn btn-primary' @click='save'>更新</button>
-                </div>
-            </div>
+            <care-house-form :careHouseID="careHouse._id" :careHouseForm="careHouse.form"></care-house-form>
         </div>
     </div>
 </template>
@@ -54,8 +39,7 @@
 import axios from "axios";
 import moment from "moment";
 import { mapGetters } from "vuex";
-import Builder from "./Builder.vue";
-import EntryItem from "./EntryItem.vue";
+import CareHouseForm from "./CareHouseForm.vue";
 
 export default {
   props: {
@@ -69,9 +53,7 @@ export default {
       comment: "已電話聯絡??, 已約見面??, 遇到困難??"
     };
   },
-  mounted() {
-
-  },
+  mounted() {},
   computed: {
     ...mapGetters(["user"])
   },
@@ -108,6 +90,8 @@ export default {
         .catch(err => alert(err));
     }
   },
-  components: {}
+  components: {
+    CareHouseForm
+  }
 };
 </script>

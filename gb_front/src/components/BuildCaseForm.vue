@@ -142,7 +142,8 @@ export default {
             phone: ""
           },
           comment: "",
-          photos: [noPhotoID, noPhotoID, noPhotoID, noPhotoID]
+          photos: [noPhotoID, noPhotoID, noPhotoID, noPhotoID],
+          submitDate: new Date()
         };
       }
     }
@@ -157,18 +158,6 @@ export default {
       form: Vue.util.extend({}, this.buildCaseForm)
     };
   },
-  mounted() {
-    let idJson = JSON.stringify(this.buildCaseID);
-    let url = `/BuildCaseForm/${encodeURIComponent(idJson)}`;
-    axios
-      .get(url)
-      .then(resp => {
-        const ret = resp.data;
-        console.log(ret);
-        this.$set(this.form, ret);
-      })
-      .catch(err => alert(err));
-  },
   computed: {
     ...mapGetters(["user"])
   },
@@ -181,9 +170,8 @@ export default {
       axios
         .post(url, this.form)
         .then(resp => {
-          console.log(resp);
           let ret = resp.data;
-          if (ret.ok) {
+          if (ret.Ok) {
             alert("成功!");
           }
         })
@@ -198,7 +186,6 @@ export default {
           for (var pair of formData.entries()) {
             let idx = parseInt(pair[0]);
             this.$set(this.form.photos, idx, ret[0]);
-            console.log(this.form.photos);
           }
           alert("上傳成功");
         })

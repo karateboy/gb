@@ -7,12 +7,23 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
 import play.api.Play.current
 
+import org.mongodb.scala.bson._
+import MongoDB._
+import java.util.Date
+case class CareHouseForm(
+  diaper: String        = "",
+  food:   String        = "",
+  skin:   String        = "",
+  water:  String        = "",
+  photos: Seq[ObjectId] = Seq.fill(4)(new ObjectId(Photo.noPhotoID)),
+  submitDate: Date = new Date())
+  
 case class CareHouseID(county: String, name: String, wpType: Int = WorkPointType.CareHouse.id) extends IWorkPointID
-
 case class CareHouse(_id: CareHouseID, addr: String, serviceType: Seq[String],
                      phone: String, fax: String, email: String, bed: Int,
                      var location: Option[Seq[Double]] = None, notes: Seq[Note] = Seq.empty[Note],
-                     tag: Seq[String] = Seq.empty[String], owner: Option[String] = None, state: Option[String] = None, dm: Boolean = false) extends IWorkPoint {
+                     tag: Seq[String] = Seq.empty[String], owner: Option[String] = None,
+                     state: Option[String] = None, dm: Boolean = false, form: Option[CareHouseForm] = None) extends IWorkPoint {
   def getSummary = {
     val content = s"電話：${phone}<br>" +
       s"地址：${addr}<br>" +
@@ -28,7 +39,7 @@ object CareHouse {
   import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
   import java.io.File
   import org.mongodb.scala.model._
-  import org.mongodb.scala.bson._
+
   case class QueryParam(
     bedGT: Option[Int] = None, bedLT: Option[Int] = None,
     tag:       Option[Seq[String]] = None,
@@ -39,15 +50,18 @@ object CareHouse {
 
   val defaultQueryParam = QueryParam()
   import WorkPoint._
+  import ObjectIdUtil._
+  implicit val formRead = Json.reads[CareHouseForm]
   implicit val chIdRead = Json.reads[CareHouseID]
   implicit val chRead = Json.reads[CareHouse]
   implicit val qRead = Json.reads[QueryParam]
+  implicit val formWrite = Json.writes[CareHouseForm]
   implicit val chIdWrite = Json.writes[CareHouseID]
   implicit val chWrite = Json.writes[CareHouse]
   implicit val qWrite = Json.writes[QueryParam]
 
   val codecRegistry = fromRegistries(
-    fromProviders(classOf[CareHouse], classOf[CareHouseID], classOf[Note]), DEFAULT_CODEC_REGISTRY)
+    fromProviders(classOf[CareHouse], classOf[CareHouseID], classOf[Note], classOf[CareHouseForm]), DEFAULT_CODEC_REGISTRY)
 
   val ColName = WorkPoint.ColName
   val collection = MongoDB.database.getCollection[CareHouse](WorkPoint.ColName).withCodecRegistry(codecRegistry)
@@ -340,5 +354,11 @@ object CareHouse {
     val userList = User.southSalesList
     val caseFilter = Filters.and(southCaseFilter, Filters.eq("owner", null))
     splitOwnerless(caseFilter, userList)
+  }
+
+  def updateForm(_id: CareHouseID, form: CareHouseForm) = {
+    val f = collection.updateOne(Filters.eq("_id", _id), Updates.set("form", form)).toFuture()
+    f.onFailure(errorHandler)
+    f
   }
 }
