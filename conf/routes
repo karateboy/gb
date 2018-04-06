@@ -32,6 +32,8 @@ GET      /Builder/:encodedID                                   controllers.Query
 GET      /CheckOutBuildCase                                    controllers.Application.checkOutBuildCase
 GET      /CheckOutContractor                                   controllers.Application.checkOutContractor
 POST     /BuildCase                                            controllers.Application.upsertBuildCase
+GET		 /BuildCaseForm/:idJson                                controllers.SalesManager.getBuildCaseForm(idJson)
+POST     /BuildCaseForm/:idJson                                controllers.SalesManager.updateBuildCaseForm(idJson)
 
 GET      /Contractor/:id                                       controllers.Application.getContractor(id)
 POST     /Contractor                                           controllers.Application.upsertContractor
@@ -52,6 +54,8 @@ PUT      /CareHouse                                            controllers.Query
 
 GET      /BuildCaseTemplate                                    controllers.Application.getBuildCaseTemplate
 POST     /UploadBuildCase                                      controllers.Application.uploadBuildCase
+POST     /UploadPhoto                                          controllers.Application.uploadPhoto
+GET      /Photo/:id                                            controllers.Application.getPhoto(id)
 
 GET      /WorkPoint                                            controllers.SalesManager.getWorkPoint()
 GET      /WorkPointType                                        controllers.SalesManager.getWorkPointTypeList

@@ -37,17 +37,27 @@ object BuildCaseState extends Enumeration {
 
 }
 
-case class BuildCaseID(county: String, permitID: String, wpType: Int = WorkPointType.BuildCase.id) extends IWorkPointID
-case class SiteInfo(usage: String, floorDesc: String, addr: String, area: Option[Double])
+case class ContactInfo(name: Option[String] = None, addr: Option[String] = None, phone: Option[String] = None)
+case class BuildCaseForm(
+  constructor: ContactInfo   = ContactInfo(),
+  permit:      ContactInfo   = ContactInfo(),
+  earthWork:   ContactInfo   = ContactInfo(),
+  dump:        ContactInfo   = ContactInfo(),
+  burner:      ContactInfo   = ContactInfo(),
+  wall:        ContactInfo   = ContactInfo(),
+  photos:      Seq[ObjectId] = Seq.fill(4)(new ObjectId(Photo.noPhotoID)))
 
+case class BuildCaseID(county: String, permitID: String, wpType: Int = WorkPointType.BuildCase.id) extends IWorkPointID
+case class SiteInfo(usage: String, floorDesc: String, addr: String, area: Option[Double], landlordAddr: Option[String])
 case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
                       siteInfo:   SiteInfo,
                       permitDate: Date, architect: String,
-                      var location: Option[Seq[Double]] = None, in: Seq[Input] = Seq.empty[Input], out: Seq[Output] = Seq.empty[Output],
-                      contractor: Option[String] = None, contractorCheckDate: Option[Date] = None,
+                      var location: Option[Seq[Double]] = None,
+                      contractor:   Option[String]      = None, contractorCheckDate: Option[Date] = None,
                       state: Option[String] = Some(BuildCaseState.Initial.toString()), owner: Option[String] = None,
                       tag:   Seq[String] = Seq.empty[String],
-                      notes: Seq[Note]   = Seq.empty[Note], var editor: Option[String] = None, dm: Boolean = false) extends IWorkPoint {
+                      notes: Seq[Note]   = Seq.empty[Note], var editor: Option[String] = None,
+                      dm: Boolean = false, form: Option[BuildCaseForm] = None) extends IWorkPoint {
   def getSummary = {
     val content = s"${siteInfo.addr}<br>" +
       s"${siteInfo.usage}<br>" +
@@ -81,16 +91,21 @@ object BuildCase2 {
   import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
   import WorkPoint._
 
-  val codecRegistry = fromRegistries(fromProviders(classOf[BuildCase2], classOf[Input],
-    classOf[Output], classOf[Note], classOf[SiteInfo], classOf[BuildCaseID]), DEFAULT_CODEC_REGISTRY)
+  val codecRegistry = fromRegistries(fromProviders(classOf[BuildCase2], classOf[Note], classOf[SiteInfo],
+    classOf[BuildCaseID], classOf[BuildCaseForm], classOf[ContactInfo]), DEFAULT_CODEC_REGISTRY)
 
   val ColName = WorkPoint.ColName
   val collection = MongoDB.database.getCollection[BuildCase2](WorkPoint.ColName).withCodecRegistry(codecRegistry)
 
+  import ObjectIdUtil._
+  implicit val ciWrite = Json.writes[ContactInfo]
+  implicit val formWrite = Json.writes[BuildCaseForm]
   implicit val siWrite = Json.writes[SiteInfo]
   implicit val idWrite = Json.writes[BuildCaseID]
   implicit val bcWrite = Json.writes[BuildCase2]
 
+  implicit val ciRead = Json.reads[ContactInfo]
+  implicit val formRead = Json.reads[BuildCaseForm]
   implicit val siRead = Json.reads[SiteInfo]
   implicit val idRead = Json.reads[BuildCaseID]
   implicit val bcRead = Json.reads[BuildCase2]
@@ -278,7 +293,7 @@ object BuildCase2 {
             val architect = row.getCell(6).getStringCellValue
             val floorDesc = row.getCell(7).getStringCellValue
             val addr = row.getCell(8).getStringCellValue.trim()
-            val siteInfo = SiteInfo(usage, floorDesc, addr, None)
+            val siteInfo = SiteInfo(usage, floorDesc, addr, None, None)
             val location = None
 
             val builderF = for (builderOpt <- Builder.get(builderID)) yield {
@@ -315,7 +330,7 @@ object BuildCase2 {
             val architect = row.getCell(4).getStringCellValue.trim()
             val floorDesc = row.getCell(5).getStringCellValue
             val addr = row.getCell(6).getStringCellValue.trim()
-            val siteInfo = SiteInfo(usage, floorDesc, addr, None)
+            val siteInfo = SiteInfo(usage, floorDesc, addr, None, None)
             val location = None
             val rawBuilder = Builder.initBuilder(builderID, "", "")
 
@@ -674,11 +689,9 @@ object BuildCase2 {
     splitOwnerless(caseFilter, userList)
   }
 
-  def trimArchitect = {
-    for (list <- collection.find(wpFilter(WorkPointType.BuildCase.id)()).toFuture()) {
-      for (bc <- list) {
-
-      }
-    }
+  def updateForm(_id: BuildCaseID, form: BuildCaseForm) = {
+    val f = collection.updateOne(Filters.eq("_id", _id), Updates.set("form", form)).toFuture()
+    f.onFailure(errorHandler)
+    f
   }
 }

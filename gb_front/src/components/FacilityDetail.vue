@@ -48,7 +48,7 @@
             </div>
             <div class="form-group">
                 <label class="col-sm-1 control-label">產出:</label>
-                    <div class="col-sm-4">
+                    <div class="col-sm-12">
                         <table class="table table-bordered">
                             <thead>
                             <tr>
@@ -60,7 +60,7 @@
                             </thead>
                             <tbody>
                             <tr v-for="(wo, idx) in facility.wasteOut" :key="idx">
-                                <td>{{wo.date}}</td>
+                                <td>{{displayDate(wo.date)}}</td>
                                 <td>{{wo.wasteCode}}</td>
                                 <td>{{wo.wasteName}}</td>
                                 <td>{{wo.quantity}}</td>
@@ -184,6 +184,9 @@ export default {
       } else {
         this.facility.out[this.entryIndex] = evt.entry;
       }
+    },
+    displayDate(date){
+      return moment(date).format("LL");
     }
   },
   components: {

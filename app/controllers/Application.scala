@@ -17,6 +17,8 @@ import models._
 import models.ModelHelper._
 import collection.JavaConversions._
 import java.nio.file.Files
+import java.nio.file.Paths;
+import java.nio.file.Path;
 
 object Application extends Controller {
 
@@ -138,6 +140,49 @@ object Application extends Controller {
       }
 
       Ok(Json.obj("Ok" -> true))
+  }
+
+  def uploadPhoto = Security.Authenticated.async(parse.multipartFormData) {
+    implicit request =>
+      import org.mongodb.scala.model._
+      import org.mongodb.scala.bson._
+
+      val seqF =
+        request.body.files map { upload =>
+          val filename = upload.filename
+          val contentType = upload.contentType
+          val file = upload.ref.file
+
+          val path = Paths.get(file.getAbsolutePath);
+          val imageData = Files.readAllBytes(path);
+
+          val photo = Photo(new ObjectId(), imageData)
+          for (ret <- Photo.insert(photo)) yield photo._id
+        }
+      val f = Future.sequence(seqF)
+      for (objIds <- f) yield {
+        import ObjectIdUtil._
+        Ok(Json.toJson(objIds))
+      }
+  }
+
+  import play.api._
+
+  def getPhoto(id: String) = Security.Authenticated.async {
+    import org.mongodb.scala.bson._
+    val noPhotoId = new ObjectId(Photo.noPhotoID)
+    val objId = new ObjectId(id)
+    if (objId == noPhotoId) {
+      Future {
+        NoContent
+      }
+    } else {
+      val f = Photo.getPhoto(new ObjectId(id))
+      for (ret <- f) yield {
+        Ok(ret.image).as("image/jpeg")
+      }
+
+    }
   }
 
   def testParseMonthlyBuildCase() = Security.Authenticated {

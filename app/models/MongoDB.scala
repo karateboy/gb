@@ -26,8 +26,9 @@ object MongoDB {
       Contractor.init(colNames)
       Tank.init()
       GasStation.init()
-      
+
       Facility.init(colNames)
+      Photo.init(colNames)
       //OilUser.init(colNames)
       //RecyclePlant.init(colNames)
       //Purifier.init(colNames)
@@ -56,7 +57,8 @@ object MongoDB {
   implicit val objReads: Reads[ObjectId] = new Reads[ObjectId] {
     def reads(json: JsValue): JsResult[ObjectId] = {
       val ret = json.validate[String]
-      ret.fold(err => {
+      ret.fold(
+        err => {
         JsError(err)
       },
         hexStr => {

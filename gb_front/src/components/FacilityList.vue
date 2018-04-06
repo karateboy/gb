@@ -16,8 +16,10 @@
                     <tr class="info">
                         <th></th>
                         <th @click="toggleSort('name')"><a>名稱&nbsp;<span v-html = "sortDir('name')"></span></a></th>
+                        <th @click="toggleSort('county')"><a>縣市&nbsp;<span v-html = "sortDir('county')"></span></a></th>
+                        <th @click="toggleSort('phone')"><a>環安人員&nbsp;<span v-html = "sortDir('contact')"></span></a></th>
                         <th @click="toggleSort('phone')"><a>電話&nbsp;<span v-html = "sortDir('phone')"></span></a></th>
-                        <th @click="toggleSort('pollutant.noVOCtotal')"><a>空汙&nbsp;<span v-html = "sortDir('pollutant.noVOCtotal')"></span></a></th>
+                        <th @click="toggleSort('pollutant.noVOCtotal')"><a>不含VOC空汙(噸)&nbsp;<span v-html = "sortDir('pollutant.noVOCtotal')"></span></a></th>
                         <th @click="toggleSort('addr')"><a>地址&nbsp;<span v-html = "sortDir('addr')"></span></a></th>                        
                     </tr>
                 </thead>
@@ -33,10 +35,11 @@
                             <button class="btn btn-primary" @click="caseMap(index)" :disabled="!facility.location">
                                 <i class="fa fa-pen"></i>&nbsp;地圖</button>                                                                  
                         </td>
-                        <td>{{ facility._id.name}}</td>
-                        <td>{{ facility._id.county}}</td>
+                        <td>{{ facility.name}}</td>
+                        <td>{{ facility.county}}</td>
+                        <td>{{ facility.contact}}</td>
                         <td>{{ facility.phone}}</td>
-                        <td>{{ facility.bed}}</td>
+                        <td>{{ displayPollutant(facility.pollutant)}}</td>
                         <td>{{ facility.addr}}</td>
                     </tr>
                 </tbody>
@@ -236,6 +239,12 @@ export default {
         let msg = `${ret.updated}個名單被分派`;
         alert(msg);
       });
+    },
+    displayPollutant(air) {
+      if (air) {
+        if (air.noVOCtotal) return air.noVOCtotal;
+        else 0;
+      } else 0;
     }
   },
   components: {

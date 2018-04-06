@@ -381,6 +381,44 @@ object SalesManager extends Controller {
     for (wpList <- f) yield {
       Ok(Json.toJson(wpList))
     }
-
   }
+
+  def getBuildCaseForm(idJson: String) = Security.Authenticated.async {
+    implicit request =>
+      import BuildCase2._
+      import play.api.data.validation._
+      val idRet = Json.parse(idJson).validate[BuildCaseID]
+
+      idRet.fold(
+        validateErrHandler,
+        _id => {
+          val bcF = BuildCase2.getBuildCase(_id)
+          for (bcSeq <- bcF) yield {
+            if (bcSeq.isEmpty || bcSeq(0).form.isEmpty)
+              Ok(Json.toJson(BuildCaseForm()))
+            else
+              Ok(Json.toJson(bcSeq(0).form))
+          }
+        })
+  }
+
+  def updateBuildCaseForm(idJson: String) = Security.Authenticated.async(BodyParsers.parse.json) {
+    implicit request =>
+      import BuildCase2._
+      import play.api.data.validation._
+      val idRet = Json.parse(idJson).validate[BuildCaseID]
+      val formRet = request.body.validate[BuildCaseForm]
+
+      idRet.fold(
+        validateErrHandler,
+        id => {
+          formRet.fold(validateErrHandler, form => {
+            val f = updateForm(id, form)
+            for (ret <- f)
+              yield Ok("")
+
+          })
+        })
+  }
+
 }

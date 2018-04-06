@@ -14,8 +14,7 @@ import org.mongodb.scala.model._
 
 case class TankID(addr: String, wpType: Int = WorkPointType.Tank.id) extends IWorkPointID
 case class Tank(_id: TankID, county: String, count: Int,
-                var location: Option[Seq[Double]] = None, in: Seq[Input] = Seq.empty[Input], out: Seq[Output] = Seq.empty[Output],
-                notes: Seq[Note] = Seq.empty[Note], tag: Seq[String] = Seq.empty[String],
+                var location: Option[Seq[Double]] = None, notes: Seq[Note] = Seq.empty[Note], tag: Seq[String] = Seq.empty[String],
                 owner: Option[String] = None, state: Option[String] = None, dm: Boolean = false) extends IWorkPoint {
   def getSummary = {
     val content = s"${county}<br>" +
@@ -39,7 +38,7 @@ object Tank {
     sortBy:    String              = "count+")
 
   val codecRegistry = fromRegistries(
-    fromProviders(classOf[Tank], classOf[TankID], classOf[Note], classOf[Input], classOf[Output]), DEFAULT_CODEC_REGISTRY)
+    fromProviders(classOf[Tank], classOf[TankID], classOf[Note]), DEFAULT_CODEC_REGISTRY)
 
   val ColName = WorkPoint.ColName
   val collection = MongoDB.database.getCollection[Tank](WorkPoint.ColName).withCodecRegistry(codecRegistry)

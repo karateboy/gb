@@ -5,6 +5,7 @@ import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api._
 import scala.collection.JavaConversions._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * @author user
@@ -114,6 +115,15 @@ object ModelHelper {
   def isVaildPhone(phone: String) =
     phone.forall { x => x.isDigit || x == '-' || x == '(' || x == ')' || x.isSpaceChar } && !phone.isEmpty()
 
+  import scala.concurrent._
+  import play.api.data.validation._
+  import play.api.mvc.Results._
+  def validateErrHandler(err: Seq[(JsPath, Seq[ValidationError])]) = {
+    Logger.error(JsError.toJson(err).toString())
+    Future {
+      BadRequest
+    }
+  }
 }
 
 object ExcelTool {
@@ -186,7 +196,6 @@ object ExcelTool {
     }
     true
   }
-
 }
 object EnumUtils {
   def enumReads[E <: Enumeration](enum: E): Reads[E#Value] = new Reads[E#Value] {
@@ -209,23 +218,36 @@ object EnumUtils {
   implicit def enumFormat[E <: Enumeration](enum: E): Format[E#Value] = {
     Format(enumReads(enum), enumWrites)
   }
-
 }
 
 import org.mongodb.scala.bson.ObjectId
 object ObjectIdUtil {
-  def objectIdReads: Reads[ObjectId] = new Reads[ObjectId] {
-    def reads(json: JsValue): JsResult[ObjectId] = json match {
-      case JsString(s) => {
-        try {
-          JsSuccess(new ObjectId(s))
-        } catch {
-          case _: NoSuchElementException => JsError(s"unexpected ObjectId")
-        }
-      }
-      case _ => JsError("String value expected")
-    }
-  }
+//  def objectIdReads: Reads[ObjectId] = new Reads[ObjectId] {
+//    def reads(json: JsValue): JsResult[ObjectId] = json match {
+//      case JsString(s) => {
+//        try {
+//          JsSuccess(new ObjectId(s))
+//        } catch {
+//          case _: NoSuchElementException => JsError(s"unexpected ObjectId")
+//        }
+//      }
+//      case _ => JsError("String value expected")
+//    }
+//  }
+//
+//  implicit def objectIdOptReads: Reads[Option[ObjectId]] = new Reads[Option[ObjectId]] {
+//    def reads(json: JsValue): JsResult[Option[ObjectId]] = json match {
+//      case JsString(s) => {
+//        try {
+//          JsSuccess(Some(new ObjectId(s)))
+//        } catch {
+//          case _: Throwable =>
+//            JsSuccess(None)
+//        }
+//      }
+//      case _ => JsSuccess(None)
+//    }
+//  }
   implicit def objectWrites: Writes[ObjectId] = new Writes[ObjectId] {
     def writes(v: ObjectId): JsValue = JsString(v.toHexString)
   }

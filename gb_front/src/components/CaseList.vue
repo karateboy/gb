@@ -70,17 +70,14 @@ export default {
       typeIdx: 0,
       typeList: [
         {
-          _id: 1,
           typeID: "BuildCase",
           name: "起造人"
         },
         {
-          _id: 2,
           typeID: "CareHouse",
           name: "長照機構"
         },
         {
-          _id: 3,
           typeID: "Facility",
           name: "有槽工廠"
         }

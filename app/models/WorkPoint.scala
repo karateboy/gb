@@ -16,8 +16,6 @@ import MongoDB._
 
 case class LatLng(lat: Double, lng: Double)
 case class Note(date: Date, comment: String, person: String)
-case class Input(name: String, code: Option[String], freq: Option[String], volume: Option[Double], price: Option[Double])
-case class Output(name: String, code: Option[String], freq: Option[String], volume: Option[Double])
 case class Summary(title: String, content: String)
 
 abstract class IWorkPointID() {
@@ -26,8 +24,6 @@ abstract class IWorkPointID() {
 
 abstract class IWorkPoint() {
   def location: Option[Seq[Double]]
-  val in: Seq[Input]
-  val out: Seq[Output]
   val notes: Seq[Note]
   val owner: Option[String]
   val state: Option[String]
@@ -37,7 +33,7 @@ abstract class IWorkPoint() {
 case class DM(company: Option[String], contact: Option[String], addr: String)
 case class WorkPoint(
   _id:      Document,
-  location: Option[Seq[Double]], in: Seq[Input], out: Seq[Output],
+  location: Option[Seq[Double]], 
   notes: Seq[Note], owner: Option[String], state: Option[String], var summary: Option[Summary], dm: Boolean) extends IWorkPoint
 
 case class WorkPointType(_id: Int, typeID: String, name: String)
@@ -85,7 +81,7 @@ object WorkPoint {
 
   val codecRegistry = fromRegistries(fromProviders(
     classOf[WorkPoint],
-    classOf[Note], classOf[Input], classOf[Output], classOf[Summary]), DEFAULT_CODEC_REGISTRY)
+    classOf[Note], classOf[Summary]), DEFAULT_CODEC_REGISTRY)
 
   private val collection = MongoDB.database.getCollection[WorkPoint](WorkPoint.ColName).withCodecRegistry(codecRegistry)
 
@@ -95,13 +91,9 @@ object WorkPoint {
 
   implicit val summaryWrite = Json.writes[Summary]
   implicit val latlngRead = Json.reads[LatLng]
-  implicit val outputWrite = Json.writes[Output]
-  implicit val inputWrite = Json.writes[Input]
   implicit val noteWrite = Json.writes[Note]
   implicit val wpWrite = Json.writes[WorkPoint]
   implicit val summaryRead = Json.reads[Summary]
-  implicit val inputRead = Json.reads[Input]
-  implicit val outRead = Json.reads[Output]
   implicit val noteRead = Json.reads[Note]
   //implicit val wpRead = Json.reads[WorkPoint]
 
@@ -125,6 +117,19 @@ object WorkPoint {
       cf2.onFailure(errorHandler)
       cf3.onFailure(errorHandler)
     }
+    
+    if (!waitReadyResult(SysConfig.get(SysConfig.UnsetWorkPointIO)).asBoolean().getValue) {
+      if (unsetIO) {
+        SysConfig.set(SysConfig.UnsetWorkPointIO, BsonBoolean(true))
+      }
+    }
+  }
+  
+  def unsetIO = {
+    val updates = Updates.combine(Updates.unset("in"), Updates.unset("out"))
+    val f = collection.updateMany(Filters.exists("_id"), updates).toFuture()
+    f.onFailure(errorHandler)
+    true
   }
 
   def getList() = {

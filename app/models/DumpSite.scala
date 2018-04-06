@@ -21,8 +21,7 @@ import MongoDB._
 
 case class DumpSiteID(county: String, dirNo: String, wpType: Int = WorkPointType.DumpSite.id) extends IWorkPointID
 case class DumpSite(_id: DumpSiteID, name: String, contact: String, phone: String, addr: String,
-                    feature: String, siteType: String, area: Double,
-                    in: Seq[Input] = Seq.empty[Input], out: Seq[Output] = Seq.empty[Output], notes: Seq[Note] = Seq.empty[Note],
+                    feature: String, siteType: String, area: Double, notes: Seq[Note] = Seq.empty[Note],
                     var location: Option[Seq[Double]] = None, owner: Option[String] = None, state: Option[String] = None, dm: Boolean = false) extends IWorkPoint {
   def getSummary = {
     val content = s"${feature}<br>" +
@@ -37,8 +36,7 @@ object DumpSite {
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
   import org.bson.codecs.configuration.CodecRegistries.{ fromRegistries, fromProviders }
 
-  val codecRegistry = fromRegistries(fromProviders(classOf[DumpSite], classOf[DumpSiteID], classOf[Input],
-    classOf[Output], classOf[Note]), DEFAULT_CODEC_REGISTRY)
+  val codecRegistry = fromRegistries(fromProviders(classOf[DumpSite], classOf[DumpSiteID], classOf[Note]), DEFAULT_CODEC_REGISTRY)
 
   val ColName = WorkPoint.ColName
   val collection = MongoDB.database.getCollection[DumpSite](WorkPoint.ColName).withCodecRegistry(codecRegistry)

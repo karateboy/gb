@@ -40,7 +40,7 @@ case class AirPollutant(VOC: Double = 0, TSP: Double = 0, SOx: Double = 0, NOx: 
 case class WasteInput(wasteCode: String, wasteName: String, method: String, totalQuantity: Double, deadLine: Date, price: Option[Double])
 case class WasteOutput(date: Date, wasteCode: String, wasteName: String, method: String, quantity: Double, unit: String)
 
-case class Facility(_id: String, name: String, fcType: Int, addr: Option[String], phone: Option[String],
+case class Facility(_id: String, name: String, fcType: Int, county: Option[String], addr: Option[String], phone: Option[String],
                     var location: Option[Seq[Double]] = None, wasteIn: Option[Seq[WasteInput]] = None,
                     wasteOut: Option[Seq[WasteOutput]] = None, notes: Option[Seq[Note]] = None,
                     tag: Option[Seq[String]] = None, owner: Option[String] = None, state: Option[String] = None,
@@ -69,8 +69,6 @@ object Facility {
     keyword:   Option[String]      = None,
     sortBy:    String              = "pollutant.noVOCtotal+")
 
-  import WorkPoint.outputWrite
-  import WorkPoint.outRead
   import WorkPoint.noteRead
   import WorkPoint.noteWrite
   implicit val pRead = Json.reads[AirPollutant]
@@ -128,37 +126,33 @@ object Facility {
       cf8.onFailure(errorHandler)
     }
 
-    {
-      val imported = waitReadyResult(SysConfig.get(SysConfig.ImportFacilityPollutant))
-      if (!imported.asBoolean().getValue) {
-        if (importAirPollutant) {
-          SysConfig.set(SysConfig.ImportFacilityPollutant, BsonBoolean(true))
-        }
+    if (!waitReadyResult(SysConfig.get(SysConfig.ImportFacilityPollutant)).asBoolean().getValue) {
+      if (importAirPollutant) {
+        SysConfig.set(SysConfig.ImportFacilityPollutant, BsonBoolean(true))
       }
     }
 
-    {
-      val imported = waitReadyResult(SysConfig.get(SysConfig.ImportProcessPlant1))
-      if (!imported.asBoolean().getValue) {
-        if (importProcessPlant1) {
-          SysConfig.set(SysConfig.ImportProcessPlant1, BsonBoolean(true))
-        }
+    if (!waitReadyResult(SysConfig.get(SysConfig.ImportProcessPlant1)).asBoolean().getValue) {
+      if (importProcessPlant1) {
+        SysConfig.set(SysConfig.ImportProcessPlant1, BsonBoolean(true))
       }
     }
 
-    {
-      val imported = waitReadyResult(SysConfig.get(SysConfig.ImportProcessPlant2))
-      if (!imported.asBoolean().getValue) {
-        if (importProcessPlant2) {
-          SysConfig.set(SysConfig.ImportProcessPlant2, BsonBoolean(true))
-        }
+    if (!waitReadyResult(SysConfig.get(SysConfig.ImportProcessPlant2)).asBoolean().getValue) {
+      if (importProcessPlant2) {
+        SysConfig.set(SysConfig.ImportProcessPlant2, BsonBoolean(true))
       }
+    }
 
-      val importRecycle = waitReadyResult(SysConfig.get(SysConfig.ImportRecyclePlant))
-      if (!importRecycle.asBoolean().getValue) {
-        if (importRecyclePlant) {
-          SysConfig.set(SysConfig.ImportRecyclePlant, BsonBoolean(true))
-        }
+    if (!waitReadyResult(SysConfig.get(SysConfig.ImportRecyclePlant)).asBoolean().getValue) {
+      if (importRecyclePlant) {
+        SysConfig.set(SysConfig.ImportRecyclePlant, BsonBoolean(true))
+      }
+    }
+
+    if (!waitReadyResult(SysConfig.get(SysConfig.ExtractFacilityCounty)).asBoolean().getValue) {
+      if (extractCounty) {
+        SysConfig.set(SysConfig.ExtractFacilityCounty, BsonBoolean(true))
       }
     }
   }
@@ -207,6 +201,7 @@ object Facility {
               _id = props.fac_no,
               name = props.fac_name,
               fcType = fcType,
+              county = props.fac_addr map { _.take(3) },
               addr = props.fac_addr,
               phone = None,
               location = location)
@@ -335,7 +330,6 @@ object Facility {
 
   def importProcessPlant1 = importProcessPlant("甲級處理機構.xml", "甲")
   def importProcessPlant2 = importProcessPlant("乙級處理機構.xml", "乙")
-  def importProcessPlant3 = importCleanPlant("丙級處理機構.xml", "丙")
 
   def importRecyclePlant() = {
     def listFiles = {
@@ -415,31 +409,82 @@ object Facility {
 
   import org.mongodb.scala.bson.conversions.Bson
   import WorkPoint.wpFilter
-  def careHouseFilter(bsons: Bson*) = wpFilter(WorkPointType.CareHouse.id)(bsons: _*)
 
   def query(filter: Bson)(sortBy: Bson = Sorts.descending("siteInfo.area"))(skip: Int, limit: Int) = {
-    val f = collection.find(careHouseFilter(filter)).sort(sortBy).skip(skip).limit(limit).toFuture()
+    val f = collection.find(filter).sort(sortBy).skip(skip).limit(limit).toFuture()
     f.onFailure(errorHandler)
     f
   }
 
   def count(filter: Bson) = {
-    val f = collection.count(careHouseFilter(filter)).toFuture()
+    val f = collection.count(filter).toFuture()
     f.onFailure(errorHandler)
     f
   }
 
-  val northCounty = List(
-    "基隆市", "宜蘭縣", "台北市", "新北市", "桃園市",
-    "新竹縣", "新竹市")
+  val northCountyList = List("基隆", "宜蘭", "台北", "新北", "桃園", "新竹")
+  val southCountyList = List(
+    "連江",
+    "苗栗",
+    "台中",
+    "彰化",
+    "南投",
+    "嘉義",
+    "雲林",
+    "台南",
+    "高雄",
+    "澎湖",
+    "金門",
+    "屏東",
+    "台東",
+    "花蓮")
+
+  val countyList = northCountyList ++ southCountyList
+  def extractCounty = {
+    val f = collection.find().toFuture()
+
+    def findCounty(addr: String) = {
+      var addrCounty: Option[String] = None
+      countyList.exists({ county =>
+        addrCounty = Some(county)
+        addr.contains(county)
+      })
+
+      if(addrCounty.isEmpty){
+        Logger.warn(s"$addr 無法取得縣市")
+      }
+      addrCounty
+    }
+
+    for (factoryList <- f) {
+      val updateModels =
+        for {
+          factory <- factoryList
+          addr <- factory.addr
+          convertedAddr = addr.replaceAll("臺", "台")
+          county <- findCounty(convertedAddr)
+        } yield {
+          UpdateOneModel.apply(Filters.eq("_id", factory._id), Updates.set("county", county))
+        }
+
+      val f = collection.bulkWrite(updateModels, BulkWriteOptions().ordered(false)).toFuture()
+
+      f.onFailure(errorHandler)
+      val ret = waitReadyResult(f)
+      Logger.info(s"工廠縣市已經更新 ${ret.getModifiedCount}")
+
+    }
+    true
+  }
+
+  val northCaseFilter = Filters.in("county", northCountyList:_*)
+  val southCaseFilter = Filters.not(northCaseFilter)
 
   def northOwnerless(param: QueryParam) =
-    Filters.and(Filters.in("_id.county", northCounty: _*), Filters.eq("owner", null), getFilter(param))
+    Filters.and(northCaseFilter, Filters.eq("owner", null), getFilter(param))
   def southOwnerless(param: QueryParam) =
-    Filters.and(Filters.nin("_id.county", northCounty: _*), Filters.eq("owner", null), getFilter(param))
+    Filters.and(Filters.not(northCaseFilter), Filters.eq("owner", null), getFilter(param))
 
-  val northCaseFilter = Filters.in("_id.county", northCounty: _*)
-  val southCaseFilter = Filters.nin("_id.county", northCounty: _*)
   def northAll(param: QueryParam) =
     Filters.and(northCaseFilter, getFilter(param))
   def southAll(param: QueryParam) =

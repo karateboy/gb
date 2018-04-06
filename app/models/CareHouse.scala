@@ -11,8 +11,7 @@ case class CareHouseID(county: String, name: String, wpType: Int = WorkPointType
 
 case class CareHouse(_id: CareHouseID, addr: String, serviceType: Seq[String],
                      phone: String, fax: String, email: String, bed: Int,
-                     var location: Option[Seq[Double]] = None, in: Seq[Input] = Seq.empty[Input],
-                     out: Seq[Output] = Seq.empty[Output], notes: Seq[Note] = Seq.empty[Note],
+                     var location: Option[Seq[Double]] = None, notes: Seq[Note] = Seq.empty[Note],
                      tag: Seq[String] = Seq.empty[String], owner: Option[String] = None, state: Option[String] = None, dm: Boolean = false) extends IWorkPoint {
   def getSummary = {
     val content = s"電話：${phone}<br>" +
@@ -48,7 +47,7 @@ object CareHouse {
   implicit val qWrite = Json.writes[QueryParam]
 
   val codecRegistry = fromRegistries(
-    fromProviders(classOf[CareHouse], classOf[CareHouseID], classOf[Note], classOf[Input], classOf[Output]), DEFAULT_CODEC_REGISTRY)
+    fromProviders(classOf[CareHouse], classOf[CareHouseID], classOf[Note]), DEFAULT_CODEC_REGISTRY)
 
   val ColName = WorkPoint.ColName
   val collection = MongoDB.database.getCollection[CareHouse](WorkPoint.ColName).withCodecRegistry(codecRegistry)
