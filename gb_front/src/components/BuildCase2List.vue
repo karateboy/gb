@@ -44,7 +44,7 @@
                     </tr>
                 </tbody>
             </table>
-            <pagination for="cardList" :records="total" :per-page="5" count-text="第{from}到第{to}筆/共{count}筆|{count} 筆|1筆"></pagination>
+            <pagination for="cardList" :records="total" :per-page="5" count-text="第{from}到第{to}筆/共{count}筆|{count} 筆|1筆" @paginate="setPage"></pagination>
             <div>
               <button  v-if="download" class="btn btn-primary" @click="downloadExcel()">下載Excel</button>
               <button v-if="dm" class="btn btn-primary" @click="downloadDM()">下載DM 信封</button>
@@ -52,7 +52,7 @@
             </div>
         </div>
         <div v-else class="alert alert-info" role="alert">無</div>
-        <build-case2-detail v-if="display === 'detail'" :buildCase="buildCaseList[selectedIndex]"></build-case2-detail>
+        <build-case2-detail v-if="display === 'detail'" :buildCase="buildCaseList[selectedIndex]" @buildCaseChanged="reload"></build-case2-detail>
         <build-case2-map v-if="display === 'map'" :buildCase="buildCaseList[selectedIndex]"></build-case2-map>
     </div>
 </template>
@@ -102,12 +102,11 @@ export default {
       display: "",
       selectedIndex: -1,
       sortBy: "siteInfo.area+",
-      keyword: ""
+      keyword: "",
+      page: 0
     };
   },
-  computed: {
-    
-  },
+  computed: {},
   mounted: function() {
     this.fetchBuildCase(0, this.limit);
     PaginationEvent.$on("vue-pagination::cardList", this.handlePageChange);
@@ -125,6 +124,12 @@ export default {
   },
 
   methods: {
+    setPage(page) {
+      this.page = page;
+    },
+    reload() {
+      this.handlePageChange(this.page);
+    },
     processResp(resp) {
       const ret = resp.data;
       this.buildCaseList.splice(0, this.buildCaseList.length);
@@ -246,18 +251,16 @@ export default {
       window.open(url);
     },
     downloadDM() {
-      let url =
-        baseUrl() + `${this.url}/dm`;
+      let url = baseUrl() + `${this.url}/dm`;
       window.open(url);
     },
-    splitCaseList(){
-      let url =
-        baseUrl() + `${this.url}/split`;
-      axios.get(url).then(resp=>{
-        let ret = resp.data
-        let msg = `${ret.updated}個名單被分派`
-        alert(msg)
-      })
+    splitCaseList() {
+      let url = baseUrl() + `${this.url}/split`;
+      axios.get(url).then(resp => {
+        let ret = resp.data;
+        let msg = `${ret.updated}個名單被分派`;
+        alert(msg);
+      });
     }
   },
   components: {

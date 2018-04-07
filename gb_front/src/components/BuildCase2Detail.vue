@@ -45,7 +45,7 @@
                 <label class="col-sm-1 control-label">業務:</label>
                 <div class="col-sm-4"><input type="text" class="form-control" :value="buildCase.owner" readonly></div>
             </div>
-            <build-case-form :buildCaseID="buildCase._id" :build-case-form="buildCase.form"></build-case-form>
+            <build-case-form :buildCaseID="buildCase._id" :build-case-form="buildCase.form" @formChanged="onFormChanged"></build-case-form>
         </div>
         <div>
         
@@ -141,6 +141,9 @@ export default {
           }
         })
         .catch(err => alert(err));
+    },
+    onFormChanged(evt){
+      this.$emit("buildCaseChanged", this.buildCase._id)
     }
   },
   components: {

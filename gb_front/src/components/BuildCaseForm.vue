@@ -173,6 +173,7 @@ export default {
           let ret = resp.data;
           if (ret.Ok) {
             alert("成功!");
+            this.$emit("formChanged", this.form)
           }
         })
         .catch(err => alert(err));
