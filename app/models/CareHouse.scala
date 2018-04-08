@@ -11,13 +11,13 @@ import org.mongodb.scala.bson._
 import MongoDB._
 import java.util.Date
 case class CareHouseForm(
-  diaper: String        = "",
-  food:   String        = "",
-  skin:   String        = "",
-  water:  String        = "",
-  photos: Seq[ObjectId] = Seq.fill(4)(new ObjectId(Photo.noPhotoID)),
-  submitDate: Date = new Date())
-  
+  diaper:     String        = "",
+  food:       String        = "",
+  skin:       String        = "",
+  water:      String        = "",
+  photos:     Seq[ObjectId] = Seq.fill(4)(new ObjectId(Photo.noPhotoID)),
+  submitDate: Date          = new Date())
+
 case class CareHouseID(county: String, name: String, wpType: Int = WorkPointType.CareHouse.id) extends IWorkPointID
 case class CareHouse(_id: CareHouseID, addr: String, serviceType: Seq[String],
                      phone: String, fax: String, email: String, bed: Int,
@@ -42,11 +42,12 @@ object CareHouse {
 
   case class QueryParam(
     bedGT: Option[Int] = None, bedLT: Option[Int] = None,
-    tag:       Option[Seq[String]] = None,
-    state:     Option[String]      = None,
-    var owner: Option[String]      = None,
-    keyword:   Option[String]      = None,
-    sortBy:    String              = "bed+")
+    tag:         Option[Seq[String]] = None,
+    state:       Option[String]      = None,
+    var owner:   Option[String]      = None,
+    keyword:     Option[String]      = None,
+    var hasForm: Option[Boolean]     = None,
+    sortBy:      String              = "bed+")
 
   val defaultQueryParam = QueryParam()
   import WorkPoint._
@@ -211,8 +212,14 @@ object CareHouse {
     val bedLtFilter = param.bedLT map { v => Filters.lt("bed", v) }
     val stateFilter = param.state map { v => Filters.eq("state", v) }
     val ownerFilter = param.owner map { sales => regex("owner", "(?i)" + sales) }
+    val hasFormFilter = param.hasForm map { has =>
+      if (has)
+        Filters.ne("form", null)
+      else
+        Filters.eq("form", null)
+    }
 
-    val filterList = List(bedGtFilter, bedLtFilter, stateFilter, ownerFilter, keywordFilter).flatMap { f => f }
+    val filterList = List(bedGtFilter, bedLtFilter, stateFilter, ownerFilter, keywordFilter, hasFormFilter).flatMap { f => f }
 
     val filter = if (!filterList.isEmpty)
       and(filterList: _*)

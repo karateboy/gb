@@ -28,7 +28,7 @@
                 <label class="col-sm-1 control-label">業務:</label>
                 <div class="col-sm-4"><input type="text" class="form-control" :value="careHouse.owner" readonly></div>
             </div>
-            <care-house-form :careHouseID="careHouse._id" :careHouseForm="careHouse.form"></care-house-form>
+            <care-house-form :careHouseID="careHouse._id" :careHouseForm="careHouse.form" @formChanged="onFormChanged"></care-house-form>
         </div>
     </div>
 </template>
@@ -88,6 +88,9 @@ export default {
           }
         })
         .catch(err => alert(err));
+    },
+    onFormChanged(evt){
+      this.$emit("Changed", this.careHouse._id)
     }
   },
   components: {

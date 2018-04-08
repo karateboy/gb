@@ -121,7 +121,8 @@ export default {
         .then(resp => {
           let ret = resp.data;
           if (ret.Ok) {
-            alert("成功!");
+            alert("成功上傳!");
+            this.$emit("formChanged", this.form)
           }
         })
         .catch(err => alert(err));

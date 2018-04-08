@@ -82,11 +82,12 @@ case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
 object BuildCase2 {
   case class QueryParam(
     areaGT: Option[Double] = None, areaLT: Option[Double] = None,
-    tag:       Option[Seq[String]] = None,
-    state:     Option[String]      = None,
-    var owner: Option[String]      = None,
-    keyword:   Option[String]      = None,
-    sortBy:    String              = "siteInfo.area+")
+    tag:         Option[Seq[String]] = None,
+    state:       Option[String]      = None,
+    var owner:   Option[String]      = None,
+    keyword:     Option[String]      = None,
+    var hasForm: Option[Boolean]     = None,
+    sortBy:      String              = "siteInfo.area+")
 
   import org.mongodb.scala.bson.codecs.Macros._
   import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
@@ -532,8 +533,14 @@ object BuildCase2 {
     val areaLtFilter = param.areaLT map { v => Filters.lt("siteInfo.area", v) }
     val stateFilter = param.state map { v => Filters.eq("state", v) }
     val ownerFilter = param.owner map { sales => regex("owner", "(?i)" + sales) }
+    val hasFormFilter = param.hasForm map { has =>
+      if (has)
+        Filters.ne("form", null)
+      else
+        Filters.eq("form", null)
+    }
 
-    val filterList = List(areaGtFilter, areaLtFilter, stateFilter, ownerFilter, keywordFilter).flatMap { f => f }
+    val filterList = List(areaGtFilter, areaLtFilter, stateFilter, ownerFilter, keywordFilter, hasFormFilter).flatMap { f => f }
 
     val filter = if (!filterList.isEmpty)
       and(filterList: _*)
@@ -689,6 +696,23 @@ object BuildCase2 {
     val userList = User.southSalesList
     val caseFilter = Filters.and(southCaseFilter, Filters.eq("owner", null), Filters.gt("siteInfo.area", 500))
     splitOwnerless(caseFilter, userList)
+  }
+
+  def splitSouthCase(caseFilter: Bson) = {
+    val userList = User.southSalesList
+    val bcListF = collection.find(caseFilter).sort(Sorts.descending("siteInfo.area")).toFuture()
+    val ret =
+      for (bcList <- bcListF) yield {
+        val updateModelList =
+          for ((bc, idx) <- bcList.zipWithIndex) yield {
+            val owner = userList(idx % userList.length)
+            UpdateOneModel(Filters.eq("_id", bc._id), Updates.set("owner", owner))
+          }
+        val f = collection.bulkWrite(updateModelList, BulkWriteOptions().ordered(false)).toFuture()
+        f.onFailure(errorHandler)
+        f
+      }
+    ret.flatMap(x => x)
   }
 
   def updateForm(_id: BuildCaseID, form: BuildCaseForm) = {

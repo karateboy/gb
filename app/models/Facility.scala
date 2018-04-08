@@ -63,11 +63,12 @@ object Facility {
   import org.mongodb.scala.bson._
 
   case class QueryParam(
-    tag:       Option[Seq[String]] = None,
-    state:     Option[String]      = None,
-    var owner: Option[String]      = None,
-    keyword:   Option[String]      = None,
-    sortBy:    String              = "pollutant.noVOCtotal+")
+    tag:         Option[Seq[String]] = None,
+    state:       Option[String]      = None,
+    var owner:   Option[String]      = None,
+    keyword:     Option[String]      = None,
+    var hasForm: Option[Boolean]     = None,
+    sortBy:      String              = "pollutant.noVOCtotal+")
 
   import WorkPoint.noteRead
   import WorkPoint.noteWrite
@@ -387,8 +388,14 @@ object Facility {
 
     val stateFilter = param.state map { v => Filters.eq("state", v) }
     val ownerFilter = param.owner map { sales => regex("owner", "(?i)" + sales) }
+    val hasFormFilter = param.hasForm map { has =>
+      if (has)
+        Filters.ne("form", null)
+      else
+        Filters.eq("form", null)
+    }
 
-    val filterList = List(stateFilter, ownerFilter, keywordFilter).flatMap { f => f }
+    val filterList = List(stateFilter, ownerFilter, keywordFilter, hasFormFilter).flatMap { f => f }
 
     val filter = if (!filterList.isEmpty)
       and(filterList: _*)
@@ -450,7 +457,7 @@ object Facility {
         addr.contains(county)
       })
 
-      if(addrCounty.isEmpty){
+      if (addrCounty.isEmpty) {
         Logger.warn(s"$addr 無法取得縣市")
       }
       addrCounty
@@ -477,7 +484,7 @@ object Facility {
     true
   }
 
-  val northCaseFilter = Filters.in("county", northCountyList:_*)
+  val northCaseFilter = Filters.in("county", northCountyList: _*)
   val southCaseFilter = Filters.not(northCaseFilter)
 
   def northOwnerless(param: QueryParam) =

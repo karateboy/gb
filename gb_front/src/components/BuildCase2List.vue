@@ -52,7 +52,7 @@
             </div>
         </div>
         <div v-else class="alert alert-info" role="alert">無</div>
-        <build-case2-detail v-if="display === 'detail'" :buildCase="buildCaseList[selectedIndex]" @buildCaseChanged="reload"></build-case2-detail>
+        <build-case2-detail v-if="display === 'detail'" :buildCase="buildCaseList[selectedIndex]" @Changed="reload"></build-case2-detail>
         <build-case2-map v-if="display === 'map'" :buildCase="buildCaseList[selectedIndex]"></build-case2-map>
     </div>
 </template>

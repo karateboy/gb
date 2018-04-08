@@ -32,9 +32,9 @@ GET      /Builder/:encodedID                                   controllers.Query
 GET      /CheckOutBuildCase                                    controllers.Application.checkOutBuildCase
 GET      /CheckOutContractor                                   controllers.Application.checkOutContractor
 POST     /BuildCase                                            controllers.Application.upsertBuildCase
-GET		 /BuildCaseForm/:idJson                                controllers.SalesManager.getBuildCaseForm(idJson)
+GET      /BuildCaseForm/:idJson                                controllers.SalesManager.getBuildCaseForm(idJson)
 POST     /BuildCaseForm/:idJson                                controllers.SalesManager.updateBuildCaseForm(idJson)
-GET		 /CareHouseForm/:idJson                                controllers.SalesManager.getCareHouseForm(idJson)
+GET      /CareHouseForm/:idJson                                controllers.SalesManager.getCareHouseForm(idJson)
 POST     /CareHouseForm/:idJson                                controllers.SalesManager.updateCareHouseForm(idJson)
 
 GET      /Contractor/:id                                       controllers.Application.getContractor(id)
@@ -43,7 +43,7 @@ POST     /Contractor                                           controllers.Appli
 GET      /UsageRecord/:offset                                  controllers.Application.getUsageRecord(offset: Int)
 
 GET      /Case/Ownerless/:dir/:typeID/dm                       controllers.SalesManager.getOwnerlessDM(dir, typeID)
-GET      /Case/Ownerless/:dir/:typeID/split                    controllers.SalesManager.getOwnerlessSplit(dir, typeID)
+GET      /Case/:filter/:dir/:typeID/split                      controllers.SalesManager.getCaseSplit(filter, dir, typeID)
 
 GET      /Case/:filter/:dir/:typeID/:queryParam/:skip/:limit   controllers.SalesManager.getCaseList(filter, output="json", dir, typeID, queryParam, skip:Int, limit:Int)
 GET      /Case/:filter/:dir/:typeID/:queryParam/count          controllers.SalesManager.getCaseCount(filter, dir, typeID, queryParam)

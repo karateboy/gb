@@ -49,7 +49,7 @@
             </div>            
         </div>
         <div v-else class="alert alert-info" role="alert">無</div>
-        <care-house-detail v-if="display === 'detail'" :careHouse="careHouseList[selectedIndex]"></care-house-detail>
+        <care-house-detail v-if="display === 'detail'" :careHouse="careHouseList[selectedIndex]" @Changed="reload"></care-house-detail>
         <build-case2-map v-if="display === 'map'" :careHouse="careHouseList[selectedIndex]"></build-case2-map>
     </div>
 </template>
@@ -94,7 +94,8 @@ export default {
       display: "",
       selectedIndex: -1,
       sortBy: "bed-",
-      keyword: ""
+      keyword: "",
+      page: 0
     };
   },
   computed: {},
@@ -115,6 +116,9 @@ export default {
   },
 
   methods: {
+    reload() {
+      this.handlePageChange(this.page);
+    },
     processResp(resp) {
       const ret = resp.data;
       this.careHouseList.splice(0, this.careHouseList.length);
@@ -161,6 +165,7 @@ export default {
         });
     },
     handlePageChange(page) {
+      this.page = page;
       let skip = (page - 1) * this.limit;
       this.fetchCareHouse(skip, this.limit);
     },

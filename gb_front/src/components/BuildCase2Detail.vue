@@ -143,7 +143,7 @@ export default {
         .catch(err => alert(err));
     },
     onFormChanged(evt){
-      this.$emit("buildCaseChanged", this.buildCase._id)
+      this.$emit("Changed", this.buildCase._id)
     }
   },
   components: {

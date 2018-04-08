@@ -41,6 +41,11 @@
                             <i class="fa fa-diamond" aria-hidden="true"></i>
                             <span class="nav-label"></span>我的名單</a>
                     </router-link>
+                    <router-link tag="li" :to="{name:'SubmittedByMe', params:{ url:'Case/SubmittedByMe'}}" active-class="active">
+                        <a>
+                            <i class="fa fa-upload" aria-hidden="true"></i>
+                            <span class="nav-label"></span>我上傳的案件</a>
+                    </router-link>
                     <router-link tag="li" :to="{name:'ObtainCase', params:{ url:'Case/Ownerless', obtainBtn:true}}" active-class="active">
                         <a>
                             <i class="fa fa-search" aria-hidden="true"></i>

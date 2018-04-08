@@ -37,12 +37,16 @@ object SalesManager extends Controller {
                 getSouthOwnerless(queryParam)(skip, limit)
             case CaseFilter.MyCase =>
               queryParam.owner = Some(Security.getUserID(request))
-              BuildCase2.query(BuildCase2.getFilter(queryParam))(BuildCase2.getSortBy(queryParam))(skip, limit)
+              query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
             case CaseFilter.AllCase =>
               if (dir.equalsIgnoreCase("N"))
                 getNorthAll(queryParam)(skip, limit)
               else
                 getSouthAll(queryParam)(skip, limit)
+            case CaseFilter.SubmittedByMe =>
+              queryParam.owner = Some(Security.getUserID(request))
+              queryParam.hasForm = Some(true)
+              query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
           }
 
         for {
@@ -79,6 +83,10 @@ object SalesManager extends Controller {
                 getNorthAll(queryParam)(skip, limit)
               else
                 getSouthAll(queryParam)(skip, limit)
+            case CaseFilter.SubmittedByMe =>
+              queryParam.owner = Some(Security.getUserID(request))
+              queryParam.hasForm = Some(true)
+              query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
           }
 
         for (careHouseList <- f) yield {
@@ -112,6 +120,10 @@ object SalesManager extends Controller {
                 getNorthAll(queryParam)(skip, limit)
               else
                 getSouthAll(queryParam)(skip, limit)
+            case CaseFilter.SubmittedByMe =>
+              queryParam.owner = Some(Security.getUserID(request))
+              queryParam.hasForm = Some(true)
+              query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
           }
 
         for (facilityList <- f) yield {
@@ -161,6 +173,10 @@ object SalesManager extends Controller {
                 getNorthAllCount(queryParam)
               else
                 getSouthAllCount(queryParam)
+            case CaseFilter.SubmittedByMe =>
+              queryParam.owner = Some(Security.getUserID(request))
+              queryParam.hasForm = Some(true)
+              count(getFilter(queryParam))
           }
 
         for (count <- f) yield {
@@ -186,6 +202,10 @@ object SalesManager extends Controller {
                 getNorthAllCount(queryParam)
               else
                 getSouthAllCount(queryParam)
+            case CaseFilter.SubmittedByMe =>
+              queryParam.owner = Some(Security.getUserID(request))
+              queryParam.hasForm = Some(true)
+              count(getFilter(queryParam))
           }
 
         for (count <- f) yield {
@@ -211,6 +231,10 @@ object SalesManager extends Controller {
                 getNorthAllCount(queryParam)
               else
                 getSouthAllCount(queryParam)
+            case CaseFilter.SubmittedByMe =>
+              queryParam.owner = Some(Security.getUserID(request))
+              queryParam.hasForm = Some(true)
+              count(getFilter(queryParam))
           }
 
         for (count <- f) yield {
@@ -259,8 +283,9 @@ object SalesManager extends Controller {
       }
   }
 
-  def getOwnerlessSplit(dir: String, typeID: String) = Security.Authenticated.async {
+  def getCaseSplit(casefilterStr: String, dir: String, typeID: String) = Security.Authenticated.async {
     implicit request =>
+      val casefilter = CaseFilter.withName(casefilterStr)
       val wpType = WorkPointType.withName(typeID)
 
       wpType match {
@@ -415,7 +440,7 @@ object SalesManager extends Controller {
           formRet.fold(validateErrHandler, form => {
             val f = updateForm(id, form)
             for (ret <- f)
-              yield Ok(Json.obj("Ok"->true))
+              yield Ok(Json.obj("Ok" -> true))
 
           })
         })
@@ -453,7 +478,7 @@ object SalesManager extends Controller {
           formRet.fold(validateErrHandler, form => {
             val f = updateForm(id, form)
             for (ret <- f)
-              yield Ok(Json.obj("Ok"->true))
+              yield Ok(Json.obj("Ok" -> true))
           })
         })
   }
