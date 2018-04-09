@@ -75,6 +75,11 @@
                             <i class="fa fa-search" aria-hidden="true"></i>
                             <span class="nav-label"></span>全部名單</a>
                     </router-link>
+                    <router-link tag="li" :to="{name:'CaseList', params:{ url:'Case/SubmittedCases'}}" active-class="active">
+                        <a>
+                            <i class="fa fa-search" aria-hidden="true"></i>
+                            <span class="nav-label"></span>全部上傳表格</a>
+                    </router-link>
                 </ul>
             </li>
             <li v-show="isIntern">

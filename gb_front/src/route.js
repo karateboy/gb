@@ -83,12 +83,6 @@ export const routes = [{
                 props: true
             },
             {
-                path: 'SubmittedByMe',
-                component: CaseList,
-                name: 'SubmittedByMe',
-                props: true
-            },
-            {
                 path: 'ObtainCase',
                 component: CaseList,
                 name: 'ObtainCase',
@@ -111,11 +105,18 @@ export const routes = [{
         component: Intern,
         name: 'SalesAdmin',
         children: [{
-            path: 'CaseList',
-            component: CaseList,
-            name: 'CaseList',
-            props: true
-        }]
+                path: 'CaseList',
+                component: CaseList,
+                name: 'CaseList',
+                props: true
+            },
+            {
+                path: 'SubmittedList',
+                component: CaseList,
+                name: 'SubmittedList',
+                props: true
+            }
+        ]
     },
     {
         path: '/System',

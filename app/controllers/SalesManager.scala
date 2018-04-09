@@ -47,6 +47,9 @@ object SalesManager extends Controller {
               queryParam.owner = Some(Security.getUserID(request))
               queryParam.hasForm = Some(true)
               query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
+            case CaseFilter.SubmittedCases =>
+              queryParam.hasForm = Some(true)
+              query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
           }
 
         for {
@@ -87,6 +90,9 @@ object SalesManager extends Controller {
               queryParam.owner = Some(Security.getUserID(request))
               queryParam.hasForm = Some(true)
               query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
+            case CaseFilter.SubmittedCases =>
+              queryParam.hasForm = Some(true)
+              query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
           }
 
         for (careHouseList <- f) yield {
@@ -122,6 +128,9 @@ object SalesManager extends Controller {
                 getSouthAll(queryParam)(skip, limit)
             case CaseFilter.SubmittedByMe =>
               queryParam.owner = Some(Security.getUserID(request))
+              queryParam.hasForm = Some(true)
+              query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
+            case CaseFilter.SubmittedCases =>
               queryParam.hasForm = Some(true)
               query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
           }
@@ -177,6 +186,9 @@ object SalesManager extends Controller {
               queryParam.owner = Some(Security.getUserID(request))
               queryParam.hasForm = Some(true)
               count(getFilter(queryParam))
+            case CaseFilter.SubmittedCases =>
+              queryParam.hasForm = Some(true)
+              count(getFilter(queryParam))
           }
 
         for (count <- f) yield {
@@ -206,6 +218,10 @@ object SalesManager extends Controller {
               queryParam.owner = Some(Security.getUserID(request))
               queryParam.hasForm = Some(true)
               count(getFilter(queryParam))
+            case CaseFilter.SubmittedCases =>
+              queryParam.hasForm = Some(true)
+              count(getFilter(queryParam))
+
           }
 
         for (count <- f) yield {
@@ -235,6 +251,10 @@ object SalesManager extends Controller {
               queryParam.owner = Some(Security.getUserID(request))
               queryParam.hasForm = Some(true)
               count(getFilter(queryParam))
+            case CaseFilter.SubmittedCases =>
+              queryParam.hasForm = Some(true)
+              count(getFilter(queryParam))
+
           }
 
         for (count <- f) yield {

@@ -5,4 +5,5 @@ object CaseFilter extends Enumeration {
   val MyCase = Value
   val AllCase = Value
   val SubmittedByMe = Value
+  val SubmittedCases = Value
 }
