@@ -83,6 +83,12 @@ export const routes = [{
                 props: true
             },
             {
+                path: 'SubmittedByMe',
+                component: CaseList,
+                name: 'SubmittedByMe',
+                props: true
+            },
+            {
                 path: 'ObtainCase',
                 component: CaseList,
                 name: 'ObtainCase',

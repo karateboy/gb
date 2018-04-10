@@ -114,12 +114,15 @@ export default {
   watch: {
     url: function(newUrl) {
       this.fetchBuildCase(0, this.limit);
+      PaginationEvent.$on("vue-pagination::cardList", this.handlePageChange);
     },
     param: function(newParam) {
       this.fetchBuildCase(0, this.limit);
+      PaginationEvent.$on("vue-pagination::cardList", this.handlePageChange);
     },
     keyword(newKeyword) {
       this.fetchBuildCase(0, this.limit);
+      PaginationEvent.$on("vue-pagination::cardList", this.handlePageChange);
     }
   },
 
