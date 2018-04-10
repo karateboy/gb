@@ -34,6 +34,8 @@
                                 <i class="fa fa-pen"></i>&nbsp;歸還</button> 
                             <button class="btn btn-primary" @click="caseMap(index)" :disabled="!facility.location">
                                 <i class="fa fa-pen"></i>&nbsp;地圖</button>                                                                  
+                            <button class="btn btn-info" @click="facilityExcel(facility)">
+                                <i class="fa fa-excel"></i>&nbsp;Excel</button>                                                                      
                         </td>
                         <td>{{ facility.name}}</td>
                         <td>{{ facility.county}}</td>
@@ -243,8 +245,12 @@ export default {
     displayPollutant(air) {
       if (air) {
         if (air.noVOCtotal) return air.noVOCtotal;
-        else 0;
-      } else 0;
+        else return 0;
+      } else return 0;
+    },
+    facilityExcel(facility) {
+      let url = baseUrl() + `/FacilityExcel/${facility._id}`;
+      window.open(url);
     }
   },
   components: {

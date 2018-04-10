@@ -72,8 +72,7 @@ export default {
   },
   data() {
     return {
-      comment: "已電話聯絡??, 已約見面??, 遇到困難??",
-      displayBuilder: false,
+      //displayBuilder: false,
       builder: {},
       ioType: "in",
       opType: "add",
@@ -81,19 +80,9 @@ export default {
       entry: {}
     };
   },
-  mounted() {
-    if (!this.buildCase.personal) {
-      axios.get("/Builder/" + encodeURI(this.buildCase.builder)).then(resp => {
-        if (resp.status == 200) {
-          const ret = resp.data;
-          this.builder = ret;
-          this.displayBuilder = true;
-        }
-      });
-    }
-  },
-  watch: {
-    "buildCase.builder": function(newId) {
+  computed: {
+    ...mapGetters(["user"]),
+    displayBuilder: function() {
       if (!this.buildCase.personal) {
         axios
           .get("/Builder/" + encodeURI(this.buildCase.builder))
@@ -101,14 +90,11 @@ export default {
             if (resp.status == 200) {
               const ret = resp.data;
               this.builder = ret;
-              this.displayBuilder = true;
             }
           });
-      }
+        return true;
+      } else return false;
     }
-  },
-  computed: {
-    ...mapGetters(["user"])
   },
   methods: {
     noteHeader(note) {
@@ -142,8 +128,8 @@ export default {
         })
         .catch(err => alert(err));
     },
-    onFormChanged(evt){
-      this.$emit("Changed", this.buildCase._id)
+    onFormChanged(evt) {
+      this.$emit("Changed", this.buildCase._id);
     }
   },
   components: {

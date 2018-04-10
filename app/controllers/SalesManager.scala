@@ -503,4 +503,21 @@ object SalesManager extends Controller {
         })
   }
 
+  def downloadFacilityExcel(_id: String) = Security.Authenticated.async {
+    implicit request =>
+      for (facilityList <- Facility.get(_id)) yield {
+        val facility = facilityList.head
+        try {
+          val excel = ExcelUtility.exportFactorySheet(facility)
+          Ok.sendFile(excel, fileName = _ =>
+            s"${facility.name}.xlsx",
+            onClose = () => { Files.deleteIfExists(excel.toPath()) })
+
+        } catch {
+          case ex: Throwable =>
+            Logger.error(s"無法匯出 ${facility.name}", ex)
+            NoContent
+        }
+      }
+  }
 }

@@ -70,6 +70,8 @@ GET      /DownloadType                                         controllers.Appli
 GET      /Download/:downloadType                               controllers.Application.handleDownload(downloadType)
 
 GET      /Test                                                 controllers.Application.testGrabber
+
+GET      /FacilityExcel/:id                                    controllers.SalesManager.downloadFacilityExcel(id)
 #Report
 
 #JSON

@@ -252,4 +252,50 @@ object ExcelUtility {
     finishExcel(reportFilePath, pkg, wb)
     missingWasteCodeSet
   }
+  
+  def exportFactorySheet(factory: Facility) = {
+    val (reportFilePath, pkg, wb) = prepareTemplate("factory.xlsx")
+    val evaluator = wb.getCreationHelper().createFormulaEvaluator()
+    val format = wb.createDataFormat()
+    val sheet = wb.getSheetAt(0)
+    
+
+    sheet.getRow(1).getCell(0).setCellValue(factory.name)
+    for (contact <- factory.contact)
+      sheet.getRow(2).getCell(1).setCellValue(contact)
+
+    for (phone <- factory.phone)
+      sheet.getRow(2).getCell(3).setCellValue(phone)
+
+    for (addr <- factory.addr)
+      sheet.getRow(6).getCell(1).setCellValue(addr)
+
+    for (location <- factory.location) {
+      val gasStationF = GasStation.getNearest(location)
+      val gasStation = waitReadyResult(gasStationF)
+      sheet.getRow(7).getCell(1).setCellValue(s"${gasStation._id.name}:${gasStation.addr}")
+    }
+
+    for (wasteOutList <- factory.wasteOut) {
+      sheet.getRow(0).getCell(6).setCellValue(wasteOutList.head.date)
+      for {
+        (wo, idx) <- wasteOutList.zipWithIndex
+        row = idx + 9
+      } {
+        sheet.getRow(row).getCell(0).setCellValue(wo.wasteCode)
+        sheet.getRow(row).getCell(1).setCellValue(wo.wasteName)
+        sheet.getRow(row).getCell(2).setCellValue(wo.quantity)
+        for (location <- factory.location) {
+          val top3 = waitReadyResult(Facility.findTop3ProcessPlant(location, wo.wasteCode))
+
+          val desp = top3 map { proc =>
+            s"${proc.name.take(4)}${proc.phone.getOrElse("")}"
+          }
+          sheet.getRow(row).getCell(4).setCellValue(desp.mkString(","))
+        }
+      }
+    }
+
+    finishExcel(reportFilePath, pkg, wb)
+  }
 }

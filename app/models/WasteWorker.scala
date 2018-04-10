@@ -11,6 +11,7 @@ object WasteWorker {
   case object GrabFactoryInfo
   case object GrabProcessPlantInfo
   case object ExportFactorySheet
+  case object ImportBuildCase
 
   var count = 0
   def createWorker(implicit context: ActorSystem) = {
@@ -38,6 +39,12 @@ object WasteWorker {
     val worker = createWorker
     worker ! ExportFactorySheet
   }
+
+  def importBuildCase()(implicit context: ActorSystem) = {
+    val worker = createWorker
+    worker ! ImportBuildCase
+  }
+
 }
 
 class WasteWorker() extends Actor with ActorLogging {
@@ -53,6 +60,8 @@ class WasteWorker() extends Actor with ActorLogging {
       grabProcessPlantInfo
     case ExportFactorySheet =>
       exportFactorySheet
+    case ImportBuildCase =>
+      importBuildCase
   }
 
   def grabber = {
@@ -139,5 +148,11 @@ class WasteWorker() extends Actor with ActorLogging {
       }
       self ! PoisonPill
     }
+  }
+
+  def importBuildCase() = {
+    val path = current.path.getAbsolutePath + "/import/buildCase1.xlsx"
+    BuildCase2.importMonthlyReport(path)(BuildCase2.monthlyReportParser)
+    self ! PoisonPill
   }
 }

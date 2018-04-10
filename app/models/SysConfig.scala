@@ -25,6 +25,7 @@ object SysConfig extends Enumeration {
   val ImportRecyclePlant = Value
   val ExtractFacilityCounty = Value
   val UnsetWorkPointIO = Value
+  val ImportBuildCase = Value
 
   val defaultConfig = Map(
     ImportDumpSite -> Document(valueKey -> false),
@@ -40,7 +41,8 @@ object SysConfig extends Enumeration {
     ExportFactorySheet -> Document(valueKey -> false),
     ImportRecyclePlant -> Document(valueKey -> false),
     ExtractFacilityCounty -> Document(valueKey -> false),
-    UnsetWorkPointIO -> Document(valueKey-> false))
+    UnsetWorkPointIO -> Document(valueKey -> false),
+    ImportBuildCase -> Document(valueKey -> true))
 
   def init(colNames: Seq[String]) {
     if (!colNames.contains(ColName)) {

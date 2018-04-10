@@ -36,11 +36,11 @@ object Global extends GlobalSettings {
       }
     }
 
-    for (grabed <- SysConfig.get(SysConfig.ExportFactorySheet)) {
+    for (ret <- SysConfig.get(SysConfig.ImportBuildCase)) {
       import org.mongodb.scala.bson._
-      if (!grabed.asBoolean().getValue) {
-        WasteWorker.exportFactorSheet()(app.actorSystem)
-        SysConfig.set(SysConfig.ExportFactorySheet, BsonBoolean(true))
+      if (ret.asBoolean().getValue) {
+        WasteWorker.importBuildCase()(app.actorSystem)
+        SysConfig.set(SysConfig.ImportBuildCase, BsonBoolean(false))
       }
     }
 

@@ -380,9 +380,11 @@ object Facility {
     import org.mongodb.scala.bson.conversions._
     val keywordFilter: Option[Bson] = param.keyword map {
       keyword =>
-        val noFilter = regex("_id.no", keyword)
-        val nameFilter = regex("_id.name", "(?i)" + keyword)
+        val noFilter = regex("_id", keyword)
+        val nameFilter = regex("name", "(?i)" + keyword)
+        val countyFilter = regex("name", "(?i)" + keyword)
         val addrFilter = regex("addr", "(?i)" + keyword)
+        
         or(noFilter, nameFilter, addrFilter)
     }
 
