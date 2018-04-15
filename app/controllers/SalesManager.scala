@@ -37,6 +37,7 @@ object SalesManager extends Controller {
                 getSouthOwnerless(queryParam)(skip, limit)
             case CaseFilter.MyCase =>
               queryParam.owner = Some(Security.getUserID(request))
+              queryParam.hasForm = Some(false)
               query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
             case CaseFilter.AllCase =>
               if (dir.equalsIgnoreCase("N"))
@@ -80,6 +81,7 @@ object SalesManager extends Controller {
                 getSouthOwnerless(queryParam)(skip, limit)
             case CaseFilter.MyCase =>
               queryParam.owner = Some(Security.getUserID(request))
+              queryParam.hasForm = Some(false)
               query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
             case CaseFilter.AllCase =>
               if (dir.equalsIgnoreCase("N"))
@@ -120,6 +122,7 @@ object SalesManager extends Controller {
                 getSouthOwnerless(queryParam)(skip, limit)
             case CaseFilter.MyCase =>
               queryParam.owner = Some(Security.getUserID(request))
+              queryParam.hasForm = Some(false)
               query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
             case CaseFilter.AllCase =>
               if (dir.equalsIgnoreCase("N"))
@@ -176,6 +179,7 @@ object SalesManager extends Controller {
                 getSouthOwnerlessCount(queryParam)
             case CaseFilter.MyCase =>
               queryParam.owner = Some(Security.getUserID(request))
+              queryParam.hasForm = Some(false)
               count(getFilter(queryParam))
             case CaseFilter.AllCase =>
               if (dir.equalsIgnoreCase("N"))
@@ -208,6 +212,7 @@ object SalesManager extends Controller {
                 getSouthOwnerlessCount(queryParam)
             case CaseFilter.MyCase =>
               queryParam.owner = Some(Security.getUserID(request))
+              queryParam.hasForm = Some(false)
               count(getFilter(queryParam))
             case CaseFilter.AllCase =>
               if (dir.equalsIgnoreCase("N"))
@@ -241,6 +246,7 @@ object SalesManager extends Controller {
                 getSouthOwnerlessCount(queryParam)
             case CaseFilter.MyCase =>
               queryParam.owner = Some(Security.getUserID(request))
+              queryParam.hasForm = Some(false)
               count(getFilter(queryParam))
             case CaseFilter.AllCase =>
               if (dir.equalsIgnoreCase("N"))

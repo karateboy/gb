@@ -40,14 +40,15 @@ object BuildCaseState extends Enumeration {
 import java.util.Date
 case class ContactInfo(name: Option[String] = None, addr: Option[String] = None, phone: Option[String] = None)
 case class BuildCaseForm(
-  constructor: ContactInfo   = ContactInfo(),
-  permit:      ContactInfo   = ContactInfo(),
-  earthWork:   ContactInfo   = ContactInfo(),
-  dump:        ContactInfo   = ContactInfo(),
-  burner:      ContactInfo   = ContactInfo(),
-  wall:        ContactInfo   = ContactInfo(),
-  photos:      Seq[ObjectId] = Seq.fill(4)(new ObjectId(Photo.noPhotoID)),
-  submitDate:  Date          = new Date())
+  constructor: ContactInfo    = ContactInfo(),
+  permit:      ContactInfo    = ContactInfo(),
+  earthWork:   ContactInfo    = ContactInfo(),
+  dump:        ContactInfo    = ContactInfo(),
+  burner:      ContactInfo    = ContactInfo(),
+  wall:        ContactInfo    = ContactInfo(),
+  photos:      Seq[ObjectId]  = Seq.fill(4)(new ObjectId(Photo.noPhotoID)),
+  comment:     Option[String] = Some(""),
+  submitDate:  Date           = new Date())
 
 case class BuildCaseID(county: String, permitID: String, wpType: Int = WorkPointType.BuildCase.id) extends IWorkPointID
 case class SiteInfo(usage: String, floorDesc: String, addr: String, area: Option[Double], landlordAddr: Option[String])

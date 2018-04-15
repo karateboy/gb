@@ -45,10 +45,10 @@
                           <td><input type="text" class="form-control" v-model="form.wall.name"></td>
                           <td><input type="text" class="form-control" v-model="form.wall.addr"></td>
                           <td><input type="text" class="form-control" v-model="form.wall.phone"></td>
-                        </tr>
+                        </tr> 
                         <tr><th>備註</th>
-                          <td colspan="3"><textarea class="form-control" rows="3" v-model="form.comment"></textarea></td>
-                        </tr>
+                          <td colspan="3"><textarea class="form-control" rows="4" v-model="form.comment"></textarea></td>
+                        </tr>                                               
                         <tr><th>工地辦公室照片</th>
                           <td colspan="3">
                             <img v-if="form.photos[0] != '000000000000000000000000'" :src="imageUrl(form.photos[0])" alt="工地辦公室" class="img-thumbnail" width="400">
@@ -84,7 +84,7 @@
                     </tbody>
               </table>              
               <div class="col-sm-1 col-sm-offset-1">
-                    <button class='btn btn-primary' @click='save'>上傳</button>
+                    <button class='btn btn-primary' @click='save'>上傳透明度表格</button>
               </div>
             </div>
         </div>

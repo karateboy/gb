@@ -17,6 +17,7 @@
                         <th></th>
                         <th @click="toggleSort('permitDate')"><a>發照日期&nbsp;<span v-html = "sortDir('permitDate')"></span></a></th>
                         <th @click="toggleSort('_id.county')"><a>縣市&nbsp;<span v-html = "sortDir('_id.county')"></span></a></th>
+                        <th @click="toggleSort('owner')"><a>業務&nbsp;<span v-html = "sortDir('owner')"></span></a></th>
                         <th @click="toggleSort('builder')"><a>起造人&nbsp;<span v-html = "sortDir('builder')"></span></a></th>
                         <th @click="toggleSort('architect')"><a>建築師&nbsp;<span v-html = "sortDir('architect')"></span></a></th>
                         <th @click="toggleSort('siteInfo.area')"><a>樓板面積&nbsp;<span v-html = "sortDir('siteInfo.area')"></span></a></th>
@@ -37,6 +38,7 @@
                         </td>
                         <td>{{ issueDate(buildCase)}}</td>
                         <td>{{ buildCase._id.county}}</td>
+                        <td>{{ buildCase.owner}}</td>
                         <td>{{ buildCase.builder}}</td>
                         <td>{{ buildCase.architect}}</td>
                         <td>{{ buildCase.siteInfo.area}}</td>
@@ -101,7 +103,7 @@ export default {
       total: 0,
       display: "",
       selectedIndex: -1,
-      sortBy: "siteInfo.area+",
+      sortBy: "siteInfo.area-",
       keyword: "",
       page: 0
     };

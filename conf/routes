@@ -31,7 +31,6 @@ GET      /Builder/:encodedID                                   controllers.Query
 
 GET      /CheckOutBuildCase                                    controllers.Application.checkOutBuildCase
 GET      /CheckOutContractor                                   controllers.Application.checkOutContractor
-POST     /BuildCase                                            controllers.Application.upsertBuildCase
 GET      /BuildCaseForm/:idJson                                controllers.SalesManager.getBuildCaseForm(idJson)
 POST     /BuildCaseForm/:idJson                                controllers.SalesManager.updateBuildCaseForm(idJson)
 GET      /CareHouseForm/:idJson                                controllers.SalesManager.getCareHouseForm(idJson)
@@ -51,6 +50,7 @@ GET      /Case/:filter/:dir/:typeID/:queryParam/excel          controllers.Sales
 
 POST     /ObtainCase                                           controllers.SalesManager.obtainCase()
 POST     /ReleaseCase                                          controllers.SalesManager.releaseCase()
+POST     /BuildCase                                            controllers.Application.upsertBuildCase
 PUT      /BuildCase                                            controllers.Query.upsertBuildCase
 PUT      /CareHouse                                            controllers.Query.upsertCareHouse
 

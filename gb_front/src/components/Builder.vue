@@ -16,7 +16,7 @@
                     </tbody>
                 </table>
                 <div class="col-sm-1 col-sm-offset-1">
-                    <button class='btn btn-primary' @click='save'>更新資訊</button>
+                    <button class='btn btn-primary' @click='save'>更新起造人資訊</button>
                 </div>
             </div>
         </div>

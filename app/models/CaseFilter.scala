@@ -7,3 +7,7 @@ object CaseFilter extends Enumeration {
   val SubmittedByMe = Value
   val SubmittedCases = Value
 }
+
+abstract class FilterInterface {
+  
+}

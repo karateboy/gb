@@ -16,7 +16,7 @@
             </div>
             <div class="form-group">
                 <label class="col-sm-1 control-label">樓地板面積:</label>
-                <div class="col-sm-4"><input type="text" class="form-control" :value="buildCase.siteInfo.area" readonly></div>
+                <div class="col-sm-4"><input type="number" class="form-control" v-model.number="buildCase.siteInfo.area"></div>
             </div>
             <div class="form-group">
                 <label class="col-sm-1 control-label">用途:</label>
@@ -44,6 +44,15 @@
             <div class="form-group">
                 <label class="col-sm-1 control-label">業務:</label>
                 <div class="col-sm-4"><input type="text" class="form-control" :value="buildCase.owner" readonly></div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-1 control-label">座標:</label>
+                <div class="col-sm-4"><input type="text" class="form-control" v-model="location"></div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-1 col-sm-offset-1">
+                    <button class='btn btn-primary' @click='save'>更新建案資訊</button>
+              </div>
             </div>
             <build-case-form :buildCaseID="buildCase._id" :build-case-form="buildCase.form" @formChanged="onFormChanged"></build-case-form>
         </div>
@@ -94,6 +103,22 @@ export default {
           });
         return true;
       } else return false;
+    },
+    location: {
+      get: function() {
+        if (this.buildCase.location) {
+          let ret = this.buildCase.location.slice();
+          return ret.reverse().join();
+        } else return "";
+      },
+      set: function(v) {
+        if (v) {
+          let locationStr = v.split(",");
+          this.buildCase.location.splice(0, this.buildCase.location.length);
+          this.buildCase.location.push(parseFloat(locationStr[1]));
+          this.buildCase.location.push(parseFloat(locationStr[0]));
+        }
+      }
     }
   },
   methods: {
@@ -108,16 +133,6 @@ export default {
       } else return true;
     },
     save() {
-      if (!this.validate()) return;
-
-      let newNote = {
-        date: new Date(),
-        comment: this.comment,
-        person: this.user.name
-      };
-
-      this.buildCase.notes.push(newNote);
-
       axios
         .put("/BuildCase", this.buildCase)
         .then(resp => {
