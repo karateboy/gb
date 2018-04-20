@@ -28,30 +28,10 @@ object SalesManager extends Controller {
       def buildCase = {
         import BuildCase2._
         val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
-        val f =
-          caseFilter match {
-            case CaseFilter.Ownerless =>
-              if (dir.equalsIgnoreCase("N"))
-                getNorthOwnerless(queryParam)(skip, limit)
-              else
-                getSouthOwnerless(queryParam)(skip, limit)
-            case CaseFilter.MyCase =>
-              queryParam.owner = Some(Security.getUserID(request))
-              queryParam.hasForm = Some(false)
-              query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
-            case CaseFilter.AllCase =>
-              if (dir.equalsIgnoreCase("N"))
-                getNorthAll(queryParam)(skip, limit)
-              else
-                getSouthAll(queryParam)(skip, limit)
-            case CaseFilter.SubmittedByMe =>
-              queryParam.owner = Some(Security.getUserID(request))
-              queryParam.hasForm = Some(true)
-              query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
-            case CaseFilter.SubmittedCases =>
-              queryParam.hasForm = Some(true)
-              query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
-          }
+        val f = {
+          val filter = matchCaseFilter(caseFilter, dir, Security.getUserID(request))(queryParam)
+          query(filter)(getSortBy(queryParam))(skip, limit)
+        }
 
         for {
           buildCaseList <- f
@@ -95,6 +75,7 @@ object SalesManager extends Controller {
             case CaseFilter.SubmittedCases =>
               queryParam.hasForm = Some(true)
               query(getFilter(queryParam))(getSortBy(queryParam))(skip, limit)
+
           }
 
         for (careHouseList <- f) yield {
@@ -170,30 +151,10 @@ object SalesManager extends Controller {
       def buildCase = {
         import BuildCase2._
         val queryParam = Json.parse(queryParamJson).validate[QueryParam].asOpt.getOrElse(defaultQueryParam)
-        val f =
-          casefilter match {
-            case CaseFilter.Ownerless =>
-              if (dir.equalsIgnoreCase("N"))
-                getNorthOwnerlessCount(queryParam)
-              else
-                getSouthOwnerlessCount(queryParam)
-            case CaseFilter.MyCase =>
-              queryParam.owner = Some(Security.getUserID(request))
-              queryParam.hasForm = Some(false)
-              count(getFilter(queryParam))
-            case CaseFilter.AllCase =>
-              if (dir.equalsIgnoreCase("N"))
-                getNorthAllCount(queryParam)
-              else
-                getSouthAllCount(queryParam)
-            case CaseFilter.SubmittedByMe =>
-              queryParam.owner = Some(Security.getUserID(request))
-              queryParam.hasForm = Some(true)
-              count(getFilter(queryParam))
-            case CaseFilter.SubmittedCases =>
-              queryParam.hasForm = Some(true)
-              count(getFilter(queryParam))
-          }
+        val f = {
+          val filter = matchCaseFilter(casefilter, dir, Security.getUserID(request))(queryParam)
+          count(filter)
+        }
 
         for (count <- f) yield {
           Ok(Json.toJson(count))

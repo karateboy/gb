@@ -89,6 +89,18 @@ export const routes = [{
                 props: true
             },
             {
+                path: 'ClosedByMe',
+                component: CaseList,
+                name: 'ClosedByMe',
+                props: true
+            },
+            {
+                path: 'EscalatedByMe',
+                component: CaseList,
+                name: 'EscalatedByMe',
+                props: true
+            },
+            {
                 path: 'ObtainCase',
                 component: CaseList,
                 name: 'ObtainCase',
@@ -121,7 +133,19 @@ export const routes = [{
                 component: CaseList,
                 name: 'SubmittedList',
                 props: true
-            }
+            },
+            {
+                path: 'EscalatedList',
+                component: CaseList,
+                name: 'EscalatedList',
+                props: true
+            },
+            {
+                path: 'ClosedList',
+                component: CaseList,
+                name: 'ClosedList',
+                props: true
+            },
         ]
     },
     {

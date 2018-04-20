@@ -62,14 +62,6 @@ object Builder {
   def upsert(builder: Builder) = {
     val f = collection.replaceOne(Filters.eq("_id", builder._id), builder, UpdateOptions().upsert(true)).toFuture()
     f.onFailure(errorHandler)
-    f.onSuccess({
-      case x =>
-        if (!builder.phone.isEmpty()) {
-          BuildCaseState.GetPhone.toString()
-          val f2 = BuildCase2.updateStateByBuilder(builder._id, BuildCaseState.GetPhone.toString())
-          f2.onFailure(errorHandler)
-        }
-    })
     f
   }
 

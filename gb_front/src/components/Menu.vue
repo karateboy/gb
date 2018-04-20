@@ -46,6 +46,16 @@
                             <i class="fa fa-upload" aria-hidden="true"></i>
                             <span class="nav-label"></span>我上傳的案件</a>
                     </router-link>
+                    <router-link tag="li" :to="{name:'ClosedByMe', params:{ url:'Case/ClosedByMe'}}" active-class="active">
+                        <a>
+                            <i class="fa fa-upload" aria-hidden="true"></i>
+                            <span class="nav-label"></span>我封存的案件</a>
+                    </router-link>
+                    <router-link tag="li" :to="{name:'EscalatedByMe', params:{ url:'Case/EscalatedByMe'}}" active-class="active">
+                        <a>
+                            <i class="fa fa-upload" aria-hidden="true"></i>
+                            <span class="nav-label"></span>我後送的案件</a>
+                    </router-link>
                     <router-link tag="li" :to="{name:'ObtainCase', params:{ url:'Case/Ownerless', obtainBtn:true}}" active-class="active">
                         <a>
                             <i class="fa fa-search" aria-hidden="true"></i>
@@ -79,6 +89,16 @@
                         <a>
                             <i class="fa fa-search" aria-hidden="true"></i>
                             <span class="nav-label"></span>全部上傳表格</a>
+                    </router-link>
+                    <router-link tag="li" :to="{name:'ClosedList', params:{ url:'Case/ClosedList'}}" active-class="active">
+                        <a>
+                            <i class="fa fa-search" aria-hidden="true"></i>
+                            <span class="nav-label"></span>封存案件</a>
+                    </router-link>
+                    <router-link tag="li" :to="{name:'EscalatedList', params:{ url:'Case/EscalatedList'}}" active-class="active">
+                        <a>
+                            <i class="fa fa-search" aria-hidden="true"></i>
+                            <span class="nav-label"></span>後送案件</a>
                     </router-link>
                 </ul>
             </li>

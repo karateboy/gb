@@ -19,6 +19,7 @@ import org.mongodb.scala.model.Indexes._
 import org.mongodb.scala.bson._
 import MongoDB._
 
+/*
 object BuildCaseState extends Enumeration {
   val Initial = Value
   val GetPhone = Value
@@ -26,16 +27,9 @@ object BuildCaseState extends Enumeration {
   val Monitoring = Value
   val Contracted = Value
   val Closed = Value
-
-  val map = Map(
-    Initial -> "原始",
-    GetPhone -> "取得電話",
-    Visited -> "已拜訪",
-    Monitoring -> "觀察中",
-    Contracted -> "已簽約",
-    Closed -> "結案")
-
 }
+*
+*/
 
 import java.util.Date
 case class ContactInfo(name: Option[String] = None, addr: Option[String] = None, phone: Option[String] = None)
@@ -57,7 +51,7 @@ case class BuildCase2(_id: BuildCaseID, builder: String, personal: Boolean,
                       permitDate: Date, architect: String,
                       var location: Option[Seq[Double]] = None,
                       contractor:   Option[String]      = None, contractorCheckDate: Option[Date] = None,
-                      state: Option[String] = Some(BuildCaseState.Initial.toString()), owner: Option[String] = None,
+                      state: Option[String] = Some(CaseState.Unknown.toString()), owner: Option[String] = None,
                       tag:   Seq[String] = Seq.empty[String],
                       notes: Seq[Note]   = Seq.empty[Note], var editor: Option[String] = None,
                       dm: Boolean = false, form: Option[BuildCaseForm] = None) extends IWorkPoint {
@@ -84,7 +78,7 @@ object BuildCase2 {
   case class QueryParam(
     areaGT: Option[Double] = None, areaLT: Option[Double] = None,
     tag:         Option[Seq[String]] = None,
-    state:       Option[String]      = None,
+    var state:   Option[String]      = None,
     var owner:   Option[String]      = None,
     keyword:     Option[String]      = None,
     var hasForm: Option[Boolean]     = None,
@@ -236,6 +230,7 @@ object BuildCase2 {
     }
   }
 
+  import scala.concurrent._
   def monthlyReportParser(wb: XSSFWorkbook) {
     def getCountyInfo(sheetName: String) = {
       val tag = sheetName.take(3)
@@ -309,20 +304,13 @@ object BuildCase2 {
               })
             }
 
-            for (builder <- builderF) yield {
-              val state = if (!builder.phone.isEmpty())
-                BuildCaseState.GetPhone.toString()
-              else
-                BuildCaseState.Initial.toString()
-
-              BuildCase2(
-                _id = BuildCaseID(county, permitID),
-                builder = builderID,
-                personal = false,
-                siteInfo = siteInfo,
-                permitDate = permitDate, architect = architect,
-                state = Some(state))
-            }
+            BuildCase2(
+              _id = BuildCaseID(county, permitID),
+              builder = builderID,
+              personal = false,
+              siteInfo = siteInfo,
+              permitDate = permitDate, architect = architect,
+              state = Some(CaseState.Unknown.toString()))
           }
 
           def personalBuildCase() = {
@@ -344,6 +332,7 @@ object BuildCase2 {
               personal = true,
               siteInfo = siteInfo,
               permitDate = permitDate, architect = architect)
+
           }
 
           try {
@@ -365,7 +354,7 @@ object BuildCase2 {
               val buildCase = if (personal)
                 personalBuildCase
               else
-                waitReadyResult(companyBuildCase)
+                companyBuildCase
 
               buildCaseSeq = buildCaseSeq :+ buildCase
             }
@@ -549,6 +538,47 @@ object BuildCase2 {
       Filters.exists("_id")
 
     filter
+  }
+
+  def matchCaseFilter(caseFilter: CaseFilter.Value, dir: String, userID: String)(queryParam: QueryParam) = {
+    import CaseFilter._
+    caseFilter match {
+      case Ownerless =>
+        if (dir.equalsIgnoreCase("N"))
+          northOwnerless(queryParam)
+        else
+          southOwnerless(queryParam)
+      case MyCase =>
+        queryParam.owner = Some(userID)
+        queryParam.hasForm = Some(false)
+        getFilter(queryParam)
+      case AllCase =>
+        if (dir.equalsIgnoreCase("N"))
+          northAll(queryParam)
+        else
+          southAll(queryParam)
+      case SubmittedByMe =>
+        queryParam.owner = Some(userID)
+        queryParam.hasForm = Some(true)
+        getFilter(queryParam)
+      case SubmittedCases =>
+        queryParam.hasForm = Some(true)
+        getFilter(queryParam)
+      case ClosedByMe =>
+        queryParam.owner = Some(userID)
+        queryParam.state = Some(CaseState.Closed.toString)
+        getFilter(queryParam)
+      case ClosedList=>
+        queryParam.state = Some(CaseState.Closed.toString)
+        getFilter(queryParam)
+      case EscalatedByMe=>
+        queryParam.owner = Some(userID)
+        queryParam.state = Some(CaseState.Escalated.toString)
+        getFilter(queryParam)
+      case EscalatedList=>
+        queryParam.state = Some(CaseState.Escalated.toString)
+        getFilter(queryParam)
+    }
   }
 
   import org.mongodb.scala.model._
