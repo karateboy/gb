@@ -32,7 +32,9 @@
                             <button class="btn btn-primary" @click="obtainCase(buildCase)" v-if="obtainBtn">
                                 <i class="fa fa-pen"></i>&nbsp;取得</button>  
                             <button class="btn btn-primary" @click="releaseCase(buildCase)" v-if="!obtainBtn">
-                                <i class="fa fa-pen"></i>&nbsp;歸還</button> 
+                                <i class="fa fa-pen"></i>&nbsp;歸還</button>
+                            <button class="btn btn-primary" @click="setCaseState(buildCase,'Closed')">
+                                <i class="fa fa-pen"></i>&nbsp;結案</button>     
                             <button class="btn btn-primary" @click="caseMap(index)" :disabled="!buildCase.location">
                                 <i class="fa fa-pen"></i>&nbsp;地圖</button>                                                                  
                         </td>
@@ -205,9 +207,22 @@ export default {
           const ret = resp.data;
           if (ret.ok) {
             alert("成功取得");
-            this.fetchBuildCase(0, this.limit);
+            this.reload();
           } else {
             alert(ret.msg);
+          }
+        })
+        .catch(err => alert(err));
+    },
+    setCaseState(buildCase, state) {
+      buildCase.state = state;
+      axios
+        .put("/BuildCase", buildCase)
+        .then(resp => {
+          let ret = resp.data;
+          if (ret.Ok) {
+            alert("成功!");
+            this.reload();
           }
         })
         .catch(err => alert(err));
@@ -220,7 +235,7 @@ export default {
           const ret = resp.data;
           if (ret.ok) {
             alert("成功歸還");
-            this.fetchBuildCase(0, this.limit);
+            this.reload();
           } else {
             alert(ret.msg);
           }
@@ -237,8 +252,7 @@ export default {
           this.sortBy = this.sortBy.replace("-", "+");
         }
       }
-
-      this.fetchBuildCase(0, this.limit);
+      this.reload();
     },
     sortDir(col) {
       if (this.sortBy.indexOf(col) == -1) {
