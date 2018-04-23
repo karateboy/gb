@@ -1,6 +1,6 @@
 name := """gb"""
 
-version := "1.0.42"
+version := "1.0.43"
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.12"
