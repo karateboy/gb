@@ -551,6 +551,7 @@ object BuildCase2 {
       case MyCase =>
         queryParam.owner = Some(userID)
         queryParam.hasForm = Some(false)
+        queryParam.state = Some(CaseState.Unknown.toString)
         getFilter(queryParam)
       case AllCase =>
         if (dir.equalsIgnoreCase("N"))
