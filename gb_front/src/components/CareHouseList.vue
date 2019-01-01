@@ -17,6 +17,7 @@
                         <th></th>
                         <th @click="toggleSort('_id.name')"><a>機構名稱&nbsp;<span v-html = "sortDir('_id.name')"></span></a></th>
                         <th @click="toggleSort('_id.county')"><a>縣市&nbsp;<span v-html = "sortDir('_id.county')"></span></a></th>
+                        <th @click="toggleSort('owner')"><a>業務&nbsp;<span v-html = "sortDir('owner')"></span></a></th>
                         <th @click="toggleSort('phone')"><a>電話&nbsp;<span v-html = "sortDir('phone')"></span></a></th>
                         <th @click="toggleSort('bed')"><a>床數&nbsp;<span v-html = "sortDir('bed')"></span></a></th>
                         <th @click="toggleSort('addr')"><a>地址&nbsp;<span v-html = "sortDir('addr')"></span></a></th>                        
@@ -36,6 +37,7 @@
                         </td>
                         <td>{{ careHouse._id.name}}</td>
                         <td>{{ careHouse._id.county}}</td>
+                        <td>{{ careHouse.owner}}</td>
                         <td>{{ careHouse.phone}}</td>
                         <td>{{ careHouse.bed}}</td>
                         <td>{{ careHouse.addr}}</td>
